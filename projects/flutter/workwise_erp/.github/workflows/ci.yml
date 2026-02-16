@@ -48,6 +48,14 @@ jobs:
           name: coverage-lcov
           path: coverage/lcov.info
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   build_android:
     name: Build Android (release on main)
     needs: analyze_and_test
