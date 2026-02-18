@@ -1,0 +1,27 @@
+import 'package:workwise_erp/core/errors/either.dart';
+import 'package:workwise_erp/core/errors/failure.dart';
+import '../entities/user.dart';
+
+abstract class AuthRepository {
+  /// Fetch authenticated user and return Either<Failure, User>
+  Future<Either<Failure, User>> fetchCurrentUser();
+
+  /// Login with email/password and return Either<Failure, User>
+  Future<Either<Failure, User>> login({required String email, required String password});
+
+  /// Request password reset (accepts email or phone). Sends OTP to email/SMS.
+  Future<Either<Failure, void>> forgotPassword({required String emailOrPhone});
+
+  /// Update user profile
+  Future<Either<Failure, User>> updateProfile(Map<String, dynamic> payload);
+
+  /// Logout / clear local session
+  Future<Either<Failure, void>> logout();
+
+  /// Verify OTP sent for forgot-password flow
+  Future<Either<Failure, void>> verifyForgotPasswordOtp({required String emailOrPhone, required String otp});
+
+  /// Change password using OTP (forgot-password flow)
+  Future<Either<Failure, void>> changePasswordUsingOtp({required String emailOrPhone, required String otp, required String newPassword});
+}
+

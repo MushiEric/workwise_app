@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 
 import 'core/themes/app_colors.dart';
+import 'core/theme/app_typography.dart';
 import 'core/provider/locale_provider.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/forgot_password_page.dart';
@@ -45,9 +46,9 @@ void main() async {
 
   // You can also override using a build-time dart-define `RUNTIME_ENV` like:
   // flutter run --dart-define=RUNTIME_ENV=dev
-  const _runtimeEnv = String.fromEnvironment('RUNTIME_ENV', defaultValue: '');
-  if (_runtimeEnv.isNotEmpty) {
-    EnvConfig.init(EnvConfig.parseEnv(_runtimeEnv));
+  const runtimeEnv = String.fromEnvironment('RUNTIME_ENV', defaultValue: '');
+  if (runtimeEnv.isNotEmpty) {
+    EnvConfig.init(EnvConfig.parseEnv(runtimeEnv));
   }
 
   // Initialize Sentry only when DSN is provided via --dart-define
@@ -60,15 +61,15 @@ void main() async {
         options.tracesSampleRate = 0.05; // low default; increase if needed
         options.release = '${AppConstant.appName}@${AppConstant.appVersion}';
       },
-      appRunner: () => runApp(const ProviderScope(child: MyApp())),
+      appRunner: () => runApp(const ProviderScope(child: Workwise())),
     );
   } else {
-    runApp(const ProviderScope(child: MyApp()));
+    runApp(const ProviderScope(child: Workwise()));
   }
 }
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+class Workwise extends ConsumerWidget {
+  const Workwise({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,6 +101,10 @@ class MyApp extends ConsumerWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
         ),
+        // Centralized typography (Inter default, Figtree for titles/numbers)
+        textTheme: AppTypography.textTheme,
+        // Standardize icon sizing across the app
+        iconTheme: const IconThemeData(size: 20),
       ),
       routes: {
         '/': (context) => const LoginPage(),
