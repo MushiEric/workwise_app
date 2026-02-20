@@ -14,6 +14,7 @@ import '../providers/sales_providers.dart';
 import '../state/sales_state.dart';
 import '../widgets/order_tile.dart';
 import 'sales_view_page.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class SalesPage extends ConsumerStatefulWidget {
   const SalesPage({super.key});
@@ -76,34 +77,21 @@ class _SalesPageState extends ConsumerState<SalesPage> {
           actions: [
             if (!_isSearching)
               IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
+                icon: Icon(
+                  LucideIcons.search,
+                  size: 20,
+                  color: isDark ? Colors.white70 : Colors.white,
+                ),  
+
                 onPressed: () {
                   setState(() => _isSearching = true);
                 },
               ),
             IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.filter_list_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
+              icon: Icon(
+                LucideIcons.filter,
+                size: 20,
+                color: isDark ? Colors.white70 : Colors.white,
               ),
               onPressed: _showFilterOptions,
             ),
@@ -112,17 +100,10 @@ class _SalesPageState extends ConsumerState<SalesPage> {
               final checker = ref.watch(permissionCheckerProvider);
               if (!checker.hasPermission('show PFI')) return const SizedBox.shrink();
               return IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.receipt_long_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
+                icon: Icon(
+                  LucideIcons.receipt,
+                  size: 20,
+                  color: isDark ? Colors.white70 : Colors.white,
                 ),
                 onPressed: () => Navigator.pushNamed(context, '/pfi'),
               );
