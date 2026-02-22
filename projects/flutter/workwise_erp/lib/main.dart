@@ -40,6 +40,7 @@ import 'core/storage/tenant_local_data_source.dart';
 import 'core/provider/tenant_provider.dart';
 import 'features/tenant/presentation/pages/workspace_entry_page.dart';
 import 'features/logistic/presentation/pages/trips_page.dart';
+import 'features/customer/presentation/pages/customer_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +138,7 @@ class Workwise extends ConsumerWidget {
         '/pfi': (context) => const PfiPage(),
         '/logistic': (context) => const LogisticPage(),
         '/logistic/trips': (context) => const TripsPage(),
+        '/customers': (context) => const CustomerPage(),
         '/logistic/operators': (context) => const OperatorsPage(),
         '/logistic/operators/detail': (context) => const OperatorDetailPage(),
         '/assets': (context) => const AssetsPage(),
