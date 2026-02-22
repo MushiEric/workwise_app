@@ -35,6 +35,11 @@ import '../../../core/constants/app_constant.dart';
 
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/config/environment.dart';
+import 'core/models/tenant.dart';
+import 'core/storage/tenant_local_data_source.dart';
+import 'core/provider/tenant_provider.dart';
+import 'features/tenant/presentation/pages/workspace_entry_page.dart';
+import 'features/logistic/presentation/pages/trips_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +58,20 @@ void main() async {
 
   // Initialize Sentry only when DSN is provided via --dart-define
   final sentryDsn = EnvConfig.sentryDsn;
+
+  // Load persisted tenant (if any) so Workwise can decide initial route.
+  final tenantStorage = TenantLocalDataSource();
+  final persistedTenant = await tenantStorage.readTenant();
+  final tenantOverride = persistedTenant == null
+      ? null
+      : Tenant(persistedTenant);
+
+  final providerOverrides = <Override>[];
+  if (tenantOverride != null) {
+    // override the provider value (StateProvider<Tenant?> expects Tenant?)
+    providerOverrides.add(tenantProvider.overrideWith((ref) => tenantOverride));
+  }
+
   if (sentryDsn.isNotEmpty) {
     await SentryFlutter.init(
       (options) {
@@ -61,10 +80,10 @@ void main() async {
         options.tracesSampleRate = 0.05; // low default; increase if needed
         options.release = '${AppConstant.appName}@${AppConstant.appVersion}';
       },
-      appRunner: () => runApp(const ProviderScope(child: Workwise())),
+      appRunner: () => runApp(ProviderScope(overrides: providerOverrides, child: const Workwise())),
     );
   } else {
-    runApp(const ProviderScope(child: Workwise()));
+    runApp(ProviderScope(overrides: providerOverrides, child: const Workwise()));
   }
 }
 
@@ -107,6 +126,7 @@ class Workwise extends ConsumerWidget {
         iconTheme: const IconThemeData(size: 20),
       ),
       routes: {
+        '/workspace': (context) => const WorkspaceEntryScreen(),
         '/': (context) => const LoginPage(),
         '/forgot-password': (context) => const ForgotPasswordPage(),
         '/forgot-password/verify': (context) => const VerifyForgotPasswordOtpPage(),
@@ -116,6 +136,7 @@ class Workwise extends ConsumerWidget {
         '/sales': (context) => const SalesPage(),
         '/pfi': (context) => const PfiPage(),
         '/logistic': (context) => const LogisticPage(),
+        '/logistic/trips': (context) => const TripsPage(),
         '/logistic/operators': (context) => const OperatorsPage(),
         '/logistic/operators/detail': (context) => const OperatorDetailPage(),
         '/assets': (context) => const AssetsPage(),
@@ -133,7 +154,7 @@ class Workwise extends ConsumerWidget {
         '/notifications': (context) => const NotificationsPage(),
         '/hr': (context) => const HRPage(),
       },
-      initialRoute: '/',
+      initialRoute: ref.watch(tenantProvider) == null ? '/workspace' : '/',
     );
   }
 }

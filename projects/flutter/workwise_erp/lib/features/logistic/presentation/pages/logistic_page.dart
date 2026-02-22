@@ -7,7 +7,9 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../assets/presentation/providers/assets_providers.dart';
 import '../../../assets/presentation/widgets/asset_tile.dart';
 import '../providers/operators_providers.dart';
+import '../providers/trips_providers.dart';
 import '../widgets/operator_tile.dart';
+import '../widgets/trip_tile.dart';
 
 class LogisticPage extends ConsumerStatefulWidget {
   const LogisticPage({super.key});
@@ -32,6 +34,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
       } catch (_) {}
       try {
         ref.read(operatorsNotifierProvider.notifier).loadOperators();
+      } catch (_) {}
+      try {
+        ref.read(tripsNotifierProvider.notifier).loadTrips();
       } catch (_) {}
     });
   }
@@ -98,6 +103,42 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     );
   }
 
+  Widget _buildTripTab(BuildContext context) {
+    final state = ref.watch(tripsNotifierProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: state.when(
+        initial: () => const SizedBox.shrink(),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (msg) => Center(child: Text(msg, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700))),
+        loaded: (trips) {
+          if (trips.isEmpty) {
+            return Center(child: Text('No trips found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+          }
+          return RefreshIndicator(
+            onRefresh: () => ref.read(tripsNotifierProvider.notifier).loadTrips(),
+            child: ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              itemCount: trips.length,
+              itemBuilder: (context, idx) {
+                final t = trips[idx];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: TripTile(
+                    trip: t,
+                    onTap: () => Navigator.pushNamed(context, '/logistic/trips'),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _placeholder(String text) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
@@ -115,7 +156,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     final tabs = <Widget>[
       _buildVehicleTab(context),
       _placeholder('Journey - placeholder'),
-      _placeholder('Trip - placeholder'),
+      _buildTripTab(context),
       _buildOperatorsTab(context),
       _placeholder('Workshop - placeholder'),
     ];
