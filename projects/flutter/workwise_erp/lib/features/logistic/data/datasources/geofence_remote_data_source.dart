@@ -8,14 +8,15 @@ class GeofenceRemoteDataSource {
   GeofenceRemoteDataSource(this.client);
 
   // TODO: Confirm exact endpoint paths with your backend team if these differ.
-  static const String _geofenceEndpoint = '/geofence/';
+  // backend uses explicit "get" path rather than bare resource
+  static const String _geofenceEndpoint = '/geofence/getGeofence';
   // actual path observed by backend
   static const String _assetGeofenceEndpoint = '/geofence/getAssetGeofence';
 
   /// GET /geofence/ — returns all geofence zones.
   Future<List<GeofenceModel>> getGeofences() async {
     try {
-      final resp = await client.get(_geofenceEndpoint);
+      final resp = await client.get('$_geofenceEndpoint');
       final list = _extractList(resp.data);
       return list
           .map((j) => GeofenceModel.fromJson(Map<String, dynamic>.from(j)))
