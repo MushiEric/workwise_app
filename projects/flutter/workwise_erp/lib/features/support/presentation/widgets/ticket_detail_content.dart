@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 
 import '../../domain/entities/support_ticket.dart';
@@ -358,10 +359,10 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
       children: [
         // Enhanced Tab Bar
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: EdgeInsets.symmetric(horizontal: 16.w),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: TabBar(
             controller: _tabController,
@@ -372,9 +373,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               Tab(text: 'History'),
             ],
             labelColor: primaryColor,
+            labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: TextStyle(fontSize: 13.sp),
             unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
             indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.r),
               color: primaryColor.withOpacity(0.15),
             ),
             indicatorSize: TabBarIndicatorSize.tab,
@@ -382,7 +385,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
             splashFactory: NoSplash.splashFactory,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         
         // Tab Bar Views
         Expanded(
@@ -413,20 +416,18 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     final priorityColor = _getPriorityColor(selectedPriority);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         
-     
-          const SizedBox(height: 20),
-          
+          SizedBox(height: 20.h),
+
           // Subject
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.r),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               border: Border.all(
                 color: isDark ? Colors.white10 : Colors.grey.shade200,
                 width: 1,
@@ -437,29 +438,29 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               children: [
                 Row(
                   children: [
-                    Icon(Icons.subject_rounded, size: 16, color: primaryColor),
-                    const SizedBox(width: 8),
+                    Icon(Icons.subject_rounded, size: 16.r, color: primaryColor),
+                    SizedBox(width: 8.w),
                     Expanded(
                       child: Text(
                         'Subject',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.white70 : Colors.grey.shade700,
-                          fontSize: 14,
+                          fontSize: 14.sp,
                         ),
                       ),
                     ),
                     if ((widget.ticket.ticketCode ?? '').isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
                           color: primaryColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: Text(
                           widget.ticket.ticketCode ?? '',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             color: isDark ? Colors.white70 : primaryColor,
                           ),
@@ -467,11 +468,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
                       ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
                   widget.ticket.subject ?? 'No subject',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w500,
                     color: isDark ? Colors.white : const Color(0xFF1A2634),
                   ),
@@ -479,9 +480,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               ],
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
+
+          SizedBox(height: 16.h),
+
           // Status and Priority Row
           Row(
             children: [
@@ -497,7 +498,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.w),
               Expanded(
                 child: _buildDropdownCard(
                   context,
@@ -512,8 +513,8 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               ),
             ],
           ),
-          
-          const SizedBox(height: 20),
+
+          SizedBox(height: 20.h),
           
           // Customer Information Card
           _buildInfoCard(
@@ -602,32 +603,32 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
           color: color.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12.r),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 4),
+                Icon(icon, size: 14.r, color: color),
+                SizedBox(width: 4.w),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: color,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             DropdownButtonFormField<String>(
               // Deduplicate options and ensure the current value exists exactly once.
               initialValue: (() {
@@ -638,6 +639,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               items: uniqueOptions(options).map((s) => DropdownMenuItem(
                 value: s,
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       width: 8,
@@ -648,7 +650,12 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(s),
+                    Flexible(
+                      child: Text(
+                        s,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               )).toList(),
@@ -674,10 +681,10 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
   Widget _buildInfoCard(BuildContext context, {required String title, required IconData icon, required List<Widget> children, required bool isDark}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
           color: isDark ? Colors.white10 : Colors.grey.shade200,
           width: 1,
@@ -688,19 +695,21 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  color: isDark ? Colors.white : const Color(0xFF1A2634),
+              Icon(icon, size: 18.r, color: AppColors.primary),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16.sp,
+                    color: isDark ? Colors.white : const Color(0xFF1A2634),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           ...children,
         ],
       ),
@@ -709,18 +718,18 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
   Widget _infoRow(String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 100.w,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.sp,
                 color: isDark ? Colors.white54 : Colors.grey.shade600,
               ),
             ),
@@ -729,7 +738,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w500,
                 color: isDark ? Colors.white70 : Colors.grey.shade800,
               ),
@@ -742,10 +751,10 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
   Widget _buildAttachmentsSection(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
           color: isDark ? Colors.white10 : Colors.grey.shade200,
           width: 1,
@@ -756,38 +765,44 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
         children: [
           Row(
             children: [
-              Icon(Icons.attach_file_rounded, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
+              Icon(Icons.attach_file_rounded, size: 18.r, color: AppColors.primary),
+              SizedBox(width: 8.w),
               Text(
                 'Attachments (${localAttachments.length})',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           ...localAttachments.map((attachment) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: 8.h),
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12.r),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8.r),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10.r),
                     ),
-                    child: const Icon(Icons.insert_drive_file_rounded, size: 16, color: AppColors.primary),
+                    child: Icon(
+                      Icons.insert_drive_file_rounded,
+                      size: 16.r,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -796,21 +811,31 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
                           attachment['name'] ?? 'File',
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            fontSize: 13.sp,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           attachment['size'] ?? 'Unknown size',
                           style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                            fontSize: 11.sp,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.download_rounded, size: 20, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                    icon: Icon(
+                      Icons.download_rounded,
+                      size: 20.r,
+                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    ),
                     onPressed: () {},
                   ),
                 ],
@@ -1633,22 +1658,23 @@ void _showDeleteFileConfirmation(BuildContext context) {
                     children: [
                       Icon(
                         Icons.chat_bubble_outline_rounded,
-                        size: 64,
+                        size: 64.r,
                         color: isDark ? Colors.white24 : Colors.grey.shade300,
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       Text(
                         'No comments yet',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.white70 : Colors.grey.shade700,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       Text(
                         'Be the first to add a comment',
                         style: TextStyle(
+                          fontSize: 14.sp,
                           color: isDark ? Colors.white54 : Colors.grey.shade600,
                         ),
                       ),
@@ -1657,24 +1683,24 @@ void _showDeleteFileConfirmation(BuildContext context) {
                 )
               : ListView.separated(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.r),
                   itemCount: replies.length,
                   reverse: true,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, __) => SizedBox(height: 12.h),
                   itemBuilder: (context, i) {
                     final r = replies[i];
                     final isCurrentUser = r.createdBy == currentUser?.id;
                     final author = isCurrentUser ? 'You' : 'User ${r.createdBy ?? '-'}';
                     final time = _timeAgo(r.createdAt);
                     final avatarText = author.isNotEmpty ? author[0].toUpperCase() : '?';
-                    
+
                     return Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.r),
                       decoration: BoxDecoration(
                         color: isCurrentUser
                             ? primaryColor.withOpacity(0.1)
                             : (isDark ? Colors.white.withOpacity(0.03) : Colors.white),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
                           color: isCurrentUser
                               ? primaryColor.withOpacity(0.3)
@@ -1687,8 +1713,8 @@ void _showDeleteFileConfirmation(BuildContext context) {
                         children: [
                           // Avatar
                           Container(
-                            width: 40,
-                            height: 40,
+                            width: 40.r,
+                            height: 40.r,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: isCurrentUser
@@ -1700,16 +1726,16 @@ void _showDeleteFileConfirmation(BuildContext context) {
                             child: Center(
                               child: Text(
                                 avatarText,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 16.sp,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          
+                          SizedBox(width: 12.w),
+
                           // Content
                           Expanded(
                             child: Column(
@@ -1717,27 +1743,31 @@ void _showDeleteFileConfirmation(BuildContext context) {
                               children: [
                                 Row(
                                   children: [
-                                    Text(
-                                      author,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: isCurrentUser
-                                            ? primaryColor
-                                            : (isDark ? Colors.white : const Color(0xFF1A2634)),
+                                    Flexible(
+                                      child: Text(
+                                        author,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14.sp,
+                                          color: isCurrentUser
+                                              ? primaryColor
+                                              : (isDark ? Colors.white : const Color(0xFF1A2634)),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8.w),
                                     if (isCurrentUser)
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                                         decoration: BoxDecoration(
                                           color: primaryColor.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(10.r),
                                         ),
                                         child: Text(
                                           'You',
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 10.sp,
                                             color: primaryColor,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -1747,17 +1777,17 @@ void _showDeleteFileConfirmation(BuildContext context) {
                                     Text(
                                       time,
                                       style: TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 11.sp,
                                         color: isDark ? Colors.white38 : Colors.grey.shade500,
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                SizedBox(height: 8.h),
                                 Text(
                                   r.message ?? '-',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 14.sp,
                                     height: 1.4,
                                     color: isDark ? Colors.white70 : Colors.grey.shade800,
                                   ),
@@ -1771,10 +1801,10 @@ void _showDeleteFileConfirmation(BuildContext context) {
                   },
                 ),
         ),
-        
+
         // Comment Input
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF151A2E) : Colors.white,
             boxShadow: [
@@ -1789,44 +1819,55 @@ void _showDeleteFileConfirmation(BuildContext context) {
             children: [
               // Attachment Button
               Container(
-                margin: const EdgeInsets.only(right: 8),
+                margin: EdgeInsets.only(right: 8.w),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.attach_file_rounded, color: isDark ? Colors.white54 : Colors.grey.shade600),
-                  onPressed: () {
-                    // Attach file
-                  },
+                  icon: Icon(
+                    Icons.attach_file_rounded,
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    size: 20.r,
+                  ),
+                  onPressed: () {},
                 ),
               ),
-              
+
               // Text Field
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: TextField(
                     controller: _commentController,
                     decoration: InputDecoration(
                       hintText: 'Write a comment...',
-                      hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade500),
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                        fontSize: 14.sp,
+                      ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 12.h,
+                      ),
                     ),
-                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1A2634)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                      fontSize: 14.sp,
+                    ),
                     maxLines: null,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendComment(),
                   ),
                 ),
               ),
-              
+
               // Send Button
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -1846,15 +1887,15 @@ void _showDeleteFileConfirmation(BuildContext context) {
                 ),
                 child: IconButton(
                   icon: _isSendingComment
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
+                      ? SizedBox(
+                          width: 20.r,
+                          height: 20.r,
+                          child: const CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      : Icon(Icons.send_rounded, color: Colors.white, size: 20.r),
                   onPressed: _isSendingComment ? null : _sendComment,
                 ),
               ),
@@ -1873,14 +1914,14 @@ void _showDeleteFileConfirmation(BuildContext context) {
           children: [
             Icon(
               Icons.history_rounded,
-              size: 64,
+              size: 64.r,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               'No history available',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white70 : Colors.grey.shade700,
               ),
@@ -1891,15 +1932,15 @@ void _showDeleteFileConfirmation(BuildContext context) {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.r),
       itemCount: history.length,
       itemBuilder: (context, i) {
         final entry = history[i];
         final type = entry['type'] ?? 'default';
-        
+
         IconData icon;
         Color iconColor;
-        
+
         switch (type) {
           case 'create':
             icon = Icons.add_circle_rounded;
@@ -1919,7 +1960,7 @@ void _showDeleteFileConfirmation(BuildContext context) {
         }
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: EdgeInsets.only(bottom: 8.h),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1927,32 +1968,32 @@ void _showDeleteFileConfirmation(BuildContext context) {
               Column(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 32.r,
+                    height: 32.r,
                     decoration: BoxDecoration(
                       color: iconColor.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(icon, size: 16, color: iconColor),
+                    child: Icon(icon, size: 16.r, color: iconColor),
                   ),
                   if (i < history.length - 1)
                     Container(
-                      width: 2,
-                      height: 40,
+                      width: 2.w,
+                      height: 40.h,
                       color: isDark ? Colors.white10 : Colors.grey.shade200,
                     ),
                 ],
               ),
-              const SizedBox(width: 12),
-              
+              SizedBox(width: 12.w),
+
               // Content
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
+                  margin: EdgeInsets.only(bottom: 16.h),
+                  padding: EdgeInsets.all(12.r),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
                       color: isDark ? Colors.white10 : Colors.grey.shade200,
                       width: 1,
@@ -1965,29 +2006,44 @@ void _showDeleteFileConfirmation(BuildContext context) {
                         entry['action'] ?? 'Unknown action',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
+                          fontSize: 14.sp,
                           color: isDark ? Colors.white : const Color(0xFF1A2634),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Row(
                         children: [
-                          Icon(Icons.person_outline_rounded, size: 12, color: isDark ? Colors.white38 : Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(
-                            entry['user'] ?? 'System',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white54 : Colors.grey.shade600,
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 12.r,
+                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          ),
+                          SizedBox(width: 4.w),
+                          Flexible(
+                            child: Text(
+                              entry['user'] ?? 'System',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.access_time_rounded, size: 12, color: isDark ? Colors.white38 : Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(entry['timestamp']),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          SizedBox(width: 8.w),
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 12.r,
+                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          ),
+                          SizedBox(width: 4.w),
+                          Flexible(
+                            child: Text(
+                              _formatDate(entry['timestamp']),
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: isDark ? Colors.white38 : Colors.grey.shade500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
