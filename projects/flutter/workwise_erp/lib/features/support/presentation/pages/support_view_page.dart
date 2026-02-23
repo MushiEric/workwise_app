@@ -6,6 +6,7 @@ import '../providers/support_providers.dart';
 import '../../domain/entities/support_ticket.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
+import '../../../../core/themes/app_colors.dart';
 
 class SupportViewPage extends ConsumerWidget {
   final SupportTicket ticket;
@@ -21,14 +22,14 @@ class SupportViewPage extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+            icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : AppColors.white),
             onPressed: () {
               // page-level share
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share ticket — not implemented')));
             },
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+            icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : AppColors.white),
             onSelected: (v) {
               switch (v) {
                 case 'create_pfi':

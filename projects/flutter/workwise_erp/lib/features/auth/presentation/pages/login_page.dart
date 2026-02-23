@@ -7,6 +7,7 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/token_provider.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
+import 'package:workwise_erp/core/provider/tenant_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -51,9 +52,19 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     
     _animationController.forward();
 
-    // Auto-restore session if a token exists on device
+    // Auto-restore session if a token exists on device. Guard against
+    // attempting restoration when tenant is not yet configured — that used to
+    // cause `UninitializedTenantException` and an endless loading dialog.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
+        final tenant = ref.read(tenantProvider);
+        if (tenant == null) {
+          // redirect user to workspace entry (workspace must be set before API calls)
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/workspace');
+          return;
+        }
+
         final token = await ref.read(tokenLocalDataSourceProvider).readToken();
         if (token != null && token.isNotEmpty) {
           if (!mounted) return;
@@ -69,7 +80,12 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
             orElse: () {},
           );
         }
-      } catch (_) {}
+      } catch (_) {
+        // ensure any failure doesn't leave a modal open
+        try {
+          hideAppLoadingDialog(context);
+        } catch (_) {}
+      }
     });
   }
 
@@ -180,6 +196,18 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final tenant = ref.watch(tenantProvider);
+
+    // If tenant isn't configured, avoid initializing network-dependent providers
+    // (they read `tenantProvider` and would throw). `initState` will redirect to
+    // `/workspace` via a post-frame callback — show a harmless placeholder here.
+    if (tenant == null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        body: const SizedBox.shrink(),
+      );
+    }
+
     final state = ref.watch(authNotifierProvider);
     final isLoading = state.whenOrNull(loading: (_) => true) ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;

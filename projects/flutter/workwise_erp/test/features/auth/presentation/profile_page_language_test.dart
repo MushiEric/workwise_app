@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/features/auth/domain/entities/user.dart';
+import 'package:workwise_erp/features/auth/domain/entities/role.dart';
 import 'package:workwise_erp/features/auth/presentation/pages/profile_page.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
@@ -52,5 +53,22 @@ void main() {
     // Expect success feedback and updated subtitle
     expect(find.textContaining('Language updated successfully'), findsOneWidget);
     expect(find.text('Swahili'), findsWidgets);
+  });
+
+  testWidgets('shows role from user.roles (or backend `type`)', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    final user = User(id: 2, name: 'Role User', lang: 'en', roles: [const Role(id: 1, name: 'operator')]);
+
+    final container = ProviderContainer(overrides: [
+      currentUserProvider.overrideWithValue(FutureProvider((ref) async => Either.right(user))),
+    ]);
+
+    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: Scaffold(body: ProfilePage()))));
+    await tester.pumpAndSettle();
+
+    // role badge should display the role name from roles[0]
+    expect(find.text('operator'), findsOneWidget);
+  });
   });
 }

@@ -7,6 +7,8 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
 import '../state/auth_state.dart';
+import '../../../../core/provider/tenant_provider.dart';
+import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -408,7 +410,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              user?.isAdmin == true ? 'Administrator' : 'company',
+              // Prefer explicit admin flag, otherwise show first role name when
+              // available (backend may supply `roles` or `type`). Fallback to
+              // legacy `'company'` label.
+              user?.isAdmin == true
+                  ? 'Administrator'
+                  : (user?.roles != null && user!.roles!.isNotEmpty && (user.roles!.first.name?.isNotEmpty ?? false)
+                      ? user.roles!.first.name!
+                      : 'company'),
               style: TextStyle(
                 color: isDark ? Colors.white : primaryColor,
                 fontSize: 13,
@@ -970,6 +979,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
               ),
               _buildMenuTile(
+                icon: LucideIcons.server,
+                label: 'Switch Workspace',
+                subtitle: 'Change workspace / tenant',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showSwitchWorkspaceConfirmation();
+                },
+              ),
+              _buildMenuTile(
                 icon: LucideIcons.logOut,
                 label: 'Sign Out',
                 color: Colors.red,
@@ -1097,6 +1115,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       },
       icon: LucideIcons.logOut,
       confirmColor: Colors.red,
+    );
+  }
+
+  void _showSwitchWorkspaceConfirmation() {
+    context.showConfirmationModal(
+      title: 'Switch Workspace',
+      message: 'Switching workspace will sign you out and require entering a new workspace URL. Continue?',
+      confirmText: 'Switch',
+      onConfirm: () async {
+        // clear tenant and session
+        await ref.read(tenantLocalDataSourceProvider).clearTenant();
+        ref.read(tenantProvider.notifier).state = null;
+        await ref.read(authNotifierProvider.notifier).logout();
+
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/workspace', (route) => false);
+        }
+      },
+      icon: LucideIcons.server,
+      confirmColor: Colors.orange,
     );
   }
 

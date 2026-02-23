@@ -53,6 +53,7 @@ void main() {
       'email': 'fetched@example.com',
       'is_admin': 0,
       'is_active': 1,
+      'type': 'operator',
     };
 
     when(() => mockDio.post(any(), data: any(named: 'data'), options: any(named: 'options'))).thenAnswer((_) async => Response(
@@ -71,6 +72,26 @@ void main() {
     expect(model.id, 42);
     expect(model.apiToken, 'tok-xyz');
     expect(model.email, 'fetched@example.com');
+    // `type` should have been converted into roles
+    expect(model.roles, isNotNull);
+    expect(model.roles!.first.name, equals('operator'));
+
+  });
+
+  test('fetchCurrentUser converts `type` into roles when present', () async {
+    final resp = {'id': 99, 'name': 'Type User', 'email': 't@example.com', 'type': 'company'};
+
+    when(() => mockDio.get('/user')).thenAnswer((_) async => Response(
+          requestOptions: RequestOptions(path: '/user'),
+          data: resp,
+          statusCode: 200,
+        ));
+
+    final model = await remote.fetchCurrentUser();
+    expect(model.id, 99);
+    expect(model.roles, isNotNull);
+    expect(model.roles!.first.name, equals('company'));
+  });
   });
 
   test('login parses JSON string response', () async {

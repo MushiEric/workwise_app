@@ -6,6 +6,8 @@ import 'package:workwise_erp/core/provider/permission_provider.dart';
 import 'package:workwise_erp/core/security/permission_checker.dart';
 import 'package:workwise_erp/core/widgets/app_drawer.dart';
 import 'package:workwise_erp/features/index/presentation/pages/index_page.dart';
+import 'package:workwise_erp/core/models/tenant.dart';
+import 'package:workwise_erp/core/provider/tenant_provider.dart';
 import 'package:workwise_erp/features/auth/domain/entities/user.dart' as domain;
 import 'package:workwise_erp/features/auth/domain/entities/role.dart';
 import 'package:workwise_erp/features/auth/domain/entities/permission.dart';
@@ -42,13 +44,17 @@ void main() {
       // ignore: avoid_print
       print('VISIBLE_MENUS: $visible');
       expect(visible.contains('HR'), isTrue);
+      expect(visible.contains('Customers'), isTrue);
       expect(visible.contains('Sales'), isFalse);
       container.dispose();
 
       // render AppDrawer directly (avoids drawer opening & layout constraints in test)
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [permissionCheckerProvider.overrideWithValue(checker)],
+          overrides: [
+            permissionCheckerProvider.overrideWithValue(checker),
+            tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
+          ],
           child: const MaterialApp(home: AppDrawer()),
         ),
       );
@@ -81,14 +87,17 @@ void main() {
       // render AppDrawer directly (avoids drawer opening & layout constraints in test)
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [permissionCheckerProvider.overrideWithValue(checker)],
+          overrides: [
+            permissionCheckerProvider.overrideWithValue(checker),
+            tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
+          ],
           child: const MaterialApp(home: AppDrawer()),
         ),
       );
 
       await tester.pumpAndSettle();
       expect(find.text('HR'), findsNothing);
-    });
+      expect(find.text('Customers'), findsOneWidget);    });
 
     testWidgets('IndexPage hides Project tile when permission missing and shows when present', (tester) async {
       // missing permission
@@ -100,7 +109,10 @@ void main() {
       final checkerNo = PermissionChecker(userNoProject);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [permissionCheckerProvider.overrideWithValue(checkerNo)],
+          overrides: [
+            permissionCheckerProvider.overrideWithValue(checkerNo),
+            tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
+          ],
           child: const MaterialApp(home: IndexPage()),
         ),
       );
@@ -123,7 +135,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [permissionCheckerProvider.overrideWithValue(checkerYes)],
+          overrides: [
+            permissionCheckerProvider.overrideWithValue(checkerYes),
+            tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
+          ],
           child: const MaterialApp(home: IndexPage()),
         ),
       );
@@ -155,7 +170,10 @@ void main() {
       // render AppDrawer to ensure it's not hidden by UI logic
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [permissionCheckerProvider.overrideWithValue(checkerYes)],
+          overrides: [
+            permissionCheckerProvider.overrideWithValue(checkerYes),
+            tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
+          ],
           child: const MaterialApp(home: AppDrawer()),
         ),
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -174,17 +175,10 @@ class _DocumentPageState extends ConsumerState<DocumentPage> with TickerProvider
             // Search button
             if (!_isSearching)
               IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
+                icon: Icon(
+                 LucideIcons.search,
+                  size: 18,
+                  color: isDark ? Colors.white54 : AppColors.white,
                 ),
                 onPressed: () {
                   setState(() => _isSearching = true);
@@ -192,72 +186,58 @@ class _DocumentPageState extends ConsumerState<DocumentPage> with TickerProvider
               ),
             
             // View toggle (grid/list)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    onTap: () => setState(() => _isGridView = true),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isGridView 
-                            ? primaryColor.withOpacity(0.2)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.grid_view_rounded,
-                        size: 20,
-                        color: _isGridView 
-                            ? primaryColor
-                            : (isDark ? Colors.white54 : Colors.grey.shade600),
-                      ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _isGridView = true),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _isGridView 
+                          ? primaryColor.withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                    LucideIcons.grid,
+                      size: 20,
+                      color: _isGridView 
+                          ? primaryColor
+                          : (isDark ? Colors.white54 : AppColors.white),
                     ),
                   ),
-                  InkWell(
-                    onTap: () => setState(() => _isGridView = false),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: !_isGridView 
-                            ? primaryColor.withOpacity(0.2)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.view_list_rounded,
-                        size: 20,
-                        color: !_isGridView 
-                            ? primaryColor
-                            : (isDark ? Colors.white54 : Colors.grey.shade600),
-                      ),
+                ),
+                InkWell(
+                  onTap: () => setState(() => _isGridView = false),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: !_isGridView 
+                          ? primaryColor.withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                    LucideIcons.list,
+                      size: 20,
+                      color: !_isGridView 
+                          ? primaryColor
+                          : (isDark ? Colors.white54 : AppColors.white),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
             // More options
             IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.more_vert_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
+              icon: Icon(
+                LucideIcons.moreHorizontal,
+                size: 20,
+                color: isDark ? Colors.white54 : AppColors.white,
               ),
               onPressed: _showMoreOptions,
             ),
@@ -272,53 +252,40 @@ class _DocumentPageState extends ConsumerState<DocumentPage> with TickerProvider
                 height: 70,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search folders and files...',
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search folders and files...',
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: isDark ? Colors.white54 : Colors.grey.shade600,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
                           color: isDark ? Colors.white54 : Colors.grey.shade600,
                         ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _isSearching = false;
-                            });
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _isSearching = false;
+                          });
+                        },
                       ),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1A2634),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      onChanged: (value) => setState(() {}),
                     ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                    onChanged: (value) => setState(() {}),
                   ),
                 ),
               ),

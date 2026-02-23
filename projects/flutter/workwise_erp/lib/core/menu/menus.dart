@@ -11,6 +11,16 @@ const List<MenuItemModel> appMenus = [
     requiredPermissions: ['show crm dashboard', 'show pos dashboard'],
   ),
 
+  // Customer management: allow everyone by default (no permission required)
+  MenuItemModel(
+    id: 'customer',
+    title: 'Customers',
+    icon: Icons.people_outline,
+    route: '/customers',
+    // optionally guard with CRM permission if desired:
+    // requiredPermissions: ['show crm dashboard'],
+  ),
+
   // Logistic: allow by default (no strict permission)
   MenuItemModel(id: 'logistic', title: 'Logistic', icon: Icons.local_shipping, route: '/logistic'),
 

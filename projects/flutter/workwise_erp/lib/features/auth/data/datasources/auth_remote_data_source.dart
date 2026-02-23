@@ -36,6 +36,20 @@ class AuthRemoteDataSource {
         throw ServerException('Invalid server response when fetching user');
       }
 
+      // normalize older backend responses that use `type` (string/number)
+      // as the user's role — convert `type` -> `roles` so `UserModel` can
+      // deserialize into `roles: List<RoleModel>`.
+      if ((dataMap['roles'] == null || (dataMap['roles'] is List && (dataMap['roles'] as List).isEmpty)) && dataMap.containsKey('type')) {
+        final t = dataMap['type'];
+        if (t != null) {
+          dataMap['roles'] = [
+            {
+              'name': t.toString(),
+            }
+          ];
+        }
+      }
+
       return UserModel.fromJson(dataMap);
     } on DioException catch (e) {
       switch (e.type) {
@@ -119,6 +133,19 @@ class AuthRemoteDataSource {
 
       if (token != null && token.isNotEmpty) {
         userMap['api_token'] = token;
+      }
+
+      // Normalize `type` -> `roles` when backend returns a single `type` field
+      // instead of an array of roles.
+      if ((userMap['roles'] == null || (userMap['roles'] is List && (userMap['roles'] as List).isEmpty)) && userMap.containsKey('type')) {
+        final t = userMap['type'];
+        if (t != null) {
+          userMap['roles'] = [
+            {
+              'name': t.toString(),
+            }
+          ];
+        }
       }
 
       // If server returned a token but the POST response does not look like a user
