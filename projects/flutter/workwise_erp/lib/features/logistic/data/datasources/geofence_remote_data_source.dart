@@ -16,6 +16,10 @@ class GeofenceRemoteDataSource {
   /// GET /geofence/ — returns all geofence zones.
   Future<List<GeofenceModel>> getGeofences() async {
     try {
+      // log the constructed URI for diagnostics
+      final uri = '${client.options.baseUrl}$_geofenceEndpoint';
+      // ignore: avoid_print
+      print('[Geofence] fetching from $uri');
       final resp = await client.get('$_geofenceEndpoint');
       final list = _extractList(resp.data);
       return list
@@ -33,6 +37,9 @@ class GeofenceRemoteDataSource {
   Future<List<GeofenceModel>> getAssetGeofences(
       String registrationNumber) async {
     try {
+      final full = '${client.options.baseUrl}$_assetGeofenceEndpoint/${Uri.encodeComponent(registrationNumber)}';
+      // ignore: avoid_print
+      print('[Geofence] fetching asset geofences from $full');
       final resp = await client
           .get('$_assetGeofenceEndpoint/${Uri.encodeComponent(registrationNumber)}');
       final list = _extractList(resp.data, forAsset: true);
