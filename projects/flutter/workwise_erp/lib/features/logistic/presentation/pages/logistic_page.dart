@@ -8,6 +8,7 @@ import '../../../assets/presentation/providers/assets_providers.dart';
 import '../../../assets/presentation/widgets/asset_tile.dart';
 import '../providers/operators_providers.dart';
 import '../providers/trips_providers.dart';
+import '../providers/geofence_providers.dart';
 import '../widgets/operator_tile.dart';
 import '../widgets/trip_tile.dart';
 
@@ -21,8 +22,8 @@ class LogisticPage extends ConsumerStatefulWidget {
 class _LogisticPageState extends ConsumerState<LogisticPage> {
   int _currentIndex = 0;
 
-  static const List<String> _labels = ['Vehicle', 'Journey', 'Trip', 'Operators', 'Workshop'];
-  static const List<IconData> _icons = [Icons.car_rental, Icons.timeline, Icons.directions_car, Icons.person, Icons.build];
+  static const List<String> _labels = ['Vehicle', 'Geofences', 'Journey', 'Trip', 'Operators', 'Workshop'];
+  static const List<IconData> _icons = [Icons.car_rental, Icons.map, Icons.timeline, Icons.directions_car, Icons.person, Icons.build];
 
   @override
   void initState() {
@@ -31,6 +32,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
         ref.read(assetsNotifierProvider.notifier).loadAssets();
+      } catch (_) {}
+      try {
+        ref.read(geofenceNotifierProvider.notifier).loadGeofences();
       } catch (_) {}
       try {
         ref.read(operatorsNotifierProvider.notifier).loadOperators();
@@ -63,6 +67,40 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: AssetTile(asset: a, onTap: () => Navigator.pushNamed(context, '/assets/detail', arguments: a.id)),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGeofenceTab(BuildContext context) {
+    final state = ref.watch(geofenceNotifierProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: state.when(
+        initial: () => const SizedBox.shrink(),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (msg) => Center(child: Text(msg, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700))),
+        loaded: (geofences) {
+          if (geofences.isEmpty) {
+            return Center(child: Text('No geofences found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+          }
+          return RefreshIndicator(
+            onRefresh: () => ref.read(geofenceNotifierProvider.notifier).loadGeofences(),
+            child: ListView.builder(
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              itemCount: geofences.length,
+              itemBuilder: (context, idx) {
+                final g = geofences[idx];
+                return ListTile(
+                  title: Text(g.name ?? 'Unnamed zone'),
+                  subtitle: Text(g.type ?? ''),
+                  trailing: g.isCurrentlyInside ? Icon(Icons.check_circle, color: Colors.green) : null,
                 );
               },
             ),
@@ -155,6 +193,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
 
     final tabs = <Widget>[
       _buildVehicleTab(context),
+      _buildGeofenceTab(context),
       _placeholder('Journey - placeholder'),
       _buildTripTab(context),
       _buildOperatorsTab(context),
