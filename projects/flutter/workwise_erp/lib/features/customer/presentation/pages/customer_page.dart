@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_drawer.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_modal.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../state/customers_state.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_contact.dart';
 import '../providers/customer_providers.dart';
@@ -22,29 +25,62 @@ class CustomerPage extends ConsumerStatefulWidget {
 
 class _CustomerPageState extends ConsumerState<CustomerPage> {
   int _tab = 0;
+  final TextEditingController _searchCtrl = TextEditingController();
+  bool _isSearching = false;
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // kick off initial load
       ref.read(customersNotifierProvider.notifier).loadCustomers();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // listen inside build (allowed) to show/hide loading dialog
+    ref.listen<CustomersState>(customersNotifierProvider, (previous, next) {
+      final starting = next.maybeWhen(loading: () => true, orElse: () => false);
+      final wasLoading = previous?.maybeWhen(loading: () => true, orElse: () => false) ?? false;
+      if (starting && !wasLoading) {
+        showAppLoadingDialog(context, message: 'Fetching customers...');
+      } else if (!starting && wasLoading) {
+        hideAppLoadingDialog(context);
+      }
+    });
+
     final primary = AppColors.primary;
     return Scaffold(
       appBar: CustomAppBar(
+        foregroundColor: Colors.white, // icons/text on appbar should contrast against blue background
         title: const ['Customers', 'Contacts', 'Settings'][_tab],
         actions: [
-          if (_tab == 0)
+          if (_tab == 0) ...[
+            IconButton(
+              icon: Icon(
+                _isSearching ? LucideIcons.x : LucideIcons.search,
+                // color left to appbar foregroundColor
+              ),
+              tooltip: _isSearching ? 'Close search' : 'Search',
+              onPressed: () {
+                setState(() {
+                  if (_isSearching) {
+                    _query = '';
+                    _searchCtrl.clear();
+                  }
+                  _isSearching = !_isSearching;
+                });
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
               tooltip: 'Refresh',
               onPressed: () =>
                   ref.read(customersNotifierProvider.notifier).loadCustomers(),
             ),
+          ],
           if (_tab == 1)
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
@@ -55,12 +91,37 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: IndexedStack(
-        index: _tab,
-        children: const [
-          _CustomerListTab(),
-          _ContactsTab(),
-          _SettingsTab(),
+      body: Column(
+        children: [
+          if (_tab == 0 && _isSearching)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Search customers…',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  border: InputBorder.none,
+                ),
+                onChanged: (v) => setState(() => _query = v.trim()),
+              ),
+            ),
+          Expanded(
+            child: IndexedStack(
+              index: _tab,
+              children: [
+                _CustomerListTab(
+                  query: _query,
+                  searchCtrl: _searchCtrl,
+                  onQueryChanged: (v) => setState(() => _query = v),
+                ),
+                const _ContactsTab(),
+                const _SettingsTab(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -92,83 +153,46 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
 // Tab 1 — Customer List (scrollable table)
 // ─────────────────────────────────────────────────────────
 
-class _CustomerListTab extends ConsumerStatefulWidget {
-  const _CustomerListTab();
+class _CustomerListTab extends ConsumerWidget {
+  const _CustomerListTab({
+    Key? key,
+    required this.query,
+    required this.searchCtrl,
+    required this.onQueryChanged,
+  }) : super(key: key);
+
+  final String query;
+  final TextEditingController searchCtrl;
+  final ValueChanged<String> onQueryChanged;
 
   @override
-  ConsumerState<_CustomerListTab> createState() => _CustomerListTabState();
-}
-
-class _CustomerListTabState extends ConsumerState<_CustomerListTab> {
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  List<Customer> _filter(List<Customer> all) {
-    if (_query.isEmpty) return all;
-    final q = _query.toLowerCase();
-    return all.where((c) {
-      return (c.name?.toLowerCase().contains(q) ?? false) ||
-          (c.shortName?.toLowerCase().contains(q) ?? false) ||
-          (c.email?.toLowerCase().contains(q) ?? false) ||
-          (c.phone?.contains(q) ?? false) ||
-          (c.taxNumber?.toLowerCase().contains(q) ?? false) ||
-          (c.vrn?.toLowerCase().contains(q) ?? false) ||
-          (c.customerNumber?.toLowerCase().contains(q) ?? false);
-    }).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(customersNotifierProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final state = ref.watch(customersNotifierProvider);
+
+    List<Customer> _filter(List<Customer> all) {
+      if (query.isEmpty) return all;
+      final q = query.toLowerCase();
+      return all.where((c) {
+        return (c.name?.toLowerCase().contains(q) ?? false) ||
+            (c.shortName?.toLowerCase().contains(q) ?? false) ||
+            (c.email?.toLowerCase().contains(q) ?? false) ||
+            (c.phone?.contains(q) ?? false) ||
+            (c.taxNumber?.toLowerCase().contains(q) ?? false) ||
+            (c.vrn?.toLowerCase().contains(q) ?? false) ||
+            (c.customerNumber?.toLowerCase().contains(q) ?? false);
+      }).toList();
+    }
 
     return Column(
       children: [
-        // Search bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: TextField(
-            controller: _searchCtrl,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search_rounded, size: 20),
-              hintText: 'Search customers…',
-              hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.white38 : Colors.grey.shade400),
-              isDense: true,
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none),
-              filled: true,
-              fillColor: isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : AppColors.surfaceVariantLight,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              suffixIcon: _query.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 18),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _query = '');
-                      },
-                    )
-                  : null,
-            ),
-          ),
-        ),
+        // search bar is provided by parent
         const SizedBox(height: 8),
         // Table body
         Expanded(
           child: state.when(
             initial: () => const SizedBox.shrink(),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const SizedBox.shrink(),
             error: (msg) => _ErrorBody(
               message: msg,
               onRetry: () => ref
@@ -180,13 +204,13 @@ class _CustomerListTabState extends ConsumerState<_CustomerListTab> {
               if (filtered.isEmpty) {
                 return _EmptyBody(
                   icon: Icons.people_outline_rounded,
-                  label: _query.isNotEmpty
+                  label: query.isNotEmpty
                       ? 'No customers match your search'
                       : 'No customers found',
-                  onClear: _query.isNotEmpty
+                  onClear: query.isNotEmpty
                       ? () {
-                          _searchCtrl.clear();
-                          setState(() => _query = '');
+                          searchCtrl.clear();
+                          onQueryChanged('');
                         }
                       : null,
                 );
@@ -204,7 +228,6 @@ class _CustomerListTabState extends ConsumerState<_CustomerListTab> {
     );
   }
 }
-
 // ── Horizontally scrollable DataTable ───────────────────
 
 class _CustomerTable extends StatelessWidget {

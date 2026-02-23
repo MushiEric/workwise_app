@@ -64,7 +64,7 @@ class EnvConfig {
       case AppEnvironment.dev:
         return const EnvConfig._(
           env: AppEnvironment.dev,
-          baseUrl: 'http://10.86.58.81:8000/api',
+          baseUrl: 'http://192.168.1.116:8000/api',
           connectTimeout: Duration(seconds: 15),
           receiveTimeout: Duration(seconds: 15),
           sendTimeout: Duration(seconds: 15),
@@ -75,7 +75,7 @@ class EnvConfig {
       case AppEnvironment.prod:
         return const EnvConfig._(
           env: AppEnvironment.prod,
-          baseUrl: 'https://api.workwise.africa/api',
+          baseUrl: 'https://getcore.workwise.africa/api',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),
           sendTimeout: Duration(seconds: 30),
