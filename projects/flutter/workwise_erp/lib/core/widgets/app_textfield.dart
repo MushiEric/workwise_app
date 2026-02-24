@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../themes/app_colors.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 /// Custom text field widget for the app
 class AppTextField extends StatelessWidget {
@@ -82,7 +83,7 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? const Color(0x08FFFFFF) : AppColors.surfaceVariantLight,
+        fillColor: isDark ? const Color(0x08FFFFFF) :  AppColors.surfaceVariantLight,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -143,10 +144,11 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       textInputAction: widget.textInputAction,
       validator: widget.validator,
       onFieldSubmitted: widget.onFieldSubmitted,
-      prefixIcon: widget.showPrefixIcon ? const Icon(Icons.lock_outlined) : null,
+    
+      prefixIcon: widget.showPrefixIcon ? const Icon(LucideIcons.lock) : null,
       suffixIcon: IconButton(
         icon: Icon(
-          _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          _obscureText ? LucideIcons.eyeOff : LucideIcons.eye,
         ),
         onPressed: _toggleVisibility,
       ),
@@ -182,10 +184,10 @@ class AppSearchField extends StatelessWidget {
       onSubmitted: onSubmitted,
       decoration: InputDecoration(
         hintText: hintText ?? 'Search...',
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(LucideIcons.search),
         suffixIcon: controller?.text.isNotEmpty == true
             ? IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Icon(LucideIcons.x),
                 onPressed: () {
                   controller?.clear();
                   onClear?.call();
@@ -196,7 +198,7 @@ class AppSearchField extends StatelessWidget {
         fillColor: AppColors.surfaceVariantLight,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide:BorderSide(),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

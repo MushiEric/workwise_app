@@ -2,25 +2,26 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/config/environment.dart';
 import '../../../../core/constants/app_constant.dart';
 import '../../../../core/models/tenant.dart';
 import '../../../../core/provider/tenant_provider.dart';
-import '../../../../core/storage/tenant_local_data_source.dart';
+// import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/themes/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/widgets/app_textfiled.dart';
 
 typedef DioFactory = Dio Function(String baseUrl);
 
 class WorkspaceEntryScreen extends ConsumerStatefulWidget {
-  /// [dioFactory] is optional and used for testing — it receives the normalized
-  /// API base and should return a configured Dio instance.
   const WorkspaceEntryScreen({super.key, this.dioFactory});
-
   final DioFactory? dioFactory;
 
   @override
-  ConsumerState<WorkspaceEntryScreen> createState() => _WorkspaceEntryScreenState();
+  ConsumerState<WorkspaceEntryScreen> createState() =>
+      _WorkspaceEntryScreenState();
 }
 
 class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
@@ -28,27 +29,20 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
   final _subdomainCtrl = TextEditingController();
   final FocusNode _subdomainFocus = FocusNode();
   bool _loading = false;
-  String? _error;
 
   static const _baseDomain = 'workwise.africa';
   static const _domainSuffix = '.$_baseDomain';
-
-  /// Valid subdomain: starts/ends with alphanumeric, middle may include hyphens.
   static final _validSubdomain = RegExp(r'^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$');
 
   @override
   void initState() {
     super.initState();
-    // In dev, prefill the subdomain from EnvConfig for convenience.
     if (EnvConfig.current.env == AppEnvironment.dev) {
       try {
         final host = Uri.parse(EnvConfig.current.baseUrl).host;
         if (host.endsWith(_domainSuffix)) {
-          final subdomain = host.substring(0, host.length - _domainSuffix.length);
-          // Only prefill if it's a single-level subdomain (no dots)
-          if (!subdomain.contains('.')) {
-            _subdomainCtrl.text = subdomain;
-          }
+          final sub = host.substring(0, host.length - _domainSuffix.length);
+          if (!sub.contains('.')) _subdomainCtrl.text = sub;
         }
       } catch (_) {}
     }
@@ -61,50 +55,96 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
     super.dispose();
   }
 
-  /// Builds the API base URL from a validated single-level subdomain.
-  String _buildApiBase(String subdomain) => 'https://$subdomain$_domainSuffix/api';
+  String _buildApiBase(String subdomain) =>
+      'https://$subdomain$_domainSuffix/api';
 
   Future<void> _validateAndSave() async {
-    if (!_formKey.currentState!.validate()) return;
+    final validation = _subdomainValidation(_subdomainCtrl.text);
+    if (validation != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validation),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
     setState(() {
       _loading = true;
-      _error = null;
     });
 
-    final subdomain = _subdomainCtrl.text.trim().toLowerCase();
-    final apiBase = _buildApiBase(subdomain);
-
     try {
+      final sub = _subdomainCtrl.text.trim().toLowerCase();
+      final apiBase = _buildApiBase(sub);
+
       await ref.read(tenantLocalDataSourceProvider).saveTenant(apiBase);
       ref.read(tenantProvider.notifier).state = Tenant(apiBase);
+
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
-    } catch (e) {
-      setState(() => _error = 'Could not connect to workspace. Please check and try again.');
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Could not connect to workspace. Please check and try again.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  String? _subdomainValidation(String? v) {
+    if (v == null || v.trim().isEmpty) {
+      return 'Workspace subdomain is required';
+    }
+    final s = v.trim();
+    if (s.contains('.')) {
+      return 'Enter only the subdomain';
+    }
+    if (!_validSubdomain.hasMatch(s)) {
+      return 'Use letters, numbers, or hyphens only';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfaceVariantLight,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _BrandingHeader(),
-                  const SizedBox(height: 32),
-                  _buildCard(context),
-                  const SizedBox(height: 24),
-                  _buildFooter(context),
-                ],
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 40 * (1 - value)),
+            child: Transform.scale(scale: 0.96 + (0.04 * value), child: child),
+          ),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.surfaceVariantLight,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+                child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _BrandingHeader(),
+                    const SizedBox(height: 32),
+                    _buildCard(context),
+                    const SizedBox(height: 24),
+                    _buildFooter(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -115,41 +155,30 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
 
   Widget _buildCard(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outline.withOpacity(0.15)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Enter your workspace',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Your organization\'s subdomain on $_baseDomain',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              _buildSubdomainField(context),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                _buildErrorBanner(context),
-              ],
-              const SizedBox(height: 20),
-              _buildContinueButton(),
-            ],
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
           ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSubdomainField(context),
+            const SizedBox(height: 24),
+            _buildContinueButton(),
+          ],
         ),
       ),
     );
@@ -157,123 +186,108 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
 
   Widget _buildSubdomainField(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextFormField(
-          controller: _subdomainCtrl,
-          focusNode: _subdomainFocus,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onFieldSubmitted: (_) => _validateAndSave(),
-          enabled: !_loading,
-          keyboardType: TextInputType.text,
-          inputFormatters: [
-            FilteringTextInputFormatter.deny(RegExp(r'\s')),
-            _LowercaseInputFormatter(),
-          ],
-          decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.language_rounded),
-            suffix: Text(
-              _domainSuffix,
-              style: TextStyle(
-                color: cs.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-            labelText: 'Subdomain',
-            hintText: 'yourcompany',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: cs.outline.withOpacity(0.4)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: cs.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: cs.error),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _subdomainFocus.hasFocus
+                  ? cs.primary
+                  : cs.outline.withOpacity(0.4),
+              width: _subdomainFocus.hasFocus ? 2 : 1,
             ),
           ),
-          validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Workspace subdomain is required';
-            final s = v.trim().toLowerCase();
-            if (s.contains('.')) return 'Enter only the subdomain, not the full domain';
-            if (!_validSubdomain.hasMatch(s)) {
-              return 'Use letters, numbers, or hyphens only';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 6),
-        ValueListenableBuilder<TextEditingValue>(
-          valueListenable: _subdomainCtrl,
-          builder: (_, val, __) {
-            final sub = val.text.trim().isEmpty ? 'yourcompany' : val.text.trim();
-            return Text(
-              'https://$sub$_domainSuffix',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.muted, fontFamily: 'monospace'),
-            );
-          },
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Icon(LucideIcons.globe, size: 20, color: cs.onSurfaceVariant),
+              Expanded(
+                child: AppTextField(
+                  controller: _subdomainCtrl,
+                  focusNode: _subdomainFocus,
+                  autofocus: true,
+                  enabled: !_loading,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _validateAndSave(),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                    _LowercaseInputFormatter(),
+                  ],
+                  validator: (_) => null,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 44,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withOpacity(0.6),
+                  borderRadius: const BorderRadius.horizontal(
+                    right: Radius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  _domainSuffix,
+                  style: TextStyle(
+                    color: cs.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildErrorBanner(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: cs.errorContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline_rounded, size: 16, color: cs.error),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _error!,
-              style: TextStyle(color: cs.error, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildContinueButton() {
     return SizedBox(
-      height: 48,
+      height: 52,
       child: ElevatedButton(
         onPressed: _loading ? null : _validateAndSave,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
-        child: _loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Continue', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
-              ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _loading
+              ? const SizedBox(
+                  key: ValueKey(1),
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Row(
+                  key: ValueKey(2),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.white,
+                        fontSize: 15,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(LucideIcons.arrowRight,
+                    color: AppColors.white,
+                     size: 18),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -282,7 +296,9 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
     return Text(
       'By continuing, you agree to ${AppConstant.appName} Terms of Service.',
       textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
     );
   }
 }
@@ -293,39 +309,35 @@ class _BrandingHeader extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            // color: AppColors.primary,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
           clipBehavior: Clip.hardEdge,
-          child: Image.asset(
-            'assets/images/logo.png',
-            fit: BoxFit.contain,
-          ),
+          child: Image.asset('assets/images/logo.png'),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 0.h),
         Text(
           AppConstant.appName,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontSize: 22.sp),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 6.h),
         Text(
           'Sign in to your workspace',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         ),
       ],
     );
   }
 }
 
-/// Forces all input to lowercase as the user types.
 class _LowercaseInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
-  ) =>
-      newValue.copyWith(text: newValue.text.toLowerCase());
+  ) => newValue.copyWith(text: newValue.text.toLowerCase());
 }
