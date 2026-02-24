@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -36,16 +40,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
   
   bool _isLoading = false;
   bool _isEditing = false;
-  String? _selectedAvatarColor;
-
-  final List<Color> _avatarColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.red,
-    Colors.teal,
-  ];
+  File? _pickedAvatarFile;
+  domain.User? _cachedUser;   // persists user across loading transitions
+  bool _hasPopulated = false; // ensure controllers are populated only once
 
   @override
   void initState() {
@@ -104,19 +101,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     
     setState(() => _isLoading = true);
     
-    final payload = {
+    final Map<String, dynamic> payload = {
       'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
       'phone': _phoneController.text.trim(),
       'bio': _bioController.text.trim(),
     };
+    if (_pickedAvatarFile != null) {
+      payload['avatar'] = await MultipartFile.fromFile(
+        _pickedAvatarFile!.path,
+        filename: _pickedAvatarFile!.path.split('/').last,
+      );
+    }
 
     try {
       await ref.read(authNotifierProvider.notifier).updateProfile(payload);
+      // Only reached on success (notifier throws on failure after restoring state).
+      // Re-populate controllers with the server-confirmed user data.
+      final updatedUser = ref.read(authNotifierProvider).maybeWhen(
+        authenticated: (u) => u,
+        orElse: () => null,
+      );
+      if (updatedUser != null) _populateFromUser(updatedUser);
       setState(() {
         _isLoading = false;
         _isEditing = false;
+        _pickedAvatarFile = null;
       });
-      
       if (mounted) {
         context.showSuccessModal(
           title: 'Success!',
@@ -129,7 +140,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       if (mounted) {
         context.showInfoModal(
           title: 'Update Failed',
-          message: e.toString(),
+          message: e.toString().replaceFirst('Exception: ', ''),
           buttonText: 'Try Again',
         );
       }
@@ -177,68 +188,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
-    
-    // Use currentUserProvider to prefill form (falls back to auth state)
-    final currentUserAsync = ref.watch(currentUserProvider);
+
+    // Derive user exclusively from authNotifierProvider so we always reflect
+    // the latest server-confirmed data without depending on FutureProvider.
+    final authState = ref.watch(authNotifierProvider);
 
     domain.User? user;
-    currentUserAsync.maybeWhen(
-      data: (either) => either.fold((l) => null, (r) => user = r),
-      orElse: () {},
-    );
+    authState.maybeWhen(authenticated: (u) => user = u, orElse: () {});
 
-    // if provider not ready, try AuthState
-    final authState = ref.watch(authNotifierProvider);
-    authState.maybeWhen(authenticated: (u) => user ??= u, orElse: () {});
+    // Always keep the last known good user so the UI never collapses to
+    // defaults while the notifier is in loading state.
+    if (user != null) _cachedUser = user;
+    final displayUser = _cachedUser;
 
-    // populate controllers once (when user becomes available)
-    WidgetsBinding.instance.addPostFrameCallback((_) => _populateFromUser(user));
-
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      next.maybeWhen(
-        authenticated: (_) {
-          if (mounted && !_isLoading) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(LucideIcons.checkCircle, color: Colors.green.shade400),
-                    const SizedBox(width: 12),
-                    const Expanded(child: Text('Profile updated successfully')),
-                  ],
-                ),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: Colors.green.shade50,
-              
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(16),
-              ),
-            );
-          }
-        },
-        error: (msg) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(LucideIcons.alertCircle, color: Colors.red.shade400),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(msg)),
-                  ],
-                ),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: Colors.red.shade50,
-                
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(16),
-              ),
-            );
-          }
-        },
-        orElse: () {},
-      );
-    });
+    // Populate form controllers exactly once (when user first becomes available).
+    if (!_hasPopulated && displayUser != null) {
+      _hasPopulated = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _populateFromUser(displayUser));
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -278,7 +245,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               child: Column(
                 children: [
                   // Profile Header with Avatar
-                  _buildProfileHeader(context, user, isDark, primaryColor),
+                  _buildProfileHeader(context, displayUser, isDark, primaryColor),
                   
                   const SizedBox(height: 24),
                   
@@ -288,7 +255,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   const SizedBox(height: 24),
                   
                   // Profile Form Card
-                  _buildProfileForm(context, user, isDark, primaryColor),
+                  _buildProfileForm(context, displayUser, isDark, primaryColor),
                   
                   const SizedBox(height: 16),
                   
@@ -310,9 +277,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
 
   Widget _buildProfileHeader(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
     final initials = _getInitials(user?.name);
-    final avatarColor = _selectedAvatarColor != null 
-        ? Color(int.parse(_selectedAvatarColor!.replaceFirst('#', '0xff')))
-        : primaryColor;
+    final avatarColor = primaryColor;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -351,8 +316,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
                 child: CircleAvatar(
                   backgroundColor: avatarColor,
-                  backgroundImage: imageProviderFromUrl(user?.avatar),
-                  child: (user?.avatar == null || user!.avatar!.isEmpty)
+                  backgroundImage: _pickedAvatarFile != null
+                      ? FileImage(_pickedAvatarFile!) as ImageProvider
+                      : imageProviderFromUrl(user?.avatar),
+                  child: (_pickedAvatarFile == null &&
+                          (user?.avatar == null || user!.avatar!.isEmpty))
                       ? Text(
                           initials,
                           style: TextStyle(
@@ -843,10 +811,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  void _showAvatarPicker() {
+  Future<void> _showAvatarPicker() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showModalBottomSheet(
+
+    await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -858,6 +826,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Drag handle
               Container(
                 margin: const EdgeInsets.only(top: 12),
                 width: 40,
@@ -868,53 +837,100 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Choose Avatar Color',
+              Text(
+                'Update Profile Photo',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
               ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: _avatarColors.map((color) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedAvatarColor = '#${color.value.toRadixString(16).substring(2)}';
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
+              const SizedBox(height: 8),
+              Text(
+                'Choose a photo from your device',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white54 : Colors.grey.shade600,
+                ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
+              // Gallery option
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(LucideIcons.image, color: AppColors.primary, size: 20),
+                ),
+                title: Text(
+                  'Choose from Gallery',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : const Color(0xFF1A2634),
+                  ),
+                ),
+                subtitle: Text(
+                  'Pick an image from your photos',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImageFromGallery();
+                },
+              ),
+              // Remove photo option (only if there's a current avatar or picked file)
+              if (_pickedAvatarFile != null)
+                ListTile(
+                  leading: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(LucideIcons.trash2, color: Colors.red, size: 20),
+                  ),
+                  title: const Text(
+                    'Remove Selected Photo',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _pickedAvatarFile = null);
+                  },
+                ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final path = result.files.single.path;
+      if (path == null) return;
+      setState(() => _pickedAvatarFile = File(path));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
   }
 
   void _showSettingsMenu() {

@@ -299,9 +299,13 @@ class AuthRemoteDataSource {
   }
 
   /// POST /user/updateProfile/
-  Future<UserModel> updateProfile(Map<String, dynamic> payload) async { 
+  /// Automatically uses multipart/form-data when [payload] contains a [MultipartFile].
+  Future<UserModel> updateProfile(Map<String, dynamic> payload) async {
     try {
-      final resp = await client.post('/user/updateProfile/', data: payload);
+      final dynamic requestData = payload.values.any((v) => v is MultipartFile)
+          ? FormData.fromMap(payload)
+          : payload;
+      final resp = await client.post('/user/updateProfile/', data: requestData);
       // backend may return user or {data: user}
       final raw = resp.data;
       Map<String, dynamic>? data;

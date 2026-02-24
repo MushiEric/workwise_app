@@ -36,7 +36,8 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
       final dt = DateTime.parse(value).toLocal();
       return DateFormat.yMMMd().add_jm().format(dt);
     } catch (_) {
-      return value;
+      // malformed date (e.g. "00000z")
+      return 'unknown date';
     }
   }
 

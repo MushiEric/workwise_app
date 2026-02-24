@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../widgets/ticket_detail_content.dart';
 import '../providers/support_providers.dart';
@@ -22,21 +23,38 @@ class SupportViewPage extends ConsumerWidget {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : AppColors.white),
+            icon: Icon(
+              Icons.share_rounded,
+              color: isDark ? Colors.white70 : AppColors.white,
+              size: 20.r,
+            ),
             onPressed: () {
-              // page-level share
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share ticket — not implemented')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Share ticket — not implemented'),
+                ),
+              );
             },
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : AppColors.white),
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: isDark ? Colors.white70 : AppColors.white,
+              size: 20.r,
+            ),
             onSelected: (v) {
               switch (v) {
                 case 'create_pfi':
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create PFI — not implemented')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Create PFI — not implemented')),
+                  );
                   break;
                 case 'create_jobcard':
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create JobCard — not implemented')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Create JobCard — not implemented')),
+                  );
                   break;
                 case 'more':
                 default:
@@ -44,10 +62,28 @@ class SupportViewPage extends ConsumerWidget {
               }
             },
             itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'create_pfi', child: Text('Create PFI')),
-              const PopupMenuItem(value: 'create_jobcard', child: Text('Create JobCard')),
+              PopupMenuItem(
+                value: 'create_pfi',
+                child: Text(
+                  'Create PFI',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'create_jobcard',
+                child: Text(
+                  'Create JobCard',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              ),
               const PopupMenuDivider(),
-              const PopupMenuItem(value: 'more', child: Text('More...')),
+              PopupMenuItem(
+                value: 'more',
+                child: Text(
+                  'More...',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              ),
             ],
           ),
         ],
@@ -59,7 +95,8 @@ class SupportViewPage extends ConsumerWidget {
     );
   }
 
-  void _showMoreOptions(BuildContext context, WidgetRef ref, SupportTicket ticket) {
+  void _showMoreOptions(
+      BuildContext context, WidgetRef ref, SupportTicket ticket) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -68,54 +105,83 @@ class SupportViewPage extends ConsumerWidget {
       builder: (sheetCtx) => Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
         ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
+                margin: EdgeInsets.only(top: 12.h),
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white24 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.edit_rounded, color: Colors.blue),
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    color: Colors.blue,
+                    size: 20.r,
+                  ),
                 ),
-                title: const Text('Edit Ticket'),
+                title: Text(
+                  'Edit Ticket',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
                 onTap: () => Navigator.pop(sheetCtx),
               ),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.person_add_rounded, color: Colors.green),
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(
+                    Icons.person_add_rounded,
+                    color: Colors.green,
+                    size: 20.r,
+                  ),
                 ),
-                title: const Text('Assign To'),
+                title: Text(
+                  'Assign To',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
                 onTap: () => Navigator.pop(sheetCtx),
               ),
               ListTile(
                 leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.delete_rounded, color: Colors.red),
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Icon(
+                    Icons.delete_rounded,
+                    color: Colors.red,
+                    size: 20.r,
+                  ),
                 ),
-                title: const Text('Delete Ticket'),
+                title: Text(
+                  'Delete Ticket',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
                 onTap: () {
                   Navigator.pop(sheetCtx);
-                  // use the page-level `context` (captured) so subsequent modals use a valid navigator
                   _showDeleteConfirmation(context, ref, ticket);
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
             ],
           ),
         ),
@@ -123,10 +189,12 @@ class SupportViewPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, SupportTicket ticket) {
+  void _showDeleteConfirmation(
+      BuildContext context, WidgetRef ref, SupportTicket ticket) {
     context.showConfirmationModal(
       title: 'Delete Ticket',
-      message: 'Are you sure you want to delete this ticket? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete this ticket? This action cannot be undone.',
       confirmText: 'Delete',
       onConfirm: () async {
         final ticketId = ticket.id;
@@ -136,21 +204,26 @@ class SupportViewPage extends ConsumerWidget {
         try {
           final res = await deleteUc.call(ticketId: ticketId);
           res.fold((failure) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete ticket: ${failure.message}')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Failed to delete ticket: ${failure.message}'),
+              ),
+            );
           }, (_) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Ticket deleted'),
                 backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             );
 
-            // close confirmation modal
             if (Navigator.canPop(context)) Navigator.pop(context);
 
-            // close page and refresh list
             Future.microtask(() {
               if (Navigator.canPop(context)) Navigator.pop(context);
               try {
@@ -159,7 +232,9 @@ class SupportViewPage extends ConsumerWidget {
             });
           });
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete ticket')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete ticket')),
+          );
         }
       },
       icon: Icons.delete_rounded,
@@ -167,4 +242,3 @@ class SupportViewPage extends ConsumerWidget {
     );
   }
 }
-

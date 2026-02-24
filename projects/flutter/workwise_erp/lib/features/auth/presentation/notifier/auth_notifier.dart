@@ -53,6 +53,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateProfile(Map<String, dynamic> payload) async {
     if (updateProfileUseCase == null) return;
+    // Snapshot the current authenticated state so we can restore it on failure.
+    final previousState = state;
     state = const AuthState.loading('Updating profile...');
     final res = await updateProfileUseCase!.call(payload);
     res.fold(
@@ -61,7 +63,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // ignore: avoid_print
         print('Update profile failed (technical): $tech');
         onErrorLog?.call(tech);
-        state = AuthState.error(_friendlyMessageForFailure(f));
+        // Restore the previous authenticated state so user data / permissions
+        // are not wiped out by the error.
+        state = previousState.maybeWhen(
+          authenticated: (u) => AuthState.authenticated(u),
+          orElse: () => AuthState.error(_friendlyMessageForFailure(f)),
+        );
+        // Throw so the calling page's try/catch can surface the error to the UI.
+        throw Exception(_friendlyMessageForFailure(f));
       },
       (u) => state = AuthState.authenticated(u),
     );

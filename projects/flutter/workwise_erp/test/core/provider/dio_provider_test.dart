@@ -87,14 +87,24 @@ void main() {
     expect(dio.interceptors.any((i) => i is LogInterceptor), isFalse);
   });
 
-  test('throws when tenant not initialized', () {
+  test('provider returns stub when tenant not initialized; request errors', () async {
     EnvConfig.init(AppEnvironment.dev);
 
     final container = ProviderContainer(overrides: [
       tokenLocalDataSourceProvider.overrideWithValue(_FakeTokenLocalDataSource()),
     ]);
 
-    expect(() => container.read(dioProvider), throwsA(isA<UninitializedTenantException>()));
+    // reading the provider should no longer throw
+    final dio = container.read(dioProvider);
+    expect(dio, isA<Dio>());
+
+    // but attempting to use it should result in a DioException wrapping the
+    // UninitializedTenantException
+    await expectLater(
+      () async => await dio.get('/anything'),
+      throwsA(predicate((e) =>
+          e is DioException && e.error is UninitializedTenantException)),
+    );
   });
 
   test('uses tenant.baseUrl for Dio options', () {
@@ -114,6 +124,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       tokenLocalDataSourceProvider.overrideWithValue(_FakeTokenLocalDataSource()),
+      tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
     ]);
 
     final dio = container.read(dioProvider);
@@ -138,6 +149,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       tokenLocalDataSourceProvider.overrideWithValue(_FakeTokenLocalDataSource()),
+      tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
     ]);
 
     final dio = container.read(dioProvider);
@@ -163,6 +175,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       tokenLocalDataSourceProvider.overrideWithValue(_FakeTokenLocalDataSource()),
+      tenantProvider.overrideWith((ref) => const Tenant('https://api.test/api')),
     ]);
 
     final dio = container.read(dioProvider);

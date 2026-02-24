@@ -30,7 +30,8 @@ class OrderTile extends StatelessWidget {
       final dt = DateTime.parse(d);
       return DateFormat.yMMMd().format(dt);
     } catch (_) {
-      return d;
+      // Input may be malformed (e.g. "00000z"), avoid showing raw junk
+      return 'unknown date';
     }
   }
 

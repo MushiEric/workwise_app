@@ -89,7 +89,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
               ),
             IconButton(
               icon: Icon(
-                LucideIcons.sliders,  
+                LucideIcons.filter,  
                 size: 20,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),

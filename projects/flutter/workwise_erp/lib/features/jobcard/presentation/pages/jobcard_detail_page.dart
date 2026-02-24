@@ -5,6 +5,7 @@ import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/jobcard_detail_providers.dart';
 import '../../../../core/widgets/app_bar.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class JobcardDetailPage extends ConsumerStatefulWidget {
   const JobcardDetailPage({super.key});
@@ -54,16 +55,16 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
               : 'Jobcard Detail',
           elevation: 0,
           actions: [
-            IconButton(
-              icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Share jobcard — not implemented')),
-                );
-              },
-            ),
+            // IconButton(
+            //   icon: Icon(LucideIcons.share2, color: isDark ? Colors.white70 : AppColors.white),
+            //   onPressed: () {
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       const SnackBar(content: Text('Share jobcard — not implemented')),
+            //     );
+            //   },
+            // ),
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+              icon: Icon(LucideIcons.moreVertical, color: isDark ? Colors.white70 : AppColors.white),
               onSelected: (v) {
                 switch (v) {
                   case 'print':
@@ -154,7 +155,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
       children: [
         // Enhanced Tab Bar
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.only(top: 20, left: 4, right: 16),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16),

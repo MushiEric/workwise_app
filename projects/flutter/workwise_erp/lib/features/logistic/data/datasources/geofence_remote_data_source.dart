@@ -8,8 +8,9 @@ class GeofenceRemoteDataSource {
   GeofenceRemoteDataSource(this.client);
 
   // TODO: Confirm exact endpoint paths with your backend team if these differ.
-  // backend uses explicit "get" path rather than bare resource
-  static const String _geofenceEndpoint = '/geofence/getGeofence';
+  // backend uses explicit "get" path rather than bare resource, so the
+  // correct route is `/geofence/get` (not `getGeofence`).
+  static const String _geofenceEndpoint = '/geofence/get';
   // actual path observed by backend
   static const String _assetGeofenceEndpoint = '/geofence/getAssetGeofence';
 
@@ -19,7 +20,7 @@ class GeofenceRemoteDataSource {
       // log the constructed URI for diagnostics
       final uri = '${client.options.baseUrl}$_geofenceEndpoint';
       // ignore: avoid_print
-      print('[Geofence] fetching from $uri');
+      print('[Geofence] fetching from $uri (endpoint=$_geofenceEndpoint)');
       final resp = await client.get('$_geofenceEndpoint');
       final list = _extractList(resp.data);
       return list
@@ -39,7 +40,7 @@ class GeofenceRemoteDataSource {
     try {
       final full = '${client.options.baseUrl}$_assetGeofenceEndpoint/${Uri.encodeComponent(registrationNumber)}';
       // ignore: avoid_print
-      print('[Geofence] fetching asset geofences from $full');
+      print('[Geofence] fetching asset geofences from $full (endpoint=$_assetGeofenceEndpoint/<reg>)');
       final resp = await client
           .get('$_assetGeofenceEndpoint/${Uri.encodeComponent(registrationNumber)}');
       final list = _extractList(resp.data, forAsset: true);

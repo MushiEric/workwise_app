@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
 import 'core/themes/app_colors.dart';
@@ -103,60 +104,66 @@ class Workwise extends ConsumerWidget {
     // ignore: prefer_void_to_null
     Intl.defaultLocale = localeCode;
 
-    return MaterialApp(
-      title: AppConstant.appName,
-      debugShowCheckedModeBanner: false,
-      locale: Locale(localeCode),
-      localizationsDelegates: const [
-        // Provides default Flutter localizations for widgets (dates, etc.)
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('en'), Locale('sw'), Locale('fr')],
-      theme: ThemeData(
-        primaryColor: AppColors.primary,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+    return ScreenUtilInit(
+      // Design reference: iPhone 14 Pro (390 × 844 logical pixels)
+      designSize: const Size(390, 844),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (_, __) => MaterialApp(
+        title: AppConstant.appName,
+        debugShowCheckedModeBanner: false,
+        locale: Locale(localeCode),
+        localizationsDelegates: const [
+          // Provides default Flutter localizations for widgets (dates, etc.)
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('sw'), Locale('fr')],
+        theme: ThemeData(
+          primaryColor: AppColors.primary,
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+          appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+          ),
+          // Centralized typography (Inter default, Figtree for titles/numbers)
+          textTheme: AppTypography.textTheme,
+          // Standardize icon sizing across the app
+          iconTheme: const IconThemeData(size: 20),
         ),
-        // Centralized typography (Inter default, Figtree for titles/numbers)
-        textTheme: AppTypography.textTheme,
-        // Standardize icon sizing across the app
-        iconTheme: const IconThemeData(size: 20),
+        routes: {
+          '/workspace': (context) => const WorkspaceEntryScreen(),
+          '/': (context) => const LoginPage(),
+          '/forgot-password': (context) => const ForgotPasswordPage(),
+          '/forgot-password/verify': (context) => const VerifyForgotPasswordOtpPage(),
+          '/forgot-password/change': (context) => const ChangePasswordUsingOtpPage(),
+          '/index': (context) => const IndexPage(),
+          '/profile': (context) => const ProfilePage(),
+          '/sales': (context) => const SalesPage(),
+          '/pfi': (context) => const PfiPage(),
+          '/logistic': (context) => const LogisticPage(),
+          '/logistic/trips': (context) => const TripsPage(),
+          '/customers': (context) => const CustomerPage(),
+          '/logistic/operators': (context) => const OperatorsPage(),
+          '/logistic/operators/detail': (context) => const OperatorDetailPage(),
+          '/assets': (context) => const AssetsPage(),
+          '/assets/detail': (context) => const AssetDetailPage(),
+          '/inventory': (context) => const InventoryPage(),
+          '/project': (context) => const ProjectPage(),
+          '/projects': (context) => const ProjectsPage(),
+          '/projects/detail': (context) => const ProjectDetailPage(),
+          '/jobcards': (context) => const JobcardListPage(),
+          '/jobcards/create': (context) => const JobcardCreatePage(),
+          '/jobcards/detail': (context) => const JobcardDetailPage(),
+          '/jobcards/settings': (context) => const JobcardSettingsPage(),
+          '/documents': (context) => const DocumentPage(),
+          '/support': (context) => const SupportListPage(),
+          '/notifications': (context) => const NotificationsPage(),
+          '/hr': (context) => const HRPage(),
+        },
+        initialRoute: ref.watch(tenantProvider) == null ? '/workspace' : '/',
       ),
-      routes: {
-        '/workspace': (context) => const WorkspaceEntryScreen(),
-        '/': (context) => const LoginPage(),
-        '/forgot-password': (context) => const ForgotPasswordPage(),
-        '/forgot-password/verify': (context) => const VerifyForgotPasswordOtpPage(),
-        '/forgot-password/change': (context) => const ChangePasswordUsingOtpPage(),
-        '/index': (context) => const IndexPage(),
-        '/profile': (context) => const ProfilePage(),
-        '/sales': (context) => const SalesPage(),
-        '/pfi': (context) => const PfiPage(),
-        '/logistic': (context) => const LogisticPage(),
-        '/logistic/trips': (context) => const TripsPage(),
-        '/customers': (context) => const CustomerPage(),
-        '/logistic/operators': (context) => const OperatorsPage(),
-        '/logistic/operators/detail': (context) => const OperatorDetailPage(),
-        '/assets': (context) => const AssetsPage(),
-        '/assets/detail': (context) => const AssetDetailPage(),
-        '/inventory': (context) => const InventoryPage(),
-        '/project': (context) => const ProjectPage(),
-        '/projects': (context) => const ProjectsPage(),
-        '/projects/detail': (context) => const ProjectDetailPage(),
-        '/jobcards': (context) => const JobcardListPage(),
-        '/jobcards/create': (context) => const JobcardCreatePage(),
-        '/jobcards/detail': (context) => const JobcardDetailPage(),
-        '/jobcards/settings': (context) => const JobcardSettingsPage(),
-        '/documents': (context) =>  const DocumentPage(),
-        '/support': (context) => SupportListPage(),
-        '/notifications': (context) => const NotificationsPage(),
-        '/hr': (context) => const HRPage(),
-      },
-      initialRoute: ref.watch(tenantProvider) == null ? '/workspace' : '/',
     );
   }
 }

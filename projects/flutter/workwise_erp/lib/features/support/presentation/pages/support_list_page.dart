@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
@@ -11,6 +12,7 @@ import '../../domain/entities/status.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/widgets/app_dialog.dart';
+import 'package:intl/intl.dart';
 
 import '../widgets/ticket_detail_content.dart';
 import 'support_view_page.dart';
@@ -37,11 +39,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
   @override
   void initState() {
     super.initState();
-    // start with minimal controller (legacy tabs removed).
-    // We'll recreate the controller when statuses load.
     _tabController = TabController(length: 1, vsync: this);
 
-    // load tickets and statuses once after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(supportNotifierProvider.notifier).loadTickets();
       _loadStatuses();
@@ -53,8 +52,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       final getStatuses = ref.read(getSupportStatusesUseCaseProvider);
       final res = await getStatuses.call();
       res.fold((_) => null, (list) {
-        // create new controller before disposing the old one to avoid TabController
-        // length mismatches during rebuilds (prevents painter/listener issues).
         final newController = TabController(length: list.length, vsync: this);
         setState(() {
           availableStatuses = list;
@@ -63,9 +60,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
           old.dispose();
         });
       });
-    } catch (_) {
-      // ignore and leave legacy tabs
-    }
+    } catch (_) {}
   }
 
   @override
@@ -76,22 +71,26 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     super.dispose();
   }
 
+  String _formatDate(String? raw) {
+    if (raw == null || raw.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      return DateFormat.yMMMd().format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(supportNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Defensive repair: ensure TabController length always matches TabBar tabs.
-    // This prevents the runtime assertion that can occur if async status
-    // loading changes the number of tabs while the old controller is still
-    // attached to the widget tree.
-    final expectedTabCount = availableStatuses.isNotEmpty
-        ? availableStatuses.length
-        : 1;
+    final expectedTabCount =
+        availableStatuses.isNotEmpty ? availableStatuses.length : 1;
     if (_tabController.length != expectedTabCount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        // clamp current index into the new range to avoid index errors
         var newIndex = _tabController.index;
         if (newIndex < 0) newIndex = 0;
         if (newIndex >= expectedTabCount) newIndex = expectedTabCount - 1;
@@ -109,8 +108,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       });
     }
 
-    // show/hide global loading dialog for ticket fetches
-    // Show/hide loading dialog only on state *transitions* to avoid stacked dialogs
     ref.listen<SupportState>(supportNotifierProvider, (prev, next) {
       final prevLoading =
           prev?.maybeWhen(loading: () => true, orElse: () => false) ?? false;
@@ -119,7 +116,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         orElse: () => false,
       );
 
-      if (prevLoading == nextLoading) return; // no transition — do nothing
+      if (prevLoading == nextLoading) return;
 
       if (nextLoading) {
         showAppLoadingDialog(context, message: 'Fetching tickets...');
@@ -140,11 +137,10 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         appBar: CustomAppBar(
           title: 'Support Tickets',
           actions: [
-            // Search toggle
             IconButton(
               icon: Icon(
                 _isSearching ? LucideIcons.x : LucideIcons.search,
-                size: 20,
+                size: 20.r,
               ),
               color: AppColors.white,
               onPressed: () {
@@ -154,29 +150,20 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 });
               },
             ),
-
-            // Toggle stats visibility
             IconButton(
               icon: Icon(
                 _showStats ? LucideIcons.eye : LucideIcons.eyeOff,
-                size: 20,
+                size: 20.r,
               ),
               color: AppColors.white,
               onPressed: () => setState(() => _showStats = !_showStats),
               tooltip: _showStats ? 'Hide stats' : 'Show stats',
             ),
-
-            // Action group (th / filter)
             Row(
               children: [
-                // IconButton(
-                //   onPressed: null,
-                //   icon: const Icon(LucideIcons.moreVertical),
-                //   color: AppColors.white,
-                // ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4.w),
                 IconButton(
-                  icon: const Icon(LucideIcons.slidersHorizontal),
+                  icon: Icon(LucideIcons.slidersHorizontal, size: 20.r),
                   onPressed: () => _showFilterSheet(context),
                   color: AppColors.white,
                 ),
@@ -190,18 +177,18 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             if (_isSearching)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                height: 70,
+                height: 70.h,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 8.h,
                   ),
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDark
                           ? Colors.white.withOpacity(0.05)
                           : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.03),
@@ -217,15 +204,18 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         hintText: 'Search tickets...',
                         hintStyle: TextStyle(
                           color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          fontSize: 14.sp,
                         ),
                         prefixIcon: Icon(
                           LucideIcons.search,
                           color: isDark ? Colors.white54 : AppColors.primary,
+                          size: 18.r,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             LucideIcons.x,
                             color: isDark ? Colors.white54 : AppColors.primary,
+                            size: 18.r,
                           ),
                           onPressed: () {
                             setState(() {
@@ -235,13 +225,14 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                           },
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
                         ),
                       ),
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF1A2634),
+                        fontSize: 14.sp,
                       ),
                       onChanged: (value) => setState(() {}),
                     ),
@@ -252,15 +243,15 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             // Stats Header
             if (_showStats)
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16.r),
                 child: SizedBox(
-                  height: 96,
+                  height: 96.h,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 160,
+                          width: 150.w,
                           child: _buildStatCard(
                             'Total',
                             _getTotalCount(state),
@@ -269,9 +260,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                             isDark,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         SizedBox(
-                          width: 160,
+                          width: 150.w,
                           child: _buildStatCard(
                             'Open',
                             _getOpenCount(state),
@@ -280,9 +271,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                             isDark,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         SizedBox(
-                          width: 160,
+                          width: 150.w,
                           child: _buildStatCard(
                             'In Progress',
                             _getInProgressCount(state),
@@ -291,9 +282,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                             isDark,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         SizedBox(
-                          width: 160,
+                          width: 150.w,
                           child: _buildStatCard(
                             'Resolved',
                             _getResolvedCount(state),
@@ -308,14 +299,14 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ),
               ),
 
-            // Enhanced Tab Bar (backend-driven only; legacy tabs removed)
+            // Tab Bar
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
+              margin: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withOpacity(0.05)
                     : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
               ),
               child: availableStatuses.isNotEmpty
                   ? TabBar(
@@ -325,11 +316,16 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                           .map((s) => Tab(text: s.status ?? 'Unknown'))
                           .toList(),
                       labelColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: TextStyle(fontSize: 13.sp),
                       unselectedLabelColor: isDark
                           ? Colors.white54
                           : Colors.grey.shade600,
                       indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                         color: AppColors.primary.withOpacity(0.15),
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
@@ -338,55 +334,54 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                     )
                   : const SizedBox.shrink(),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
 
             // Main Content
             Expanded(
               child: state.when(
                 initial: () => const SizedBox.shrink(),
-                loading: () => const Center(
-                  // child: CircularProgressIndicator(),
-                ),
+                loading: () => const Center(),
                 error: (msg) => Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(24.r),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20.r),
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.error_outline_rounded,
-                            size: 48,
+                            size: 48.r,
                             color: Colors.red.shade300,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         Text(
                           'Failed to load tickets',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.bold,
                             color: isDark
                                 ? Colors.white
                                 : const Color(0xFF1A2634),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8.h),
                         Text(
                           msg,
                           textAlign: TextAlign.center,
                           style: TextStyle(
+                            fontSize: 14.sp,
                             color: isDark
                                 ? Colors.white54
                                 : Colors.grey.shade600,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         AppButton(
                           text: 'Retry',
                           icon: Icons.refresh_rounded,
@@ -406,16 +401,19 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            await Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const CreateTicketPage()));
+            await Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CreateTicketPage()),
+            );
           },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('New Ticket'),
+          icon: Icon(Icons.add_rounded, size: 20.r),
+          label: Text(
+            'New Ticket',
+            style: TextStyle(fontSize: 14.sp),
+          ),
           backgroundColor: const Color(0xFF4A6FA5),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
         ),
       ),
@@ -430,11 +428,11 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     bool isDark,
   ) {
     return Container(
-      height: 96,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      height: 96.h,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
@@ -442,7 +440,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border(left: BorderSide(color: color, width: 3)),
+        border: Border(left: BorderSide(color: color, width: 3.w)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -455,17 +453,15 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.grey.shade700,
                   ),
                 ),
-
-                // number placed visually at the bottom of the text column
                 Text(
                   count.toString(),
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : const Color(0xFF1A2634),
                   ),
@@ -473,11 +469,11 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ],
             ),
           ),
-
-          const SizedBox(width: 8),
-
-          // faint icon on the right
-          Opacity(opacity: 0.12, child: Icon(icon, size: 40, color: color)),
+          SizedBox(width: 8.w),
+          Opacity(
+            opacity: 0.12,
+            child: Icon(icon, size: 40.r, color: color),
+          ),
         ],
       ),
     );
@@ -523,17 +519,14 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
   Widget _buildTicketList(BuildContext context, List<SupportTicket> tickets) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Filter tickets based on search
     var filteredTickets = tickets.where((t) {
       final searchTerm = _searchController.text.toLowerCase();
       if (searchTerm.isEmpty) return true;
-
       return (t.subject?.toLowerCase().contains(searchTerm) ?? false) ||
           (t.ticketCode?.toLowerCase().contains(searchTerm) ?? false) ||
           (t.customer?.name?.toLowerCase().contains(searchTerm) ?? false);
     }).toList();
 
-    // Filter by selected tab based on statuses (legacy tabs removed)
     if (availableStatuses.isNotEmpty) {
       final idx = _tabController.index;
       if (idx >= 0 && idx < availableStatuses.length) {
@@ -545,7 +538,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         }).toList();
       }
     }
-    // otherwise show all tickets (no tab-based filtering)
 
     if (filteredTickets.isEmpty) {
       return Center(
@@ -554,28 +546,30 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
           children: [
             Icon(
               Icons.support_agent_rounded,
-              size: 80,
+              size: 80.r,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               'No tickets found',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white70 : Colors.grey.shade700,
+                fontSize: 18.sp,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               _searchController.text.isNotEmpty
                   ? 'Try adjusting your search'
                   : 'Create your first support ticket',
               style: TextStyle(
+                fontSize: 14.sp,
                 color: isDark ? Colors.white54 : Colors.grey.shade600,
               ),
             ),
             if (_searchController.text.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               AppButton(
                 text: 'Clear Search',
                 icon: Icons.clear_rounded,
@@ -601,7 +595,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       color: const Color(0xFF4A6FA5),
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         itemCount: filteredTickets.length,
         itemBuilder: (context, idx) {
           final t = filteredTickets[idx];
@@ -617,34 +611,13 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         ? HexColor.fromHex(ticket.priority!.color!)
         : Colors.grey;
 
-    // Derive a created/updated time from available data (prefer first reply)
-    String dateStr = '';
-    DateTime? when;
-
-    if (ticket.replies != null && ticket.replies!.isNotEmpty) {
-      when = ticket.replies!.first.createdAt;
-    } else if (ticket.endDate != null) {
-      when = DateTime.tryParse(ticket.endDate!);
-    }
-
-    if (when != null) {
-      final now = DateTime.now();
-      final difference = now.difference(when);
-
-      if (difference.inDays > 0) {
-        dateStr = '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        dateStr = '${difference.inHours}h ago';
-      } else {
-        dateStr = '${difference.inMinutes}m ago';
-      }
-    }
+    String formattedDate = _formatDate(ticket.createdAt);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12.h),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         side: BorderSide(
           color: isDark ? Colors.white10 : Colors.grey.shade200,
           width: 1,
@@ -653,14 +626,12 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       color: isDark ? const Color(0xFF151A2E) : Colors.white,
       child: InkWell(
         onTap: () {
-          // open full-screen view
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => SupportViewPage(ticket: ticket)),
           );
         },
         onLongPress: () {
-          // show modal on long-press (keeps previous behavior)
           context.showAppModal(
             title: ticket.ticketCode ?? 'Ticket',
             subtitle: ticket.subject,
@@ -679,23 +650,23 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             height: MediaQuery.of(context).size.height * 0.85,
           );
         },
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Row with Ticket Code and Priority
+              // Header Row: Priority chip + ticket code + status badge
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 6.h,
                     ),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(
                         color: isDark ? Colors.white10 : Colors.grey.shade200,
                         width: 1,
@@ -705,44 +676,47 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 8.r,
+                          height: 8.r,
                           decoration: BoxDecoration(
                             color: priorityColor,
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text(
                           ticket.priority?.priority ?? 'Normal',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color:
+                                Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
                       ticket.ticketCode ?? 'N/A',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : Colors.grey.shade700,
-                        fontSize: 13,
+                        color:
+                            isDark ? Colors.white70 : Colors.grey.shade700,
+                        fontSize: 13.sp,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
                     ),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: isDark ? Colors.white10 : Colors.grey.shade200,
                         width: 1,
@@ -752,20 +726,22 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 8.r,
+                          height: 8.r,
                           decoration: BoxDecoration(
-                            color: _getStatusColor(ticket.status?.status ?? ''),
+                            color: _getStatusColor(
+                                ticket.status?.status ?? ''),
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6.w),
                         Text(
                           ticket.status?.status ?? 'Unknown',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color:
+                                Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                            fontSize: 12.sp,
                           ),
                         ),
                       ],
@@ -774,13 +750,13 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ],
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
 
               // Subject
               Text(
                 ticket.subject ?? 'No subject',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
@@ -788,84 +764,81 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 overflow: TextOverflow.ellipsis,
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
 
-              // Customer Info and Description
+              // Customer row
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 14,
-                    backgroundColor: const Color(0xFF4A6FA5).withOpacity(0.1),
+                    radius: 14.r,
+                    backgroundColor:
+                        const Color(0xFF4A6FA5).withOpacity(0.1),
                     child: Text(
-                      ticket.customer?.name?.substring(0, 1).toUpperCase() ??
+                      ticket.customer?.name
+                              ?.substring(0, 1)
+                              .toUpperCase() ??
                           '?',
-                      style: const TextStyle(
-                        color: Color(0xFF4A6FA5),
-                        fontSize: 12,
+                      style: TextStyle(
+                        color: const Color(0xFF4A6FA5),
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
-                      ticket.customer?.name ?? 'Unknown Customer',
+                      ticket.customer?.name ?? '-',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white70 : Colors.grey.shade700,
+                        color: isDark
+                            ? Colors.white70
+                            : Colors.grey.shade700,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
 
-              if (ticket.description != null &&
-                  ticket.description!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  ticket.description!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              SizedBox(height: 12.h),
 
-              const SizedBox(height: 12),
-
-              // Footer with Date and Attachment Indicator
+              // Footer
               Row(
                 children: [
                   Icon(
                     Icons.access_time_rounded,
-                    size: 14,
+                    size: 14.r,
                     color: isDark ? Colors.white38 : Colors.grey.shade400,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4.w),
                   Text(
-                    dateStr,
+                    formattedDate,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      fontSize: 12.sp,
+                      color: isDark
+                          ? Colors.white38
+                          : Colors.grey.shade500,
                     ),
                   ),
                   const Spacer(),
-                  // show replies count (messages)
-                  if (ticket.replies != null && ticket.replies!.isNotEmpty) ...[
+                  if (ticket.replies != null &&
+                      ticket.replies!.isNotEmpty) ...[
                     Icon(
                       Icons.chat_bubble_outline_rounded,
-                      size: 16,
-                      color: isDark ? Colors.white38 : Colors.grey.shade400,
+                      size: 16.r,
+                      color:
+                          isDark ? Colors.white38 : Colors.grey.shade400,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
-                      '${ticket.replies!.length}',
+                      ticket.priority?.priority ?? 'Unknown',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                        fontSize: 12.sp,
+                        color: isDark
+                            ? Colors.white38
+                            : Colors.grey.shade500,
                       ),
                     ),
                   ],
@@ -903,9 +876,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,9 +886,12 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Filter Tickets',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -923,15 +899,18 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20.h),
+            Text(
               'Priority',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 8.w,
+              runSpacing: 8.h,
               children: [
                 _buildFilterChip('All', true),
                 _buildFilterChip('High', false),
@@ -939,17 +918,20 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 _buildFilterChip('Low', false),
               ],
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20.h),
+            Text(
               'Date Range',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             _buildDateRangeOption('Today'),
             _buildDateRangeOption('This Week'),
             _buildDateRangeOption('This Month'),
             _buildDateRangeOption('Custom Range'),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             Row(
               children: [
                 Expanded(
@@ -957,27 +939,33 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                     onPressed: () => Navigator.pop(context),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.grey,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                    child: const Text('Reset'),
+                    child: Text(
+                      'Reset',
+                      style: TextStyle(fontSize: 14.sp),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4A6FA5),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                    child: const Text('Apply'),
+                    child: Text(
+                      'Apply',
+                      style: TextStyle(fontSize: 14.sp),
+                    ),
                   ),
                 ),
               ],
@@ -992,7 +980,10 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FilterChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 13.sp),
+      ),
       selected: isSelected,
       onSelected: (selected) {},
       backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
@@ -1003,9 +994,10 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             ? const Color(0xFF4A6FA5)
             : (isDark ? Colors.white70 : Colors.grey.shade700),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 13.sp,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.r),
         side: BorderSide(
           color: isSelected
               ? const Color(0xFF4A6FA5)
@@ -1020,7 +1012,10 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RadioListTile<String>(
-      title: Text(label),
+      title: Text(
+        label,
+        style: TextStyle(fontSize: 14.sp),
+      ),
       value: label,
       groupValue: 'Today',
       onChanged: (value) {},
@@ -1028,7 +1023,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       contentPadding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.r),
+      ),
     );
   }
 }

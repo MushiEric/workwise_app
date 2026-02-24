@@ -252,7 +252,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       Center(
                         child: Image.asset(
                           'assets/images/logo.png',
-                          height: 100,
+                          height: 40,
                           fit: BoxFit.contain,
                         ),
                       ),
