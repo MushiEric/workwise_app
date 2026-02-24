@@ -35,8 +35,36 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
   /// current vehicle category shown on the vehicle tab; 'truck','trailer','small'
   String _selectedVehicleCategory = 'truck';
 
+  /// controller for the geofence map — used to auto-fit bounds after creation
+  GoogleMapController? _geofenceMapController;
+
   static const List<String> _labels = ['Vehicle', 'Geofences', 'Journey', 'Trip', 'Operators', 'Workshop'];
   static const List<IconData> _icons = [Icons.car_rental, Icons.map, Icons.timeline, Icons.directions_car, Icons.person, Icons.build];
+
+  /// Computes the tightest [LatLngBounds] that contains all [points].
+  LatLngBounds _computeBounds(List<LatLng> points) {
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    // Prevent zero-size bounds (single point) which crash animateCamera
+    if (minLat == maxLat && minLng == maxLng) {
+      return LatLngBounds(
+        southwest: LatLng(minLat - 0.01, minLng - 0.01),
+        northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
+      );
+    }
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+  }
 
   Color? _colorFromHex(String? hex) {
     if (hex == null || hex.isEmpty) return null;
@@ -87,6 +115,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _geofenceMapController?.dispose();
     super.dispose();
   }
 
@@ -241,10 +270,10 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
             return Center(child: Text('No geofences found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
           }
 
-          // prepare polygons/circles
+          // ── collect all geofence shapes ─────────────────────────────
           final Set<Polygon> polygons = {};
           final Set<Circle> circles = {};
-          LatLng initialCenter = const LatLng(0, 0);
+          final List<LatLng> allPoints = []; // used to auto-fit bounds
 
           for (var g in geofences) {
             if (g.type == 'polygon') {
@@ -253,9 +282,10 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                 polygons.add(Polygon(
                     polygonId: PolygonId(g.id.toString()),
                     points: pts,
+                    strokeWidth: 2,
                     strokeColor: _colorFromHex(g.color) ?? Colors.blue,
                     fillColor: (_colorFromHex(g.color) ?? Colors.blue).withOpacity(0.2)));
-                initialCenter = pts.first;
+                allPoints.addAll(pts);
               }
             } else if (g.type == 'circle') {
               final lat = g.centerLat != null ? double.tryParse(g.centerLat!) : g.latitude;
@@ -266,37 +296,80 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                     circleId: CircleId(g.id.toString()),
                     center: LatLng(lat, lng),
                     radius: rad,
+                    strokeWidth: 2,
                     strokeColor: _colorFromHex(g.color) ?? Colors.blue,
                     fillColor: (_colorFromHex(g.color) ?? Colors.blue).withOpacity(0.2)));
-                initialCenter = LatLng(lat, lng);
+                // Approximate circle extent for bounds
+                final degOffset = rad / 111000;
+                allPoints.add(LatLng(lat + degOffset, lng + degOffset));
+                allPoints.add(LatLng(lat - degOffset, lng - degOffset));
               }
             }
           }
 
+          // Fallback centre when no shapes parsed
+          final LatLng fallbackCenter =
+              allPoints.isNotEmpty ? allPoints.first : const LatLng(0, 0);
+
           return Column(
             children: [
-              SizedBox(
-                height: 200,
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(target: initialCenter, zoom: 10),
-                  polygons: polygons,
-                  circles: circles,
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
+              // ── Map takes up 55 % of available height ─────────────────
+              Expanded(
+                flex: 55,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: fallbackCenter,
+                      zoom: 6,
+                    ),
+                    polygons: polygons,
+                    circles: circles,
+                    zoomControlsEnabled: true,
+                    myLocationButtonEnabled: false,
+                    mapToolbarEnabled: false,
+                    onMapCreated: (controller) {
+                      _geofenceMapController = controller;
+                      if (allPoints.isNotEmpty) {
+                        final bounds = _computeBounds(allPoints);
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                            controller.animateCamera(
+                              CameraUpdate.newLatLngBounds(bounds, 60),
+                            );
+                          }
+                        });
+                      }
+                    },
+                  ),
                 ),
               ),
+              const SizedBox(height: 8),
+              // ── List takes up the remaining 45 % ──────────────────────
               Expanded(
+                flex: 45,
                 child: RefreshIndicator(
                   onRefresh: () => ref.read(geofenceNotifierProvider.notifier).loadGeofences(),
                   child: ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    padding: const EdgeInsets.only(top: 4, bottom: 16),
                     itemCount: geofences.length,
                     itemBuilder: (context, idx) {
                       final g = geofences[idx];
                       return ListTile(
+                        leading: CircleAvatar(
+                          radius: 10,
+                          backgroundColor:
+                              _colorFromHex(g.color) ?? Colors.blueAccent,
+                        ),
                         title: Text(g.name ?? 'Unnamed zone'),
-                        subtitle: Text(g.type ?? ''),
-                        trailing: g.isCurrentlyInside ? Icon(Icons.check_circle, color: Colors.green) : null,
+                        subtitle: Text(
+                          g.type?.toUpperCase() ?? '',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        trailing: g.isCurrentlyInside
+                            ? const Icon(Icons.check_circle,
+                                color: Colors.green, size: 18)
+                            : null,
                       );
                     },
                   ),
