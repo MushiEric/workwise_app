@@ -307,7 +307,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                   final firstName = (username.split(' ').isNotEmpty)
                       ? username.split(' ').first
                       : username;
-                  final hour = DateTime.now().hour;
+                  final hour = DateTime.now().toLocal().hour;
                   final greeting = hour < 12
                       ? 'Good Morning'
                       : (hour < 17
@@ -347,7 +347,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Welcome to Workwise',
+                                'Welcome to ${AppConstant.appName}',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,

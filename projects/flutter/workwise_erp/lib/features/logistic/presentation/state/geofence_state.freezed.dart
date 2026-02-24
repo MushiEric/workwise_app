@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'contacts_state.dart';
+part of 'geofence_state.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -16,26 +16,26 @@ final _privateConstructorUsedError = UnsupportedError(
 );
 
 /// @nodoc
-mixin _$ContactsState {
+mixin _$GeofenceState {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<CustomerContact> contacts) loaded,
+    required TResult Function(List<Geofence> geofences) loaded,
     required TResult Function(String message) error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<CustomerContact> contacts)? loaded,
+    TResult? Function(List<Geofence> geofences)? loaded,
     TResult? Function(String message)? error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<CustomerContact> contacts)? loaded,
+    TResult Function(List<Geofence> geofences)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
@@ -64,24 +64,24 @@ mixin _$ContactsState {
 }
 
 /// @nodoc
-abstract class $ContactsStateCopyWith<$Res> {
-  factory $ContactsStateCopyWith(
-    ContactsState value,
-    $Res Function(ContactsState) then,
-  ) = _$ContactsStateCopyWithImpl<$Res, ContactsState>;
+abstract class $GeofenceStateCopyWith<$Res> {
+  factory $GeofenceStateCopyWith(
+    GeofenceState value,
+    $Res Function(GeofenceState) then,
+  ) = _$GeofenceStateCopyWithImpl<$Res, GeofenceState>;
 }
 
 /// @nodoc
-class _$ContactsStateCopyWithImpl<$Res, $Val extends ContactsState>
-    implements $ContactsStateCopyWith<$Res> {
-  _$ContactsStateCopyWithImpl(this._value, this._then);
+class _$GeofenceStateCopyWithImpl<$Res, $Val extends GeofenceState>
+    implements $GeofenceStateCopyWith<$Res> {
+  _$GeofenceStateCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
 }
 
@@ -95,14 +95,14 @@ abstract class _$$InitialImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$InitialImplCopyWithImpl<$Res>
-    extends _$ContactsStateCopyWithImpl<$Res, _$InitialImpl>
+    extends _$GeofenceStateCopyWithImpl<$Res, _$InitialImpl>
     implements _$$InitialImplCopyWith<$Res> {
   __$$InitialImplCopyWithImpl(
     _$InitialImpl _value,
     $Res Function(_$InitialImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
 }
 
@@ -113,7 +113,7 @@ class _$InitialImpl implements _Initial {
 
   @override
   String toString() {
-    return 'ContactsState.initial()';
+    return 'GeofenceState.initial()';
   }
 
   @override
@@ -130,7 +130,7 @@ class _$InitialImpl implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<CustomerContact> contacts) loaded,
+    required TResult Function(List<Geofence> geofences) loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -141,7 +141,7 @@ class _$InitialImpl implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<CustomerContact> contacts)? loaded,
+    TResult? Function(List<Geofence> geofences)? loaded,
     TResult? Function(String message)? error,
   }) {
     return initial?.call();
@@ -152,7 +152,7 @@ class _$InitialImpl implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<CustomerContact> contacts)? loaded,
+    TResult Function(List<Geofence> geofences)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -200,7 +200,7 @@ class _$InitialImpl implements _Initial {
   }
 }
 
-abstract class _Initial implements ContactsState {
+abstract class _Initial implements GeofenceState {
   const factory _Initial() = _$InitialImpl;
 }
 
@@ -214,14 +214,14 @@ abstract class _$$LoadingImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$LoadingImplCopyWithImpl<$Res>
-    extends _$ContactsStateCopyWithImpl<$Res, _$LoadingImpl>
+    extends _$GeofenceStateCopyWithImpl<$Res, _$LoadingImpl>
     implements _$$LoadingImplCopyWith<$Res> {
   __$$LoadingImplCopyWithImpl(
     _$LoadingImpl _value,
     $Res Function(_$LoadingImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
 }
 
@@ -232,7 +232,7 @@ class _$LoadingImpl implements _Loading {
 
   @override
   String toString() {
-    return 'ContactsState.loading()';
+    return 'GeofenceState.loading()';
   }
 
   @override
@@ -249,7 +249,7 @@ class _$LoadingImpl implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<CustomerContact> contacts) loaded,
+    required TResult Function(List<Geofence> geofences) loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -260,7 +260,7 @@ class _$LoadingImpl implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<CustomerContact> contacts)? loaded,
+    TResult? Function(List<Geofence> geofences)? loaded,
     TResult? Function(String message)? error,
   }) {
     return loading?.call();
@@ -271,7 +271,7 @@ class _$LoadingImpl implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<CustomerContact> contacts)? loaded,
+    TResult Function(List<Geofence> geofences)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -319,7 +319,7 @@ class _$LoadingImpl implements _Loading {
   }
 }
 
-abstract class _Loading implements ContactsState {
+abstract class _Loading implements GeofenceState {
   const factory _Loading() = _$LoadingImpl;
 }
 
@@ -330,29 +330,29 @@ abstract class _$$LoadedImplCopyWith<$Res> {
     $Res Function(_$LoadedImpl) then,
   ) = __$$LoadedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<CustomerContact> contacts});
+  $Res call({List<Geofence> geofences});
 }
 
 /// @nodoc
 class __$$LoadedImplCopyWithImpl<$Res>
-    extends _$ContactsStateCopyWithImpl<$Res, _$LoadedImpl>
+    extends _$GeofenceStateCopyWithImpl<$Res, _$LoadedImpl>
     implements _$$LoadedImplCopyWith<$Res> {
   __$$LoadedImplCopyWithImpl(
     _$LoadedImpl _value,
     $Res Function(_$LoadedImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? contacts = null}) {
+  $Res call({Object? geofences = null}) {
     return _then(
       _$LoadedImpl(
-        null == contacts
-            ? _value._contacts
-            : contacts // ignore: cast_nullable_to_non_nullable
-                  as List<CustomerContact>,
+        null == geofences
+            ? _value._geofences
+            : geofences // ignore: cast_nullable_to_non_nullable
+                  as List<Geofence>,
       ),
     );
   }
@@ -361,20 +361,19 @@ class __$$LoadedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadedImpl implements _Loaded {
-  const _$LoadedImpl(final List<CustomerContact> contacts)
-    : _contacts = contacts;
+  const _$LoadedImpl(final List<Geofence> geofences) : _geofences = geofences;
 
-  final List<CustomerContact> _contacts;
+  final List<Geofence> _geofences;
   @override
-  List<CustomerContact> get contacts {
-    if (_contacts is EqualUnmodifiableListView) return _contacts;
+  List<Geofence> get geofences {
+    if (_geofences is EqualUnmodifiableListView) return _geofences;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_contacts);
+    return EqualUnmodifiableListView(_geofences);
   }
 
   @override
   String toString() {
-    return 'ContactsState.loaded(contacts: $contacts)';
+    return 'GeofenceState.loaded(geofences: $geofences)';
   }
 
   @override
@@ -382,14 +381,17 @@ class _$LoadedImpl implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LoadedImpl &&
-            const DeepCollectionEquality().equals(other._contacts, _contacts));
+            const DeepCollectionEquality().equals(
+              other._geofences,
+              _geofences,
+            ));
   }
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_contacts));
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_geofences));
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
@@ -402,10 +404,10 @@ class _$LoadedImpl implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<CustomerContact> contacts) loaded,
+    required TResult Function(List<Geofence> geofences) loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(contacts);
+    return loaded(geofences);
   }
 
   @override
@@ -413,10 +415,10 @@ class _$LoadedImpl implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<CustomerContact> contacts)? loaded,
+    TResult? Function(List<Geofence> geofences)? loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(contacts);
+    return loaded?.call(geofences);
   }
 
   @override
@@ -424,12 +426,12 @@ class _$LoadedImpl implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<CustomerContact> contacts)? loaded,
+    TResult Function(List<Geofence> geofences)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(contacts);
+      return loaded(geofences);
     }
     return orElse();
   }
@@ -472,12 +474,12 @@ class _$LoadedImpl implements _Loaded {
   }
 }
 
-abstract class _Loaded implements ContactsState {
-  const factory _Loaded(final List<CustomerContact> contacts) = _$LoadedImpl;
+abstract class _Loaded implements GeofenceState {
+  const factory _Loaded(final List<Geofence> geofences) = _$LoadedImpl;
 
-  List<CustomerContact> get contacts;
+  List<Geofence> get geofences;
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$LoadedImplCopyWith<_$LoadedImpl> get copyWith =>
@@ -496,14 +498,14 @@ abstract class _$$ErrorImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$ErrorImplCopyWithImpl<$Res>
-    extends _$ContactsStateCopyWithImpl<$Res, _$ErrorImpl>
+    extends _$GeofenceStateCopyWithImpl<$Res, _$ErrorImpl>
     implements _$$ErrorImplCopyWith<$Res> {
   __$$ErrorImplCopyWithImpl(
     _$ErrorImpl _value,
     $Res Function(_$ErrorImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
@@ -529,7 +531,7 @@ class _$ErrorImpl implements _Error {
 
   @override
   String toString() {
-    return 'ContactsState.error(message: $message)';
+    return 'GeofenceState.error(message: $message)';
   }
 
   @override
@@ -543,7 +545,7 @@ class _$ErrorImpl implements _Error {
   @override
   int get hashCode => Object.hash(runtimeType, message);
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
@@ -556,7 +558,7 @@ class _$ErrorImpl implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<CustomerContact> contacts) loaded,
+    required TResult Function(List<Geofence> geofences) loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -567,7 +569,7 @@ class _$ErrorImpl implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<CustomerContact> contacts)? loaded,
+    TResult? Function(List<Geofence> geofences)? loaded,
     TResult? Function(String message)? error,
   }) {
     return error?.call(message);
@@ -578,7 +580,7 @@ class _$ErrorImpl implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<CustomerContact> contacts)? loaded,
+    TResult Function(List<Geofence> geofences)? loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -626,12 +628,12 @@ class _$ErrorImpl implements _Error {
   }
 }
 
-abstract class _Error implements ContactsState {
+abstract class _Error implements GeofenceState {
   const factory _Error(final String message) = _$ErrorImpl;
 
   String get message;
 
-  /// Create a copy of ContactsState
+  /// Create a copy of GeofenceState
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ErrorImplCopyWith<_$ErrorImpl> get copyWith =>

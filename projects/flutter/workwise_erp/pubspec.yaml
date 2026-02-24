@@ -50,6 +50,8 @@ dependencies:
   google_fonts: any
   share_plus: any
   sentry_flutter: ^7.14.0
+  flutter_screenutil: ^5.9.3
+  google_maps_flutter: ^2.10.0
 
 dev_dependencies:
   flutter_test:

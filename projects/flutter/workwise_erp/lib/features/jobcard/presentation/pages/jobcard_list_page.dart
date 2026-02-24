@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../notifier/jobcard_notifier.dart';
@@ -21,6 +23,16 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSearching = false;
+  bool _showStats = true;
+
+  Color _statusColorFromName(String statusName) {
+    final lower = statusName.toLowerCase();
+    if (lower.contains('open')) return const Color(0xFF4A6FA5);
+    if (lower.contains('progress')) return Colors.orange;
+    if (lower.contains('awaiting') || lower.contains('pending')) return Colors.blue;
+    if (lower.contains('closed') || lower.contains('completed')) return Colors.grey;
+    return AppColors.primary;
+  }
 
   @override
   void initState() {
@@ -41,15 +53,11 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(jobcardNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
 
-    // Show/hide global loading dialog on state transition
     ref.listen<JobcardState>(jobcardNotifierProvider, (prev, next) {
       final prevLoading = prev?.loading ?? false;
       final nextLoading = next.loading;
-
       if (prevLoading == nextLoading) return;
-
       if (nextLoading) {
         showAppLoadingDialog(context, message: 'Fetching jobcards...');
       } else {
@@ -63,76 +71,69 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: 'Jobcards',
           actions: [
-            if (!_isSearching)
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    size: 20,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
-                onPressed: () {
-                  setState(() => _isSearching = true);
-                },
-              ),
-
-            // Settings icon for Jobcard settings
             IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.settings_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
+              icon: Icon(
+                _isSearching ? LucideIcons.x : LucideIcons.search,
+                size: 20.r,
               ),
+              color: AppColors.white,
+              onPressed: () {
+                setState(() {
+                  if (_isSearching) _searchController.clear();
+                  _isSearching = !_isSearching;
+                });
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                _showStats ? LucideIcons.eye : LucideIcons.eyeOff,
+                size: 20.r,
+              ),
+              color: AppColors.white,
+              onPressed: () => setState(() => _showStats = !_showStats),
+              tooltip: _showStats ? 'Hide stats' : 'Show stats',
+            ),
+            IconButton(
+              icon: Icon(LucideIcons.settings, size: 20.r),
+              color: AppColors.white,
               onPressed: () => Navigator.pushNamed(context, '/jobcards/settings'),
             ),
-
-            IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
+            Row(
+              children: [
+                SizedBox(width: 4.w),
+                IconButton(
+                  icon: Icon(LucideIcons.slidersHorizontal, size: 20.r),
+                  color: AppColors.white,
+                  onPressed: _showFilterOptions,
                 ),
-                child: Icon(
-                  Icons.filter_list_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
-              ),
-              onPressed: _showFilterOptions,
+              ],
             ),
           ],
         ),
         body: Column(
           children: [
-            // Search Bar (when active)
+            // ── Search Bar ──
             if (_isSearching)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                height: 70,
+                height: 70.h,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 8.h,
+                  ),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.03),
@@ -148,15 +149,18 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                         hintText: 'Search jobcards...',
                         hintStyle: TextStyle(
                           color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          fontSize: 14.sp,
                         ),
                         prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                          LucideIcons.search,
+                          color: isDark ? Colors.white54 : AppColors.primary,
+                          size: 18.r,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            Icons.close_rounded,
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            LucideIcons.x,
+                            color: isDark ? Colors.white54 : AppColors.primary,
+                            size: 18.r,
                           ),
                           onPressed: () {
                             setState(() {
@@ -166,13 +170,14 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                           },
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 12.h,
                         ),
                       ),
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF1A2634),
+                        fontSize: 14.sp,
                       ),
                       onChanged: (value) => setState(() {}),
                     ),
@@ -180,116 +185,193 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                 ),
               ),
 
-            // Stats Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total',
-                      _getJobcardCount(state),
-                      Icons.assignment_rounded,
-                      primaryColor,
-                      isDark,
+            // ── Stats Header ──
+            if (_showStats)
+              Padding(
+                padding: EdgeInsets.all(16.r),
+                child: SizedBox(
+                  height: 96.h,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _buildStatusCards(state, isDark),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Pending',
-                      _getPendingCount(state),
-                      Icons.pending_actions_rounded,
-                      Colors.orange,
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Completed',
-                      _getCompletedCount(state),
-                      Icons.check_circle_rounded,
-                      Colors.green,
-                      isDark,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            // Main Content
-            Expanded(
-              child: _buildBody(state, isDark),
-            ),
+            // ── Main Content ──
+            Expanded(child: _buildBody(state, isDark)),
           ],
         ),
-
-        // Quick Create FAB
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/jobcards/create');
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('New Jobcard'),
-          backgroundColor: primaryColor,
+          onPressed: () => Navigator.of(context).pushNamed('/jobcards/create'),
+          icon: Icon(Icons.add_rounded, size: 20.r),
+          label: Text('New Jobcard', style: TextStyle(fontSize: 14.sp)),
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBody(JobcardState state, bool isDark) {
-    if (state.loading) {
-      return const Center(
-        // child: CircularProgressIndicator(),
-      );
+  // ── Stat cards matching support list style ──
+  List<Widget> _buildStatusCards(JobcardState state, bool isDark) {
+    final counts = <String, int>{};
+    for (final item in state.items.cast<Jobcard>()) {
+      final name = item.statusRow?['name']?.toString() ??
+          item.status?.toString() ??
+          '';
+      counts[name] = (counts[name] ?? 0) + 1;
     }
+
+    final widgets = <Widget>[
+      SizedBox(
+        width: 150.w,
+        child: _buildStatCard(
+          'Total',
+          _getJobcardCount(state),
+          Icons.assignment_rounded,
+          AppColors.primary,
+          isDark,
+        ),
+      ),
+    ];
+
+    counts.forEach((status, cnt) {
+      widgets.add(SizedBox(width: 12.w));
+      widgets.add(
+        SizedBox(
+          width: 150.w,
+          child: _buildStatCard(
+            status.isEmpty ? 'Unknown' : status,
+            cnt,
+            Icons.circle,
+            _statusColorFromName(status),
+            isDark,
+          ),
+        ),
+      );
+    });
+
+    return widgets;
+  }
+
+  Widget _buildStatCard(
+    String label,
+    int count,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
+    return Container(
+      height: 96.h,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0A0E21) : Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border(left: BorderSide(color: color, width: 3.w)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  count.toString(),
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1A2634),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Opacity(
+            opacity: 0.12,
+            child: Icon(icon, size: 40.r, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _getJobcardCount(JobcardState state) {
+    if (state.loading || state.error != null) return 0;
+    return state.items.length;
+  }
+
+  Widget _buildBody(JobcardState state, bool isDark) {
+    if (state.loading) return const Center();
 
     if (state.error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24.r),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20.r),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.error_outline_rounded,
-                  size: 48,
+                  size: 48.r,
                   color: Colors.red.shade300,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               Text(
                 'Failed to load jobcards',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               Text(
                 state.error!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  fontSize: 14.sp,
                   color: isDark ? Colors.white54 : Colors.grey.shade600,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
               AppButton(
                 text: 'Retry',
                 icon: Icons.refresh_rounded,
-                onPressed: () => ref.read(jobcardNotifierProvider.notifier).loadJobcards(),
+                onPressed: () =>
+                    ref.read(jobcardNotifierProvider.notifier).loadJobcards(),
                 variant: AppButtonVariant.primary,
               ),
             ],
@@ -299,14 +381,12 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     final jobcards = state.items.cast<Jobcard>();
-    
-    // Filter jobcards based on search
     final filteredJobcards = _searchController.text.isEmpty
         ? jobcards
-        : jobcards.where((jobcard) {
-            final searchTerm = _searchController.text.toLowerCase();
-            return (jobcard.jobcardNumber?.toLowerCase().contains(searchTerm) ?? false) ||
-                   (jobcard.service?.toLowerCase().contains(searchTerm) ?? false);
+        : jobcards.where((j) {
+            final q = _searchController.text.toLowerCase();
+            return (j.jobcardNumber?.toLowerCase().contains(q) ?? false) ||
+                (j.service?.toLowerCase().contains(q) ?? false);
           }).toList();
 
     if (filteredJobcards.isEmpty) {
@@ -318,31 +398,32 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
               _searchController.text.isEmpty
                   ? Icons.assignment_outlined
                   : Icons.search_off_rounded,
-              size: 80,
+              size: 80.r,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
             Text(
               _searchController.text.isEmpty
                   ? 'No jobcards found'
                   : 'No matching jobcards',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white70 : Colors.grey.shade700,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               _searchController.text.isEmpty
                   ? 'Create your first jobcard'
                   : 'Try adjusting your search',
               style: TextStyle(
+                fontSize: 14.sp,
                 color: isDark ? Colors.white54 : Colors.grey.shade600,
               ),
             ),
             if (_searchController.text.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
               AppButton(
                 text: 'Clear Search',
                 icon: Icons.clear_rounded,
@@ -362,97 +443,33 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(jobcardNotifierProvider.notifier).loadJobcards(),
+      onRefresh: () =>
+          ref.read(jobcardNotifierProvider.notifier).loadJobcards(),
       color: AppColors.primary,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
         itemCount: filteredJobcards.length,
         itemBuilder: (context, idx) {
           final jobcard = filteredJobcards[idx];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: JobcardTile(
-              jobcard: jobcard,
-              onTap: () => Navigator.of(context).pushNamed('/jobcards/detail', arguments: jobcard.id),
-              onDelete: () => _confirmDelete(jobcard),
-            ),
+          return JobcardTile(
+            jobcard: jobcard,
+            onTap: () => Navigator.of(context)
+                .pushNamed('/jobcards/detail', arguments: jobcard.id),
+            onDelete: () => _confirmDelete(jobcard),
           );
         },
       ),
     );
   }
 
-  Widget _buildStatCard(String label, int count, IconData icon, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            count.toString(),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1A2634),
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white54 : Colors.grey.shade600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  int _getJobcardCount(JobcardState state) {
-    if (state.loading || state.error != null) return 0;
-    return state.items.length;
-  }
-
-  int _getPendingCount(JobcardState state) {
-    if (state.loading || state.error != null) return 0;
-    return state.items.cast<Jobcard>().where((j) {
-      final status = j.statusRow?['name']?.toString().toLowerCase() ?? j.status?.toLowerCase() ?? '';
-      return status.contains('pending') || status == '2' || status == '3';
-    }).length;
-  }
-
-  int _getCompletedCount(JobcardState state) {
-    if (state.loading || state.error != null) return 0;
-    return state.items.cast<Jobcard>().where((j) {
-      final status = j.statusRow?['name']?.toString().toLowerCase() ?? j.status?.toLowerCase() ?? '';
-      return status.contains('completed') || status.contains('done') || status == '1' || status == '4';
-    }).length;
-  }
-
   Future<void> _confirmDelete(Jobcard jobcard) async {
     final confirmed = await AppConfirmDialog.show(
       context: context,
       title: 'Delete Jobcard',
-      message: 'Are you sure you want to delete this jobcard? This action cannot be undone.',
-      messageColor:AppColors.black,
+      message:
+          'Are you sure you want to delete this jobcard? This action cannot be undone.',
+      messageColor: AppColors.black,
       confirmText: 'Delete',
       confirmColor: AppColors.error,
     );
@@ -463,9 +480,16 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     final res = await deleteUc.call(id: jobcard.id!);
     hideAppLoadingDialog(context);
     res.fold(
-      (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete jobcard: ${l is Exception ? l.toString() : '$l'}'))),
+      (l) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to delete jobcard: ${l is Exception ? l.toString() : '$l'}',
+          ),
+        ),
+      ),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jobcard deleted')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Jobcard deleted')));
         ref.read(jobcardNotifierProvider.notifier).loadJobcards();
       },
     );
@@ -476,101 +500,137 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
         ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+        padding: EdgeInsets.all(24.r),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Filter Jobcards',
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Filter Jobcards',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-              const SizedBox(height: 20),
-              _buildFilterOption('Status', 'All', Icons.flag_rounded),
-              _buildFilterOption('Date Range', 'Last 30 days', Icons.date_range_rounded),
-              _buildFilterOption('Service', 'All services', Icons.build_rounded),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        text: 'Reset',
-                        onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.outline,
-                        size: AppButtonSize.medium,
+              ],
+            ),
+            SizedBox(height: 20.h),
+            Text(
+              'Status',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: [
+                _buildFilterChip('All', true, isDark),
+                _buildFilterChip('Open', false, isDark),
+                _buildFilterChip('In Progress', false, isDark),
+                _buildFilterChip('Completed', false, isDark),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            Text(
+              'Date Range',
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 12.h),
+            _buildDateOption('Today', isDark),
+            _buildDateOption('This Week', isDark),
+            _buildDateOption('This Month', isDark),
+            SizedBox(height: 24.h),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey,
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        text: 'Apply',
-                        onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.primary,
-                        size: AppButtonSize.medium,
+                    child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                  ],
+                    child: Text('Apply', style: TextStyle(fontSize: 14.sp)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterOption(String label, String value, IconData icon) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildFilterChip(String label, bool isSelected, bool isDark) {
+    return FilterChip(
+      label: Text(label, style: TextStyle(fontSize: 13.sp)),
+      selected: isSelected,
+      onSelected: (_) {},
+      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
+      selectedColor: AppColors.primary.withOpacity(0.2),
+      checkmarkColor: AppColors.primary,
+      labelStyle: TextStyle(
+        color: isSelected
+            ? AppColors.primary
+            : (isDark ? Colors.white70 : Colors.grey.shade700),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 13.sp,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20.r),
+        side: BorderSide(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? Colors.white24 : Colors.grey.shade300),
+        ),
+      ),
+    );
+  }
 
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: AppColors.primary),
+  Widget _buildDateOption(String label, bool isDark) {
+    return RadioListTile<String>(
+      title: Text(label, style: TextStyle(fontSize: 14.sp)),
+      value: label,
+      groupValue: 'Today',
+      onChanged: (_) {},
+      activeColor: AppColors.primary,
+      contentPadding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.r),
       ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: isDark ? Colors.white : const Color(0xFF1A2634),
-        ),
-      ),
-      subtitle: Text(
-        value,
-        style: TextStyle(
-          fontSize: 12,
-          color: isDark ? Colors.white54 : Colors.grey.shade600,
-        ),
-      ),
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: isDark ? Colors.white38 : Colors.grey.shade400,
-      ),
-      onTap: () {},
     );
   }
 }

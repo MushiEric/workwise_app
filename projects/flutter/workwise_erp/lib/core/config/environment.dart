@@ -84,7 +84,6 @@ class EnvConfig {
           cacheTtlSeconds: 3600,
         );
       case AppEnvironment.staging:
-      default:
         return const EnvConfig._(
           env: AppEnvironment.staging,
           baseUrl: 'https://staging.workwise.africa/api',
@@ -96,5 +95,10 @@ class EnvConfig {
           cacheTtlSeconds: 300,
         );
     }
+
+    // The switch above is exhaustive, but Dart requires a return after it
+    // because the analyzer can't guarantee `activeEnv` corresponds to a
+    // known enum value. Throwing here prevents null from being returned.
+    throw StateError('Unsupported environment: $activeEnv');
   }
 }

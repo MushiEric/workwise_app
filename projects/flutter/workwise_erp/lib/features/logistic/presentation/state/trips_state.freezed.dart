@@ -80,6 +80,9 @@ class _$TripsStateCopyWithImpl<$Res, $Val extends TripsState>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -98,14 +101,20 @@ class __$$InitialImplCopyWithImpl<$Res>
     _$InitialImpl _value,
     $Res Function(_$InitialImpl) _then,
   ) : super(_value, _then);
+
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
+
 class _$InitialImpl implements _Initial {
   const _$InitialImpl();
 
   @override
-  String toString() => 'TripsState.initial()';
+  String toString() {
+    return 'TripsState.initial()';
+  }
 
   @override
   bool operator ==(Object other) {
@@ -123,7 +132,9 @@ class _$InitialImpl implements _Initial {
     required TResult Function() loading,
     required TResult Function(List<Trip> trips) loaded,
     required TResult Function(String message) error,
-  }) => initial();
+  }) {
+    return initial();
+  }
 
   @override
   @optionalTypeArgs
@@ -132,7 +143,9 @@ class _$InitialImpl implements _Initial {
     TResult? Function()? loading,
     TResult? Function(List<Trip> trips)? loaded,
     TResult? Function(String message)? error,
-  }) => initial?.call();
+  }) {
+    return initial?.call();
+  }
 
   @override
   @optionalTypeArgs
@@ -143,7 +156,9 @@ class _$InitialImpl implements _Initial {
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
-    if (initial != null) return initial();
+    if (initial != null) {
+      return initial();
+    }
     return orElse();
   }
 
@@ -154,7 +169,9 @@ class _$InitialImpl implements _Initial {
     required TResult Function(_Loading value) loading,
     required TResult Function(_Loaded value) loaded,
     required TResult Function(_Error value) error,
-  }) => initial(this);
+  }) {
+    return initial(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -163,7 +180,9 @@ class _$InitialImpl implements _Initial {
     TResult? Function(_Loading value)? loading,
     TResult? Function(_Loaded value)? loaded,
     TResult? Function(_Error value)? error,
-  }) => initial?.call(this);
+  }) {
+    return initial?.call(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -174,7 +193,9 @@ class _$InitialImpl implements _Initial {
     TResult Function(_Error value)? error,
     required TResult orElse(),
   }) {
-    if (initial != null) return initial(this);
+    if (initial != null) {
+      return initial(this);
+    }
     return orElse();
   }
 }
@@ -199,14 +220,20 @@ class __$$LoadingImplCopyWithImpl<$Res>
     _$LoadingImpl _value,
     $Res Function(_$LoadingImpl) _then,
   ) : super(_value, _then);
+
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
+
 class _$LoadingImpl implements _Loading {
   const _$LoadingImpl();
 
   @override
-  String toString() => 'TripsState.loading()';
+  String toString() {
+    return 'TripsState.loading()';
+  }
 
   @override
   bool operator ==(Object other) {
@@ -224,7 +251,9 @@ class _$LoadingImpl implements _Loading {
     required TResult Function() loading,
     required TResult Function(List<Trip> trips) loaded,
     required TResult Function(String message) error,
-  }) => loading();
+  }) {
+    return loading();
+  }
 
   @override
   @optionalTypeArgs
@@ -233,7 +262,9 @@ class _$LoadingImpl implements _Loading {
     TResult? Function()? loading,
     TResult? Function(List<Trip> trips)? loaded,
     TResult? Function(String message)? error,
-  }) => loading?.call();
+  }) {
+    return loading?.call();
+  }
 
   @override
   @optionalTypeArgs
@@ -244,7 +275,9 @@ class _$LoadingImpl implements _Loading {
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
-    if (loading != null) return loading();
+    if (loading != null) {
+      return loading();
+    }
     return orElse();
   }
 
@@ -255,7 +288,9 @@ class _$LoadingImpl implements _Loading {
     required TResult Function(_Loading value) loading,
     required TResult Function(_Loaded value) loaded,
     required TResult Function(_Error value) error,
-  }) => loading(this);
+  }) {
+    return loading(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -264,7 +299,9 @@ class _$LoadingImpl implements _Loading {
     TResult? Function(_Loading value)? loading,
     TResult? Function(_Loaded value)? loaded,
     TResult? Function(_Error value)? error,
-  }) => loading?.call(this);
+  }) {
+    return loading?.call(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -275,7 +312,9 @@ class _$LoadingImpl implements _Loading {
     TResult Function(_Error value)? error,
     required TResult orElse(),
   }) {
-    if (loading != null) return loading(this);
+    if (loading != null) {
+      return loading(this);
+    }
     return orElse();
   }
 }
@@ -303,6 +342,8 @@ class __$$LoadedImplCopyWithImpl<$Res>
     $Res Function(_$LoadedImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({Object? trips = null}) {
@@ -318,6 +359,7 @@ class __$$LoadedImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
+
 class _$LoadedImpl implements _Loaded {
   const _$LoadedImpl(final List<Trip> trips) : _trips = trips;
 
@@ -330,7 +372,9 @@ class _$LoadedImpl implements _Loaded {
   }
 
   @override
-  String toString() => 'TripsState.loaded(trips: $trips)';
+  String toString() {
+    return 'TripsState.loaded(trips: $trips)';
+  }
 
   @override
   bool operator ==(Object other) {
@@ -344,6 +388,8 @@ class _$LoadedImpl implements _Loaded {
   int get hashCode =>
       Object.hash(runtimeType, const DeepCollectionEquality().hash(_trips));
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
@@ -357,7 +403,9 @@ class _$LoadedImpl implements _Loaded {
     required TResult Function() loading,
     required TResult Function(List<Trip> trips) loaded,
     required TResult Function(String message) error,
-  }) => loaded(trips);
+  }) {
+    return loaded(trips);
+  }
 
   @override
   @optionalTypeArgs
@@ -366,7 +414,9 @@ class _$LoadedImpl implements _Loaded {
     TResult? Function()? loading,
     TResult? Function(List<Trip> trips)? loaded,
     TResult? Function(String message)? error,
-  }) => loaded?.call(trips);
+  }) {
+    return loaded?.call(trips);
+  }
 
   @override
   @optionalTypeArgs
@@ -377,7 +427,9 @@ class _$LoadedImpl implements _Loaded {
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
-    if (loaded != null) return loaded(trips);
+    if (loaded != null) {
+      return loaded(trips);
+    }
     return orElse();
   }
 
@@ -388,7 +440,9 @@ class _$LoadedImpl implements _Loaded {
     required TResult Function(_Loading value) loading,
     required TResult Function(_Loaded value) loaded,
     required TResult Function(_Error value) error,
-  }) => loaded(this);
+  }) {
+    return loaded(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -397,7 +451,9 @@ class _$LoadedImpl implements _Loaded {
     TResult? Function(_Loading value)? loading,
     TResult? Function(_Loaded value)? loaded,
     TResult? Function(_Error value)? error,
-  }) => loaded?.call(this);
+  }) {
+    return loaded?.call(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -408,7 +464,9 @@ class _$LoadedImpl implements _Loaded {
     TResult Function(_Error value)? error,
     required TResult orElse(),
   }) {
-    if (loaded != null) return loaded(this);
+    if (loaded != null) {
+      return loaded(this);
+    }
     return orElse();
   }
 }
@@ -418,6 +476,8 @@ abstract class _Loaded implements TripsState {
 
   List<Trip> get trips;
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$LoadedImplCopyWith<_$LoadedImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -442,6 +502,8 @@ class __$$ErrorImplCopyWithImpl<$Res>
     $Res Function(_$ErrorImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({Object? message = null}) {
@@ -457,6 +519,7 @@ class __$$ErrorImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
+
 class _$ErrorImpl implements _Error {
   const _$ErrorImpl(this.message);
 
@@ -464,7 +527,9 @@ class _$ErrorImpl implements _Error {
   final String message;
 
   @override
-  String toString() => 'TripsState.error(message: $message)';
+  String toString() {
+    return 'TripsState.error(message: $message)';
+  }
 
   @override
   bool operator ==(Object other) {
@@ -477,6 +542,8 @@ class _$ErrorImpl implements _Error {
   @override
   int get hashCode => Object.hash(runtimeType, message);
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
@@ -490,7 +557,9 @@ class _$ErrorImpl implements _Error {
     required TResult Function() loading,
     required TResult Function(List<Trip> trips) loaded,
     required TResult Function(String message) error,
-  }) => error(message);
+  }) {
+    return error(message);
+  }
 
   @override
   @optionalTypeArgs
@@ -499,7 +568,9 @@ class _$ErrorImpl implements _Error {
     TResult? Function()? loading,
     TResult? Function(List<Trip> trips)? loaded,
     TResult? Function(String message)? error,
-  }) => error?.call(message);
+  }) {
+    return error?.call(message);
+  }
 
   @override
   @optionalTypeArgs
@@ -510,7 +581,9 @@ class _$ErrorImpl implements _Error {
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
-    if (error != null) return error(message);
+    if (error != null) {
+      return error(message);
+    }
     return orElse();
   }
 
@@ -521,7 +594,9 @@ class _$ErrorImpl implements _Error {
     required TResult Function(_Loading value) loading,
     required TResult Function(_Loaded value) loaded,
     required TResult Function(_Error value) error,
-  }) => error(this);
+  }) {
+    return error(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -530,7 +605,9 @@ class _$ErrorImpl implements _Error {
     TResult? Function(_Loading value)? loading,
     TResult? Function(_Loaded value)? loaded,
     TResult? Function(_Error value)? error,
-  }) => error?.call(this);
+  }) {
+    return error?.call(this);
+  }
 
   @override
   @optionalTypeArgs
@@ -541,7 +618,9 @@ class _$ErrorImpl implements _Error {
     TResult Function(_Error value)? error,
     required TResult orElse(),
   }) {
-    if (error != null) return error(this);
+    if (error != null) {
+      return error(this);
+    }
     return orElse();
   }
 }
@@ -551,6 +630,8 @@ abstract class _Error implements TripsState {
 
   String get message;
 
+  /// Create a copy of TripsState
+  /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ErrorImplCopyWith<_$ErrorImpl> get copyWith =>
       throw _privateConstructorUsedError;

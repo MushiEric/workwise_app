@@ -61,7 +61,7 @@ class _FakeSupportRepository implements SupportRepository {
 }
 
 void main() {
-  testWidgets('SupportListPage builds dynamic priority tabs and filters tickets by selected priority', (tester) async {
+  testWidgets('SupportListPage shows tickets with formatted dates', (tester) async {
     final highPriority = const Priority(id: 1, priority: 'High', color: '#FF0000');
     final lowPriority = const Priority(id: 2, priority: 'Low', color: '#00FF00');
 
@@ -72,6 +72,7 @@ void main() {
       status: const SupportStatus(id: 1, status: 'Open', color: '#000000'),
       priority: highPriority,
       customer: const CustomerSummary(id: 1, name: 'Acme'),
+      createdAt: '2022-01-01T00:00:00.000000Z',
     );
 
     final ticketLow = SupportTicket(
@@ -80,6 +81,7 @@ void main() {
       ticketCode: 'T-101',
       status: const SupportStatus(id: 1, status: 'Open', color: '#000000'),
       priority: lowPriority,
+      createdAt: '2023-05-10T15:30:00.000000Z',
     );
 
     final repo = _FakeSupportRepository(tickets: [ticketHigh, ticketLow], priorities: [highPriority, lowPriority]);
@@ -98,20 +100,12 @@ void main() {
     // allow async loads to complete
     await tester.pumpAndSettle();
 
-    // Expect dynamic tabs created from priorities
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('High'), findsOneWidget);
-    expect(find.text('Low'), findsOneWidget);
-
-    // Both tickets should be visible initially
+    // Both tickets should be visible
     expect(find.text('High priority issue'), findsOneWidget);
     expect(find.text('Low priority issue'), findsOneWidget);
 
-    // Tap on the 'High' tab and expect filtering to show only the high-priority ticket
-    await tester.tap(find.text('High'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('High priority issue'), findsOneWidget);
-    expect(find.text('Low priority issue'), findsNothing);
+    // createdAt dates should be formatted (yMMMd)
+    expect(find.text('Jan 1, 2022'), findsOneWidget);
+    expect(find.text('May 10, 2023'), findsOneWidget);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_modal.dart';
@@ -252,7 +253,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       Center(
                         child: Image.asset(
                           'assets/images/logo.png',
-                          height: 100,
+                          height: 40,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -282,13 +283,14 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                               controller: _emailCtrl,
                               labelText: 'Email Address',
                               keyboardType: TextInputType.emailAddress,
-                              prefixIcon: const Icon(Icons.email_outlined),
+                              prefixIcon: const Icon(LucideIcons.mail),
                               validator: (v) => (v == null || v.isEmpty) ? 'Email is required' : null,
                             ),
                             const SizedBox(height: 16),
 
                             AppPasswordField(
                               controller: _passCtrl,
+                            
                               labelText: 'Password',
                               validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
                             ),
@@ -334,8 +336,12 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                                         // ),
                                       )
                                     : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+                                   
+
                               ),
                             ),
+                             _buildSwitchToWorkSpace(context),
                           ],
                         ),
                       ),
@@ -387,3 +393,28 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     );
   }
 }
+  Widget _buildSwitchToWorkSpace(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/workspace');
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+          minimumSize: const Size(50, 50),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          'Switch To Workspace',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white70 : AppColors.primary,
+          ),
+        ),
+      ),]
+    );
+  }

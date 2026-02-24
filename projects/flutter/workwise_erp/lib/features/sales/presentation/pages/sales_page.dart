@@ -93,17 +93,10 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                 },
               ),
             IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.filter_list_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
+              icon: Icon(
+                LucideIcons.filter,  
+                size: 20,
+                color: isDark ? Colors.white70 : AppColors.white,
               ),
               onPressed: _showFilterOptions,
             ),

@@ -74,12 +74,7 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
                 });
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded),
-              tooltip: 'Refresh',
-              onPressed: () =>
-                  ref.read(customersNotifierProvider.notifier).loadCustomers(),
-            ),
+            
           ],
           if (_tab == 1)
             IconButton(

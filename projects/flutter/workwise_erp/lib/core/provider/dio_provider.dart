@@ -36,7 +36,21 @@ final dioProvider = Provider<Dio>((ref) {
 
   // tenant-aware baseUrl (runtime). Tenant must be set at app bootstrap.
   final tenant = ref.watch(tenantProvider);
-  if (tenant == null) throw UninitializedTenantException();
+  if (tenant == null) {
+    // When the workspace is being switched the provider tree will re-evaluate
+    // while the tenant is temporarily null. We don't want that to trigger an
+    // uncaught exception during widget rebuilds; instead return a lightweight
+    // Dio instance that will throw on any network call. This mirrors the
+    // previous behaviour but defers the failure until the first request.
+    final stub = Dio();
+    stub.interceptors.add(InterceptorsWrapper(onRequest: (opts, handler) {
+      handler.reject(DioException(
+        requestOptions: opts,
+        error: UninitializedTenantException(),
+      ));
+    }));
+    return stub;
+  }
 
   final options = BaseOptions(
     baseUrl: _normalizeBaseUrl(tenant.baseUrl),
