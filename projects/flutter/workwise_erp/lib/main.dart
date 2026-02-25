@@ -29,6 +29,7 @@ import 'features/inventory/presentation/pages/inventory_page.dart';
 import 'features/project/presentation/pages/project_page.dart';
 import 'features/documents/presentation/pages/documents_page.dart';
 import 'features/support/presentation/pages/support_list_page.dart';
+import 'features/support/presentation/pages/ai_chat_page.dart';
 import 'features/notification/presentation/pages/notifications_page.dart';
 import 'features/pfi/presentation/pages/pfi_page.dart';
 import 'features/hr/presentation/pages/hr_page.dart';
@@ -159,6 +160,7 @@ class Workwise extends ConsumerWidget {
           '/jobcards/settings': (context) => const JobcardSettingsPage(),
           '/documents': (context) => const DocumentPage(),
           '/support': (context) => const SupportListPage(),
+          '/support/ai': (context) => const AiChatPage(),
           '/notifications': (context) => const NotificationsPage(),
           '/hr': (context) => const HRPage(),
         },
