@@ -23,7 +23,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
   final _formKey = GlobalKey<FormState>();
   final _identifierCtrl = TextEditingController();
   final FocusNode _identifierFocus = FocusNode();
-  
+
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final Animation<Offset> _slideAnimation;
@@ -37,29 +37,25 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animations first
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    // Start animation after initialization
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -77,15 +73,17 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
     showAppLoadingDialog(context, message: 'Sending reset code...');
 
     final usecase = ref.read(forgotPasswordUseCaseProvider);
-    final res = await usecase.call(ForgotPasswordParams(emailOrPhone: identifier));
+    final res = await usecase.call(
+      ForgotPasswordParams(emailOrPhone: identifier),
+    );
 
     hideAppLoadingDialog(context);
 
     res.fold(
       (failure) {
         AppDialog.showError(
-          context: context, 
-          title: 'Request Failed', 
+          context: context,
+          title: 'Request Failed',
           message: failure.message,
         );
       },
@@ -93,11 +91,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
         AppDialog.showSuccess(
           context: context,
           title: 'Code Sent',
-          message: 'If an account exists, you will receive an OTP by email or SMS.\nPlease check your inbox or messages.',
+          message:
+              'If an account exists, you will receive an OTP by email or SMS.\nPlease check your inbox or messages.',
           buttonText: 'Verify OTP',
           onButtonPressed: () {
             Navigator.pop(context);
-            Navigator.pushNamed(context, '/forgot-password/verify', arguments: identifier);
+            Navigator.pushNamed(
+              context,
+              '/forgot-password/verify',
+              arguments: identifier,
+            );
           },
         );
       },
@@ -123,7 +126,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: 'Forgot Password',
           foregroundColor: AppColors.white,
@@ -152,36 +157,30 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                             return Transform.scale(
                               scale: value,
                               child: Container(
-                                width: 70,
-                                height: 70,
+                                width: 150,
+                                height: 150,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  // boxShadow: [
-                                  //   BoxShadow(
-                                  //     color: primaryColor.withOpacity(0.2),
-                                  //     // blurRadius: 2,
-                                  //     // offset: const Offset(0, 8),
-                                  //   ),
-                                  // ],
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(24),
                                   child: Image.asset(
                                     'assets/images/logo2.png',
-                                    
-                                    fit: BoxFit.contain,),
-                                  
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                             );
                           },
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Main Card
                         Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+                            color: isDark
+                                ? const Color(0xFF151A2E)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
@@ -201,33 +200,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                             padding: const EdgeInsets.all(32.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Gradient accent line
-                                // Container(
-                                //   height: 4,
-                                //   width: 60,
-                                //   decoration: BoxDecoration(
-                                //     gradient: LinearGradient(
-                                //       colors: [primaryColor, primaryColor.withOpacity(0.4)],
-                                //     ),
-                                //     borderRadius: BorderRadius.circular(2),
-                                //   ),
-                                // ),
-                                // const SizedBox(height: 20),
-                                
-                                // // Title
-                                // Text(
-                                //   'Reset Password',
-                                //   style: TextStyle(
-                                //     fontSize: 28,
-                                //     fontWeight: FontWeight.w700,
-                                //     color: isDark ? Colors.white : const Color(0xFF1A2634),
-                                //     letterSpacing: -0.5,
-                                //   ),
-                                // ),
-                                // const SizedBox(height: 8),
-                                
-                                // Description with animation
+                              children: [                              
                                 TweenAnimationBuilder<double>(
                                   duration: const Duration(milliseconds: 500),
                                   tween: Tween(begin: 0.0, end: 1.0),
@@ -243,149 +216,142 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                   },
                                   child: Row(
                                     children: [
-                                      // Icon(
-                                      //   LucideIcons.info,
-                                      //   size: 20,
-                                      //   color: primaryColor,
-                                      // ),
                                       const SizedBox(width: 12),
-                                      // Expanded(
-                                      //   child: Text(
-                                      //     'Enter your email or phone number. We\'ll send an OTP to verify your identity.',
-                                      //     style: TextStyle(
-                                      //       fontSize: 14,
-                                      //       height: 1.5,
-                                      //       color: isDark ? Colors.white70 : Colors.grey.shade700,
-                                      //     ),
-                                      //   ),
-                                      // ),
+                                  
                                     ],
                                   ),
                                 ),
-                                
+
                                 const SizedBox(height: 28),
 
                                 // Form
                                 Form(
                                   key: _formKey,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      // Email/Phone field with enhanced styling
                                       Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           AnimatedContainer(
-                                            duration: const Duration(milliseconds: 200),
-                                            padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                            duration: const Duration(
+                                              milliseconds: 200,
+                                            ),
+                                            padding: const EdgeInsets.only(
+                                              left: 4,
+                                              bottom: 8,
+                                            ),
                                             child: Text(
                                               'Email or Phone',
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
-                                                color: _identifierFocus.hasFocus 
-                                                    ? primaryColor 
-                                                    : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                                color: _identifierFocus.hasFocus
+                                                    ? primaryColor
+                                                    : (isDark
+                                                          ? Colors.white70
+                                                          : Colors
+                                                                .grey
+                                                                .shade700),
                                                 letterSpacing: 0.3,
                                               ),
                                             ),
                                           ),
-                                          AnimatedContainer(
-                                            duration: const Duration(milliseconds: 200),
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(16),
-                                              border: Border.all(
-                                                color: _identifierFocus.hasFocus
-                                                    ? primaryColor
-                                                    : (isDark ? Colors.white24 : Colors.grey.shade300),
-                                                width: _identifierFocus.hasFocus ? 2 : 1,
-                                              ),
-                                              boxShadow: _identifierFocus.hasFocus
-                                                  ? [
-                                                      BoxShadow(
-                                                        color: primaryColor.withOpacity(0.1),
-                                                        blurRadius: 12,
-                                                        offset: const Offset(0, 4),
-                                                      ),
-                                                    ]
-                                                  : null,
+                                          AppTextField(
+                                            controller: _identifierCtrl,
+                                            focusNode: _identifierFocus,
+                                            hintText: 'Email or phone number',
+                                            prefixIcon: Icon(
+                                              _identifierFocus.hasFocus
+                                                  ? LucideIcons.mail
+                                                  : LucideIcons.mail,
+                                              color: _identifierFocus.hasFocus
+                                                  ? primaryColor
+                                                  : (isDark
+                                                        ? Colors.white54
+                                                        : Colors
+                                                              .grey
+                                                              .shade500),
+                                              size: 20,
                                             ),
-                                            child: AppTextField(
-                                              controller: _identifierCtrl,
-                                              focusNode: _identifierFocus,
-                                              hintText: 'Email or phone number',
-                                              prefixIcon: Icon(
-                                                _identifierFocus.hasFocus
-                                                    ? LucideIcons.mail
-                                                    : LucideIcons.mail,
-                                                color: _identifierFocus.hasFocus
-                                                    ? primaryColor
-                                                    : (isDark ? Colors.white54 : Colors.grey.shade500),
-                                                size: 20,
-                                              ),
-                                              keyboardType: TextInputType.emailAddress,
-                                              validator: _validator,
-                                              // decoration: const InputDecoration(
-                                              //   border: InputBorder.none,
-                                              //   contentPadding: EdgeInsets.symmetric(
-                                              //     horizontal: 16,
-                                              //     vertical: 16,
-                                              //   ),
-                                              // ),
-                                            ),
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            validator: _validator,
+                                            
                                           ),
                                         ],
                                       ),
-                                      
+
                                       const SizedBox(height: 32),
-                                      
+
                                       // Submit button with animation
                                       TweenAnimationBuilder<double>(
-                                        duration: const Duration(milliseconds: 600),
+                                        duration: const Duration(
+                                          milliseconds: 600,
+                                        ),
                                         tween: Tween(begin: 0.0, end: 1.0),
                                         curve: Curves.easeOutCubic,
                                         builder: (context, value, child) {
                                           return Opacity(
                                             opacity: value,
                                             child: Transform.translate(
-                                              offset: Offset(0, 20 * (1 - value)),
+                                              offset: Offset(
+                                                0,
+                                                20 * (1 - value),
+                                              ),
                                               child: child,
                                             ),
                                           );
                                         },
                                         child: SizedBox(
                                           height: 54,
-                                          child: AppButton(
-                                            text: 'Send Reset Code',
-                                            textColor: AppColors.white,
+                                          child: ElevatedButton(
                                             onPressed: _submit,
-                                            variant: AppButtonVariant.primary,
-                                            size: AppButtonSize.large,
-                                            fullWidth: true,
-                                            
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  AppColors.primary,
+                                              foregroundColor: AppColors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              "Reset",
+                                              style: TextStyle(
+                                                color: AppColors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      
-                                      const SizedBox(height: 20),
-                                      
+
                                       // Back to login with enhanced styling
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             'Remember your password? ',
                                             style: TextStyle(
-                                              color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                              color: isDark
+                                                  ? Colors.white54
+                                                  : Colors.grey.shade600,
                                               fontSize: 14,
                                             ),
                                           ),
                                           TextButton(
-                                            onPressed: () => Navigator.pop(context),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
                                             style: TextButton.styleFrom(
                                               padding: EdgeInsets.zero,
                                               minimumSize: const Size(50, 30),
-                                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
                                               foregroundColor: primaryColor,
                                             ),
                                             child: Text(
@@ -406,19 +372,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Help text with animation
                         TweenAnimationBuilder<double>(
                           duration: const Duration(milliseconds: 700),
                           tween: Tween(begin: 0.0, end: 1.0),
                           curve: Curves.easeOut,
                           builder: (context, value, child) {
-                            return Opacity(
-                              opacity: value * 0.7,
-                              child: child,
-                            );
+                            return Opacity(opacity: value * 0.7, child: child);
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -426,7 +389,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                               Icon(
                                 LucideIcons.shield,
                                 size: 12,
-                                color: isDark ? Colors.white38 : Colors.grey.shade500,
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey.shade500,
                               ),
                               const SizedBox(width: 6),
                               // Text(

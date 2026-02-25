@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/provider/permission_provider.dart';
@@ -94,7 +95,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
               ),
             IconButton(
               icon: Icon(
-                LucideIcons.filter,  
+                LucideIcons.search,
                 size: 20,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),

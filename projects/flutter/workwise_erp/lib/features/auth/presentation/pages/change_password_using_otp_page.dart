@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workwise_erp/core/themes/app_colors.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/change_password_using_otp.dart';
-
+import 'package:workwise_erp/core/widgets/app_bar.dart';
 class ChangePasswordUsingOtpPage extends ConsumerStatefulWidget {
   const ChangePasswordUsingOtpPage({super.key});
 
@@ -72,10 +73,10 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Set New Password'), backgroundColor: isDark ? null : Colors.transparent, elevation: 0, foregroundColor: isDark ? null : const Color(0xFF1A2634)),
+      appBar: CustomAppBar(title: 'Set New Password', backgroundColor: AppColors.primary, foregroundColor: Colors.white),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -89,7 +90,7 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_identifier != null) Text('Resetting for: $_identifier', textAlign: TextAlign.center),
+                      // if (_identifier != null) Text('Resetting for: $_identifier', textAlign: TextAlign.center),
                       const SizedBox(height: 12),
                       Form(
                         key: _formKey,
@@ -98,13 +99,15 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
                           children: [
                             AppPasswordField(
                               controller: _passwordCtrl,
-                              labelText: 'New password',
+                              // labelText: 'New password',
+                              hintText: 'Enter new password',
                               validator: _passwordValidator,
                             ),
                             const SizedBox(height: 12),
                             AppPasswordField(
                               controller: _confirmCtrl,
                               labelText: 'Confirm password',
+                              hintText: "Confirm  Password",
                               validator: (v) => v != _passwordCtrl.text ? 'Passwords do not match' : null,
                             ),
                             const SizedBox(height: 20),
@@ -113,7 +116,7 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
                               child: ElevatedButton(
                                 onPressed: _submit,
                                 style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                child: const Text('Set password', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: const Text('Set password', style: TextStyle(fontWeight: FontWeight.bold,color: AppColors.white)),
                               ),
                             ),
                           ],

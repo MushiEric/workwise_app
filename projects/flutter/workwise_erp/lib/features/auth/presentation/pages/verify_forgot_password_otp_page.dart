@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workwise_erp/core/themes/app_colors.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/verify_forgot_password_otp.dart';
+import 'package:workwise_erp/core/widgets/app_bar.dart';
 
 class VerifyForgotPasswordOtpPage extends ConsumerStatefulWidget {
   const VerifyForgotPasswordOtpPage({super.key});
@@ -62,10 +64,10 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Reset Code'), backgroundColor: isDark ? null : Colors.transparent, elevation: 0, foregroundColor: isDark ? null : const Color(0xFF1A2634)),
+      appBar: CustomAppBar(title:'Verify Reset Code', backgroundColor:AppColors.primary, foregroundColor: Colors.white),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -106,8 +108,8 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                               height: 52,
                               child: ElevatedButton(
                                 onPressed: _submit,
-                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                child: const Text('Verify', style: TextStyle(fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), backgroundColor: AppColors.primary),
+                                child: const Text('Verify', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                               ),
                             ),
                           ],
