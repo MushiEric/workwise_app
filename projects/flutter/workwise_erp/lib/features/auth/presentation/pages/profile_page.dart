@@ -10,9 +10,9 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
-import '../state/auth_state.dart';
+// import '../state/auth_state.dart';
 import '../../../../core/provider/tenant_provider.dart';
-import '../../../../core/storage/tenant_local_data_source.dart';
+// import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -452,47 +452,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1A2634),
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white54 : Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+ 
 
   Widget _buildProfileForm(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
     return Container(
@@ -713,7 +673,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     required Color color,
     required VoidCallback onTap,
     required bool isDark,
-    bool showBorder = true,
+    // bool showBorder = true,
   }) {
     return Material(
       color: Colors.transparent,

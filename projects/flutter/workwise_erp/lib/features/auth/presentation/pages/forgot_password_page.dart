@@ -156,20 +156,21 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                 height: 70,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryColor.withOpacity(0.2),
-                                      // blurRadius: 2,
-                                      // offset: const Offset(0, 8),
-                                    ),
-                                  ],
+                                  // boxShadow: [
+                                  //   BoxShadow(
+                                  //     color: primaryColor.withOpacity(0.2),
+                                  //     // blurRadius: 2,
+                                  //     // offset: const Offset(0, 8),
+                                  //   ),
+                                  // ],
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(20),
                                   child: Image.asset(
                                     'assets/images/logo2.png',
-                                    fit: BoxFit.contain,
-                                  ),
+                                    
+                                    fit: BoxFit.contain,),
+                                  
                                 ),
                               ),
                             );
@@ -202,29 +203,29 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Gradient accent line
-                                Container(
-                                  height: 4,
-                                  width: 60,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [primaryColor, primaryColor.withOpacity(0.4)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
+                                // Container(
+                                //   height: 4,
+                                //   width: 60,
+                                //   decoration: BoxDecoration(
+                                //     gradient: LinearGradient(
+                                //       colors: [primaryColor, primaryColor.withOpacity(0.4)],
+                                //     ),
+                                //     borderRadius: BorderRadius.circular(2),
+                                //   ),
+                                // ),
+                                // const SizedBox(height: 20),
                                 
-                                // Title
-                                Text(
-                                  'Reset Password',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
+                                // // Title
+                                // Text(
+                                //   'Reset Password',
+                                //   style: TextStyle(
+                                //     fontSize: 28,
+                                //     fontWeight: FontWeight.w700,
+                                //     color: isDark ? Colors.white : const Color(0xFF1A2634),
+                                //     letterSpacing: -0.5,
+                                //   ),
+                                // ),
+                                // const SizedBox(height: 8),
                                 
                                 // Description with animation
                                 TweenAnimationBuilder<double>(
@@ -240,36 +241,25 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                       ),
                                     );
                                   },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: primaryColor.withOpacity(0.1),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          LucideIcons.info,
-                                          size: 20,
-                                          color: primaryColor,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        // Expanded(
-                                        //   child: Text(
-                                        //     'Enter your email or phone number. We\'ll send an OTP to verify your identity.',
-                                        //     style: TextStyle(
-                                        //       fontSize: 14,
-                                        //       height: 1.5,
-                                        //       color: isDark ? Colors.white70 : Colors.grey.shade700,
-                                        //     ),
-                                        //   ),
-                                        // ),
-                                      ],
-                                    ),
+                                  child: Row(
+                                    children: [
+                                      // Icon(
+                                      //   LucideIcons.info,
+                                      //   size: 20,
+                                      //   color: primaryColor,
+                                      // ),
+                                      const SizedBox(width: 12),
+                                      // Expanded(
+                                      //   child: Text(
+                                      //     'Enter your email or phone number. We\'ll send an OTP to verify your identity.',
+                                      //     style: TextStyle(
+                                      //       fontSize: 14,
+                                      //       height: 1.5,
+                                      //       color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                    ],
                                   ),
                                 ),
                                 
@@ -323,7 +313,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                             child: AppTextField(
                                               controller: _identifierCtrl,
                                               focusNode: _identifierFocus,
-                                              hintText: 'your@email.com or +1234567890',
+                                              hintText: 'Email or phone number',
                                               prefixIcon: Icon(
                                                 _identifierFocus.hasFocus
                                                     ? LucideIcons.mail
@@ -372,14 +362,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                             variant: AppButtonVariant.primary,
                                             size: AppButtonSize.large,
                                             fullWidth: true,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(0.2),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Text("Reset")
-                                            ),
+                                            
                                           ),
                                         ),
                                       ),
