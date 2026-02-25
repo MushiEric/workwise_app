@@ -211,4 +211,103 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotConnect =>
       'Could not connect to workspace. Please check and try again.';
+
+  @override
+  String get profileTitle => 'My Profile';
+
+  @override
+  String get personalInformation => 'Personal Information';
+
+  @override
+  String get fullName => 'Full Name';
+
+  @override
+  String get phoneNumber => 'Phone Number';
+
+  @override
+  String get pleaseEnterName => 'Please enter name';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get profileUpdatedSuccess =>
+      'Your profile has been updated successfully.';
+
+  @override
+  String get updateFailed => 'Update Failed';
+
+  @override
+  String get tryAgain => 'Try Again';
+
+  @override
+  String memberSince(String date) {
+    return 'Member since $date';
+  }
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get sound => 'Sound';
+
+  @override
+  String get switchWorkspace => 'Switch Workspace';
+
+  @override
+  String get changeWorkspaceSubtitle => 'Change workspace / tenant';
+
+  @override
+  String get switchWorkspaceMessage =>
+      'Switching workspace will sign you out and require entering a new workspace URL. Continue?';
+
+  @override
+  String get switchButton => 'Switch';
+
+  @override
+  String get signOut => 'Sign Out';
+
+  @override
+  String get signOutMessage =>
+      'Are you sure you want to sign out of your account?';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get changePasswordSubtitle => 'Update your password regularly';
+
+  @override
+  String get confirmNewPassword => 'Confirm New Password';
+
+  @override
+  String get passwordUpdated => 'Password Updated';
+
+  @override
+  String get passwordUpdatedMessage =>
+      'Your password has been changed successfully.';
+
+  @override
+  String get notificationSettings => 'Notification Settings';
+
+  @override
+  String get manageNotifications => 'Manage your notifications';
+
+  @override
+  String get updateProfilePhoto => 'Update Profile Photo';
+
+  @override
+  String get choosePhotoFromDevice => 'Choose a photo from your device';
+
+  @override
+  String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get pickImageFromPhotos => 'Pick an image from your photos';
+
+  @override
+  String get removeSelectedPhoto => 'Remove Selected Photo';
 }

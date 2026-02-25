@@ -483,6 +483,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not connect to workspace. Please check and try again.'**
   String get couldNotConnect;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Profile'**
+  String get profileTitle;
+
+  /// No description provided for @personalInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInformation;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get fullName;
+
+  /// No description provided for @phoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneNumber;
+
+  /// No description provided for @pleaseEnterName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter name'**
+  String get pleaseEnterName;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @profileUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile has been updated successfully.'**
+  String get profileUpdatedSuccess;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Failed'**
+  String get updateFailed;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
+  /// No description provided for @memberSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Member since {date}'**
+  String memberSince(String date);
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @sound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get sound;
+
+  /// No description provided for @switchWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Workspace'**
+  String get switchWorkspace;
+
+  /// No description provided for @changeWorkspaceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change workspace / tenant'**
+  String get changeWorkspaceSubtitle;
+
+  /// No description provided for @switchWorkspaceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching workspace will sign you out and require entering a new workspace URL. Continue?'**
+  String get switchWorkspaceMessage;
+
+  /// No description provided for @switchButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchButton;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get signOut;
+
+  /// No description provided for @signOutMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out of your account?'**
+  String get signOutMessage;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePassword;
+
+  /// No description provided for @changePasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your password regularly'**
+  String get changePasswordSubtitle;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New Password'**
+  String get confirmNewPassword;
+
+  /// No description provided for @passwordUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Password Updated'**
+  String get passwordUpdated;
+
+  /// No description provided for @passwordUpdatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password has been changed successfully.'**
+  String get passwordUpdatedMessage;
+
+  /// No description provided for @notificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification Settings'**
+  String get notificationSettings;
+
+  /// No description provided for @manageNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your notifications'**
+  String get manageNotifications;
+
+  /// No description provided for @updateProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Profile Photo'**
+  String get updateProfilePhoto;
+
+  /// No description provided for @choosePhotoFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo from your device'**
+  String get choosePhotoFromDevice;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @pickImageFromPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an image from your photos'**
+  String get pickImageFromPhotos;
+
+  /// No description provided for @removeSelectedPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Selected Photo'**
+  String get removeSelectedPhoto;
 }
 
 class _AppLocalizationsDelegate

@@ -74,5 +74,42 @@
   "continueButton": "Continue",
   "termsAgreement": "By continuing, you agree to Workwise Terms of Service.",
   "signInToWorkspace": "Sign in to your workspace",
-  "couldNotConnect": "Could not connect to workspace. Please check and try again."
+  "couldNotConnect": "Could not connect to workspace. Please check and try again.",
+
+  "profileTitle": "My Profile",
+  "personalInformation": "Personal Information",
+  "fullName": "Full Name",
+  "phoneNumber": "Phone Number",
+  "pleaseEnterName": "Please enter name",
+  "saveChanges": "Save Changes",
+  "profileUpdatedSuccess": "Your profile has been updated successfully.",
+  "updateFailed": "Update Failed",
+  "tryAgain": "Try Again",
+  "memberSince": "Member since {date}",
+  "@memberSince": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "darkMode": "Dark Mode",
+  "language": "Language",
+  "sound": "Sound",
+  "switchWorkspace": "Switch Workspace",
+  "changeWorkspaceSubtitle": "Change workspace / tenant",
+  "switchWorkspaceMessage": "Switching workspace will sign you out and require entering a new workspace URL. Continue?",
+  "switchButton": "Switch",
+  "signOut": "Sign Out",
+  "signOutMessage": "Are you sure you want to sign out of your account?",
+  "changePassword": "Change Password",
+  "changePasswordSubtitle": "Update your password regularly",
+  "confirmNewPassword": "Confirm New Password",
+  "passwordUpdated": "Password Updated",
+  "passwordUpdatedMessage": "Your password has been changed successfully.",
+  "notificationSettings": "Notification Settings",
+  "manageNotifications": "Manage your notifications",
+  "updateProfilePhoto": "Update Profile Photo",
+  "choosePhotoFromDevice": "Choose a photo from your device",
+  "chooseFromGallery": "Choose from Gallery",
+  "pickImageFromPhotos": "Pick an image from your photos",
+  "removeSelectedPhoto": "Remove Selected Photo"
 }

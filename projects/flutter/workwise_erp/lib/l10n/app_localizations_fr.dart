@@ -213,4 +213,105 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get couldNotConnect =>
       'Impossible de se connecter à l\'espace de travail. Veuillez vérifier et réessayer.';
+
+  @override
+  String get profileTitle => 'Mon Profil';
+
+  @override
+  String get personalInformation => 'Informations Personnelles';
+
+  @override
+  String get fullName => 'Nom Complet';
+
+  @override
+  String get phoneNumber => 'Numéro de Téléphone';
+
+  @override
+  String get pleaseEnterName => 'Veuillez entrer votre nom';
+
+  @override
+  String get saveChanges => 'Enregistrer les Modifications';
+
+  @override
+  String get profileUpdatedSuccess =>
+      'Votre profil a été mis à jour avec succès.';
+
+  @override
+  String get updateFailed => 'Échec de la mise à jour';
+
+  @override
+  String get tryAgain => 'Réessayer';
+
+  @override
+  String memberSince(String date) {
+    return 'Membre depuis $date';
+  }
+
+  @override
+  String get darkMode => 'Mode Sombre';
+
+  @override
+  String get language => 'Langue';
+
+  @override
+  String get sound => 'Son';
+
+  @override
+  String get switchWorkspace => 'Changer d\'Espace de Travail';
+
+  @override
+  String get changeWorkspaceSubtitle =>
+      'Changer d\'espace de travail / locataire';
+
+  @override
+  String get switchWorkspaceMessage =>
+      'Changer d\'espace de travail vous déconnectera et nécessitera une nouvelle URL. Continuer?';
+
+  @override
+  String get switchButton => 'Changer';
+
+  @override
+  String get signOut => 'Se Déconnecter';
+
+  @override
+  String get signOutMessage =>
+      'Êtes-vous sûr de vouloir vous déconnecter de votre compte?';
+
+  @override
+  String get changePassword => 'Changer le Mot de Passe';
+
+  @override
+  String get changePasswordSubtitle =>
+      'Mettez à jour votre mot de passe régulièrement';
+
+  @override
+  String get confirmNewPassword => 'Confirmer le Nouveau Mot de Passe';
+
+  @override
+  String get passwordUpdated => 'Mot de Passe Mis à Jour';
+
+  @override
+  String get passwordUpdatedMessage =>
+      'Votre mot de passe a été modifié avec succès. Veuillez vous connecter avec votre nouveau mot de passe.';
+
+  @override
+  String get notificationSettings => 'Paramètres de Notification';
+
+  @override
+  String get manageNotifications => 'Gérez vos notifications';
+
+  @override
+  String get updateProfilePhoto => 'Mettre à Jour la Photo de Profil';
+
+  @override
+  String get choosePhotoFromDevice => 'Choisir une photo de votre appareil';
+
+  @override
+  String get chooseFromGallery => 'Choisir depuis la Galerie';
+
+  @override
+  String get pickImageFromPhotos => 'Sélectionnez une image de vos photos';
+
+  @override
+  String get removeSelectedPhoto => 'Supprimer la Photo Sélectionnée';
 }

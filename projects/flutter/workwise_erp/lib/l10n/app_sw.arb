@@ -74,5 +74,42 @@
   "continueButton": "Endelea",
   "termsAgreement": "Kwa kuendelea, unakubali Masharti ya Huduma ya Workwise.",
   "signInToWorkspace": "Ingia kwenye eneo lako la kazi",
-  "couldNotConnect": "Haikuweza kuunganisha eneo la kazi. Tafadhali angalia na ujaribu tena."
+  "couldNotConnect": "Haikuweza kuunganisha eneo la kazi. Tafadhali angalia na ujaribu tena.",
+
+  "profileTitle": "Wasifu Wangu",
+  "personalInformation": "Taarifa za Kibinafsi",
+  "fullName": "Jina Kamili",
+  "phoneNumber": "Nambari ya Simu",
+  "pleaseEnterName": "Tafadhali ingiza jina",
+  "saveChanges": "Hifadhi Mabadiliko",
+  "profileUpdatedSuccess": "Wasifu wako umesasishwa kwa mafanikio.",
+  "updateFailed": "Sasisha Imeshindwa",
+  "tryAgain": "Jaribu Tena",
+  "memberSince": "Mwanachama tangu {date}",
+  "@memberSince": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "darkMode": "Hali Nyeusi",
+  "language": "Lugha",
+  "sound": "Sauti",
+  "switchWorkspace": "Badilisha Eneo la Kazi",
+  "changeWorkspaceSubtitle": "Badilisha eneo la kazi / mkanganyiko",
+  "switchWorkspaceMessage": "Kubadilisha eneo la kazi kutakusajilisha nje na kuhitaji URL mpya. Endelea?",
+  "switchButton": "Badilisha",
+  "signOut": "Toka",
+  "signOutMessage": "Je, una uhakika unataka kutoka kwenye akaunti yako?",
+  "changePassword": "Badilisha Nenosiri",
+  "changePasswordSubtitle": "Sasisha nenosiri lako mara kwa mara",
+  "confirmNewPassword": "Thibitisha Nenosiri Jipya",
+  "passwordUpdated": "Nenosiri Imesasishwa",
+  "passwordUpdatedMessage": "Nenosiri lako limebadilishwa kwa mafanikio. Tafadhali ingia na nenosiri jipya.",
+  "notificationSettings": "Mipangilio ya Arifa",
+  "manageNotifications": "Simamia arifa zako",
+  "updateProfilePhoto": "Sasisha Picha ya Wasifu",
+  "choosePhotoFromDevice": "Chagua picha kutoka kwa kifaa chako",
+  "chooseFromGallery": "Chagua kutoka Galari",
+  "pickImageFromPhotos": "Chagua picha kutoka kwa picha zako",
+  "removeSelectedPhoto": "Ondoa Picha Iliyochaguliwa"
 }

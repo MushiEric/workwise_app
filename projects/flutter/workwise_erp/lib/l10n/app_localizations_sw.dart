@@ -209,4 +209,102 @@ class AppLocalizationsSw extends AppLocalizations {
   @override
   String get couldNotConnect =>
       'Haikuweza kuunganisha eneo la kazi. Tafadhali angalia na ujaribu tena.';
+
+  @override
+  String get profileTitle => 'Wasifu Wangu';
+
+  @override
+  String get personalInformation => 'Taarifa za Kibinafsi';
+
+  @override
+  String get fullName => 'Jina Kamili';
+
+  @override
+  String get phoneNumber => 'Nambari ya Simu';
+
+  @override
+  String get pleaseEnterName => 'Tafadhali ingiza jina';
+
+  @override
+  String get saveChanges => 'Hifadhi Mabadiliko';
+
+  @override
+  String get profileUpdatedSuccess => 'Wasifu wako umesasishwa kwa mafanikio.';
+
+  @override
+  String get updateFailed => 'Sasisha Imeshindwa';
+
+  @override
+  String get tryAgain => 'Jaribu Tena';
+
+  @override
+  String memberSince(String date) {
+    return 'Mwanachama tangu $date';
+  }
+
+  @override
+  String get darkMode => 'Hali Nyeusi';
+
+  @override
+  String get language => 'Lugha';
+
+  @override
+  String get sound => 'Sauti';
+
+  @override
+  String get switchWorkspace => 'Badilisha Eneo la Kazi';
+
+  @override
+  String get changeWorkspaceSubtitle => 'Badilisha eneo la kazi / mkanganyiko';
+
+  @override
+  String get switchWorkspaceMessage =>
+      'Kubadilisha eneo la kazi kutakusajilisha nje na kuhitaji URL mpya. Endelea?';
+
+  @override
+  String get switchButton => 'Badilisha';
+
+  @override
+  String get signOut => 'Toka';
+
+  @override
+  String get signOutMessage =>
+      'Je, una uhakika unataka kutoka kwenye akaunti yako?';
+
+  @override
+  String get changePassword => 'Badilisha Nenosiri';
+
+  @override
+  String get changePasswordSubtitle => 'Sasisha nenosiri lako mara kwa mara';
+
+  @override
+  String get confirmNewPassword => 'Thibitisha Nenosiri Jipya';
+
+  @override
+  String get passwordUpdated => 'Nenosiri Imesasishwa';
+
+  @override
+  String get passwordUpdatedMessage =>
+      'Nenosiri lako limebadilishwa kwa mafanikio. Tafadhali ingia na nenosiri jipya.';
+
+  @override
+  String get notificationSettings => 'Mipangilio ya Arifa';
+
+  @override
+  String get manageNotifications => 'Simamia arifa zako';
+
+  @override
+  String get updateProfilePhoto => 'Sasisha Picha ya Wasifu';
+
+  @override
+  String get choosePhotoFromDevice => 'Chagua picha kutoka kwa kifaa chako';
+
+  @override
+  String get chooseFromGallery => 'Chagua kutoka Galari';
+
+  @override
+  String get pickImageFromPhotos => 'Chagua picha kutoka kwa picha zako';
+
+  @override
+  String get removeSelectedPhoto => 'Ondoa Picha Iliyochaguliwa';
 }
