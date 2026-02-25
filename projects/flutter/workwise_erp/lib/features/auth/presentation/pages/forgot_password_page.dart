@@ -9,6 +9,7 @@ import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/forgot_password.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -28,17 +29,17 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   bool _isEmail(String v) => _emailRe.hasMatch(v.trim());
 
   String? _validator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email or phone is required';
+    if (v == null || v.trim().isEmpty) return context.l10n.emailOrPhoneRequired;
     final value = v.trim();
     if (_isEmail(value) || _isPhone(value)) return null;
-    return 'Enter a valid email or phone';
+    return context.l10n.invalidEmailOrPhone;
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final identifier = _identifierCtrl.text.trim();
 
-    showAppLoadingDialog(context, message: 'Sending reset code...');
+    showAppLoadingDialog(context, message: context.l10n.sendingResetCode);
 
     final usecase = ref.read(forgotPasswordUseCaseProvider);
     final res = await usecase.call(ForgotPasswordParams(emailOrPhone: identifier));
@@ -50,7 +51,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       (failure) {
         AppDialog.showError(
           context: context, 
-          title: 'Request Failed', 
+          title: context.l10n.requestFailed, 
           message: failure.message,
         );
       },
@@ -58,9 +59,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         // Generic success message to avoid account enumeration
         AppDialog.showSuccess(
           context: context,
-          title: 'Code Sent',
-          message: 'If an account exists, you will receive an OTP by email or SMS.\nPlease check your inbox or messages.',
-          buttonText: 'Verify OTP',
+          title: context.l10n.codeSent,
+          message: context.l10n.codeSentMessage,
+          buttonText: context.l10n.verifyOtp,
           onButtonPressed: () {
             Navigator.pop(context); // close dialog
             Navigator.pushNamed(context, '/forgot-password/verify', arguments: identifier);
@@ -89,7 +90,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       child: Scaffold(
         backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
-          title: 'Forgot Password',
+          title: context.l10n.forgotPasswordTitle,
           showBackButton: true,
         ),
         body: SafeArea(
@@ -151,7 +152,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           children: [
                             // Title
                             Text(
-                              'Reset Password',
+                              context.l10n.resetPasswordTitle,
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
@@ -183,7 +184,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      'Enter your email or phone number. We\'ll send an OTP to verify your identity.',
+                                      context.l10n.resetPasswordDesc,
                                       style: TextStyle(
                                         fontSize: 14,
                                         height: 1.4,
@@ -206,8 +207,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                   // Email/Phone field
                                   AppTextField(
                                     controller: _identifierCtrl,
-                                    labelText: 'Email or Phone',
-                                    hintText: 'Enter your email or phone number',
+                                    labelText: context.l10n.emailOrPhone,
+                                    hintText: context.l10n.emailOrPhoneHint,
                                     prefixIcon: Icon(
                                       Icons.mail_outline_rounded,
                                       color: primaryColor,
@@ -222,7 +223,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                   
                                   // Submit button
                                   AppButton(
-                                    text: 'Send Reset Code',
+                                    text: context.l10n.sendResetCode,
                                     textColor: AppColors.white,
                                     onPressed: _submit,
                                     variant: AppButtonVariant.primary,
@@ -239,7 +240,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                     crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
                                       Text(
-                                        'Remember your password? ',
+                                        context.l10n.rememberPassword,
                                         style: TextStyle(
                                           color: isDark ? Colors.white54 : Colors.grey.shade600,
                                           fontSize: 14,
@@ -253,9 +254,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                           foregroundColor: primaryColor,
                                         ),
-                                        child: const Text(
-                                          'Sign In',
-                                          style: TextStyle(
+                                        child: Text(
+                                          context.l10n.signIn,
+                                          style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 14,
                                           ),
@@ -275,7 +276,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                     
                     // Help text
                     Text(
-                      'Secure password reset • OTP will expire in 10 minutes',
+                      context.l10n.secureResetNote,
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white38 : Colors.grey.shade500,

@@ -9,6 +9,7 @@ import '../../../../core/models/tenant.dart';
 import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/extensions/l10n_extension.dart';
 
 typedef DioFactory = Dio Function(String baseUrl);
 
@@ -80,7 +81,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil('/', (r) => false);
     } catch (e) {
-      setState(() => _error = 'Could not connect to workspace. Please check and try again.');
+      setState(() => _error = context.l10n.couldNotConnect);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -130,12 +131,12 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Enter your workspace',
+                context.l10n.enterYourWorkspace,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 4),
               Text(
-                'Your organization\'s subdomain on $_baseDomain',
+                context.l10n.subdomainDescription,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.muted,
                     ),
@@ -182,8 +183,8 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
                 fontSize: 13,
               ),
             ),
-            labelText: 'Subdomain',
-            hintText: 'yourcompany',
+            labelText: context.l10n.subdomain,
+            hintText: context.l10n.subdomainHint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -199,11 +200,11 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
             ),
           ),
           validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Workspace subdomain is required';
+            if (v == null || v.trim().isEmpty) return context.l10n.workspaceRequired;
             final s = v.trim().toLowerCase();
-            if (s.contains('.')) return 'Enter only the subdomain, not the full domain';
+            if (s.contains('.')) return context.l10n.enterSubdomainOnly;
             if (!_validSubdomain.hasMatch(s)) {
-              return 'Use letters, numbers, or hyphens only';
+              return context.l10n.useLettersNumbersHyphens;
             }
             return null;
           },
@@ -266,12 +267,12 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Continue', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 18),
+                  Text(context.l10n.continueButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
                 ],
               ),
       ),
@@ -280,7 +281,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
 
   Widget _buildFooter(BuildContext context) {
     return Text(
-      'By continuing, you agree to ${AppConstant.appName} Terms of Service.',
+      context.l10n.termsAgreement,
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
     );
@@ -312,7 +313,7 @@ class _BrandingHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Sign in to your workspace',
+          context.l10n.signInToWorkspace,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
         ),
       ],

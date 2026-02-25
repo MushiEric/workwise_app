@@ -4,10 +4,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
+import 'l10n/app_localizations.dart';
+
 import 'core/themes/app_colors.dart';
 import 'core/theme/app_typography.dart';
 import 'core/provider/locale_provider.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/splash_page.dart';
 import 'features/auth/presentation/pages/forgot_password_page.dart';
 import 'features/auth/presentation/pages/verify_forgot_password_otp_page.dart';
 import 'features/auth/presentation/pages/change_password_using_otp_page.dart';
@@ -115,7 +118,7 @@ class Workwise extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         locale: Locale(localeCode),
         localizationsDelegates: const [
-          // Provides default Flutter localizations for widgets (dates, etc.)
+          AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
@@ -135,6 +138,7 @@ class Workwise extends ConsumerWidget {
         ),
         routes: {
           '/workspace': (context) => const WorkspaceEntryScreen(),
+          '/splash': (context) => const SplashPage(),
           '/': (context) => const LoginPage(),
           '/forgot-password': (context) => const ForgotPasswordPage(),
           '/forgot-password/verify': (context) => const VerifyForgotPasswordOtpPage(),
@@ -164,7 +168,7 @@ class Workwise extends ConsumerWidget {
           '/notifications': (context) => const NotificationsPage(),
           '/hr': (context) => const HRPage(),
         },
-        initialRoute: ref.watch(tenantProvider) == null ? '/workspace' : '/',
+        initialRoute: '/splash',
       ),
     );
   }

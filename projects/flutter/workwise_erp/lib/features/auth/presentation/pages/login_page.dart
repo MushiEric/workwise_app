@@ -9,6 +9,7 @@ import 'package:workwise_erp/core/provider/token_provider.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
 import 'package:workwise_erp/core/provider/tenant_provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/extensions/l10n_extension.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -68,7 +69,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
         final token = await ref.read(tokenLocalDataSourceProvider).readToken();
         if (token != null && token.isNotEmpty) {
           if (!mounted) return;
-          showAppLoadingDialog(context, message: 'Restoring session...');
+          showAppLoadingDialog(context, message: context.l10n.restoringSession);
           await ref.read(authNotifierProvider.notifier).loadCurrentUser();
           if (!mounted) return;
           hideAppLoadingDialog(context);
@@ -103,7 +104,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     final notifier = ref.read(authNotifierProvider.notifier);
 
     // show loading dialog
-    showAppLoadingDialog(context, message: 'Signing in...');
+    showAppLoadingDialog(context, message: context.l10n.signingIn);
 
     await notifier.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
 
@@ -125,7 +126,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
       error: (message) {
         AppDialog.showError(
           context: context, 
-          title: 'Login failed', 
+          title: context.l10n.loginFailed, 
           message: message,
         );
       },
@@ -158,9 +159,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
               // show confirmation to user (verify still mounted)
               if (!mounted) return;
               context.showSuccessModal(
-                title: 'Success!',
-                message: 'Language updated successfully.',
-                buttonText: 'Done',
+                title: context.l10n.success,
+                message: context.l10n.languageUpdatedSuccess,
+                buttonText: context.l10n.done,
               );
             },
           );
@@ -179,7 +180,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Align(alignment: Alignment.centerLeft, child: Text('Select Language', style: Theme.of(context).textTheme.titleMedium)),
+                  child: Align(alignment: Alignment.centerLeft, child: Text(context.l10n.selectLanguage, style: Theme.of(context).textTheme.titleMedium)),
                 ),
                 const SizedBox(height: 8),
                 langTile('en', 'English'),
@@ -260,7 +261,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       
                       // Welcome Text
                       Text(
-                        'Welcome Back',
+                        context.l10n.welcomeBack,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : const Color(0xFF1A2634),
@@ -280,17 +281,17 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                           children: [
                             AppTextField(
                               controller: _emailCtrl,
-                              labelText: 'Email Address',
+                              labelText: context.l10n.emailAddress,
                               keyboardType: TextInputType.emailAddress,
                               prefixIcon: const Icon(Icons.email_outlined),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Email is required' : null,
+                              validator: (v) => (v == null || v.isEmpty) ? context.l10n.emailRequired : null,
                             ),
                             const SizedBox(height: 16),
 
                             AppPasswordField(
                               controller: _passCtrl,
-                              labelText: 'Password',
-                              validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
+                              labelText: context.l10n.password,
+                              validator: (v) => (v == null || v.isEmpty) ? context.l10n.passwordRequired : null,
                             ),
 
                             Align(
@@ -298,7 +299,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                               child: TextButton(
                                 onPressed: () { Navigator.pushNamed(context, '/forgot-password'); },
                                 child: Text(
-                                  'Forgot Password?',
+                                  context.l10n.forgotPassword,
                                   style: TextStyle(
                                     color: isDark ? Colors.white70 : AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -333,7 +334,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                                         //   ),
                                         // ),
                                       )
-                                    : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    : Text(context.l10n.signIn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],

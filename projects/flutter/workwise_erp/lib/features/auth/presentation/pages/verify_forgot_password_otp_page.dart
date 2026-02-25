@@ -5,6 +5,7 @@ import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/verify_forgot_password_otp.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 class VerifyForgotPasswordOtpPage extends ConsumerStatefulWidget {
   const VerifyForgotPasswordOtpPage({super.key});
@@ -35,9 +36,9 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
   }
 
   String? _otpValidator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'OTP is required';
+    if (v == null || v.trim().isEmpty) return context.l10n.otpRequired;
     final trimmed = v.trim();
-    if (!RegExp('^\\d{4,8}\$').hasMatch(trimmed)) return 'Enter a valid numeric OTP';
+    if (!RegExp('^\\d{4,8}\$').hasMatch(trimmed)) return context.l10n.invalidOtp;
     return null;
   }
 
@@ -47,13 +48,13 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
     final identifier = _identifierCtrl.text.trim();
     final otp = _otpCtrl.text.trim();
 
-    showAppLoadingDialog(context, message: 'Verifying code...');
+    showAppLoadingDialog(context, message: context.l10n.verifyingCode);
     final usecase = ref.read(verifyForgotPasswordOtpUseCaseProvider);
     final res = await usecase.call(VerifyForgotPasswordOtpParams(emailOrPhone: identifier, otp: otp));
     hideAppLoadingDialog(context);
 
     res.fold(
-      (failure) => AppDialog.showError(context: context, title: 'Verification failed', message: failure.message),
+      (failure) => AppDialog.showError(context: context, title: context.l10n.verificationFailed, message: failure.message),
       (_) {
         Navigator.pushNamed(context, '/forgot-password/change', arguments: {'identifier': identifier, 'otp': otp});
       },
@@ -65,7 +66,7 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Reset Code'), backgroundColor: isDark ? null : Colors.transparent, elevation: 0, foregroundColor: isDark ? null : const Color(0xFF1A2634)),
+      appBar: AppBar(title: Text(context.l10n.verifyResetCode), backgroundColor: isDark ? null : Colors.transparent, elevation: 0, foregroundColor: isDark ? null : const Color(0xFF1A2634)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -79,7 +80,7 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Enter the 6‑digit code we sent to your email or phone', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                      Text(context.l10n.enterOtpDesc, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
                       const SizedBox(height: 16),
                       Form(
                         key: _formKey,
@@ -88,15 +89,15 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                           children: [
                             AppTextField(
                               controller: _identifierCtrl,
-                              labelText: 'Email or phone',
+                              labelText: context.l10n.emailOrPhone,
                               prefixIcon: const Icon(Icons.mail_outline),
                               keyboardType: TextInputType.emailAddress,
-                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Identifier is required' : null,
+                              validator: (v) => (v == null || v.trim().isEmpty) ? context.l10n.emailOrPhoneRequired : null,
                             ),
                             const SizedBox(height: 12),
                             AppTextField(
                               controller: _otpCtrl,
-                              labelText: 'OTP code',
+                              labelText: context.l10n.otpCode,
                               prefixIcon: const Icon(Icons.confirmation_number_outlined),
                               keyboardType: TextInputType.number,
                               validator: _otpValidator,
@@ -107,14 +108,14 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                               child: ElevatedButton(
                                 onPressed: _submit,
                                 style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                child: const Text('Verify', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: Text(context.l10n.verify, style: const TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back')),
+                      TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.back)),
                     ],
                   ),
                 ),
