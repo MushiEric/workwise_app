@@ -36,7 +36,7 @@ void main() {
     container.read(jobcardDetailNotifierProvider.notifier).state = JobcardDetailState.loaded(jobcard);
 
     await tester.pumpWidget(
-      ProviderScope(container: container, child: const MaterialApp(home: JobcardDetailPage())),
+      UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardDetailPage())),
     );
 
     await tester.pumpAndSettle();

@@ -215,7 +215,7 @@ class _OperatorDetailPageState extends ConsumerState<OperatorDetailPage> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
-                      headingRowColor: MaterialStateProperty.all(isDark ? Colors.white10 : Colors.grey.shade100),
+                      headingRowColor: WidgetStateProperty.all(isDark ? Colors.white10 : Colors.grey.shade100),
                       columns: const [
                         DataColumn(label: Text('S/N')),
                         DataColumn(label: Text('Name')),

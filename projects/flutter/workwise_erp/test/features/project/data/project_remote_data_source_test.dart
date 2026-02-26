@@ -69,7 +69,7 @@ void main() {
           statusCode: 200,
         ));
 
-    final call = () => remote.getProjects();
+    Future<List<ProjectModel>> call() => remote.getProjects();
     expect(call, throwsA(isA<ServerException>()));
     try {
       await call();

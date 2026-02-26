@@ -989,7 +989,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       builder: (context) => Consumer(builder: (context, ref, _) {
         final selected = ref.watch(appLocaleProvider);
 
-        Widget _langTile(String code, String label) {
+        Widget langTile(String code, String label) {
           return ListTile(
             title: Text(label),
             trailing: selected == code ? Icon(LucideIcons.check, color: AppColors.primary) : null,
@@ -1031,9 +1031,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   child: Align(alignment: Alignment.centerLeft, child: Text('Select Language', style: Theme.of(context).textTheme.titleMedium)),
                 ),
                 const SizedBox(height: 8),
-                _langTile('en', 'English'),
-                _langTile('sw', 'Swahili'),
-                _langTile('fr', 'French'),
+                langTile('en', 'English'),
+                langTile('sw', 'Swahili'),
+                langTile('fr', 'French'),
                 const SizedBox(height: 12),
               ],
             ),

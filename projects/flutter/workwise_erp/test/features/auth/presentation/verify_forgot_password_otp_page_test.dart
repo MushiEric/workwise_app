@@ -23,7 +23,7 @@ void main() {
     mockUsecase = MockVerifyUsecase();
   });
 
-  Widget _buildApp() {
+  Widget buildApp() {
     return ProviderScope(
       overrides: [verifyForgotPasswordOtpUseCaseProvider.overrideWithValue(mockUsecase)],
       child: MaterialApp(
@@ -36,7 +36,7 @@ void main() {
   }
 
   testWidgets('validation errors shown', (tester) async {
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
 
     await tester.tap(find.text('Verify'));
     await tester.pumpAndSettle();
@@ -55,7 +55,7 @@ void main() {
   testWidgets('navigates to change page on success', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => const Either.right(null));
 
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
 
     await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), '123456');
@@ -68,7 +68,7 @@ void main() {
   testWidgets('shows error dialog on failure', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => Either.left(ServerFailure('invalid code')));
 
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
 
     await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), '123456');

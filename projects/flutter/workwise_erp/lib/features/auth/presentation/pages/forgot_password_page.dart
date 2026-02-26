@@ -6,7 +6,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
-import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/forgot_password.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';

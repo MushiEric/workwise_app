@@ -20,7 +20,7 @@ import 'logging_interceptor.dart';
 /// Provides a configured Dio instance for the app.
 final dioProvider = Provider<Dio>((ref) {
   // normalize baseUrl so callers can provide values with or without scheme
-  String _normalizeBaseUrl(String raw) {
+  String normalizeBaseUrl(String raw) {
     var s = raw.trim();
     if (!s.startsWith(RegExp(r'https?:\/\/'))) {
       s = 'https://$s';
@@ -53,7 +53,7 @@ final dioProvider = Provider<Dio>((ref) {
   }
 
   final options = BaseOptions(
-    baseUrl: _normalizeBaseUrl(tenant.baseUrl),
+    baseUrl: normalizeBaseUrl(tenant.baseUrl),
     connectTimeout: env.connectTimeout,
     receiveTimeout: env.receiveTimeout,
     sendTimeout: env.sendTimeout,
@@ -63,11 +63,11 @@ final dioProvider = Provider<Dio>((ref) {
 
   // Attach a request-id for traceability (added to headers and `extra` so
   // downstream interceptors / Sentry / logs can correlate requests).
-  String _generateRequestId() => '${DateTime.now().toUtc().toIso8601String()}-${Random().nextInt(1 << 32).toRadixString(16)}';
+  String generateRequestId() => '${DateTime.now().toUtc().toIso8601String()}-${Random().nextInt(1 << 32).toRadixString(16)}';
 
   dio.interceptors.add(InterceptorsWrapper(onRequest: (opts, handler) {
     final existing = opts.headers['X-Request-Id'] ?? opts.headers['x-request-id'];
-    final id = existing?.toString() ?? _generateRequestId();
+    final id = existing?.toString() ?? generateRequestId();
     opts.headers['X-Request-Id'] = id;
     opts.extra['requestId'] = id;
     handler.next(opts);
@@ -103,7 +103,7 @@ final dioProvider = Provider<Dio>((ref) {
     if (!idempotent.contains(method)) return handler.next(err);
 
     // protect against retrying non-replayable request bodies
-    bool _isReplayableBody(Object? data) {
+    bool isReplayableBody(Object? data) {
       if (data == null) return true;
       if (data is String || data is num || data is bool) return true;
       if (data is Map || data is List || data is List<int>) return true;
@@ -115,7 +115,7 @@ final dioProvider = Provider<Dio>((ref) {
       return false;
     }
 
-    if (!_isReplayableBody(opts.data)) return handler.next(err);
+    if (!isReplayableBody(opts.data)) return handler.next(err);
 
     final maxRetries = env.maxRetries;
     final retries = (opts.extra['__retry_count'] as int?) ?? 0;

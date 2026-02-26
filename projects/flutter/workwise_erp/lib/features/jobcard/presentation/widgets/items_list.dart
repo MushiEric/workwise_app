@@ -43,16 +43,16 @@ class _ItemsListState extends State<ItemsList> {
     String mode = widget.products.isNotEmpty ? 'product' : (widget.services.isNotEmpty ? 'service' : 'product');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    bool _isServiceItem(Map<String, dynamic>? m) {
+    bool isServiceItem(Map<String, dynamic>? m) {
       if (m == null) return false;
       final t = (m['type'] ?? m['item_type'] ?? '').toString().toLowerCase();
       return t.contains('service');
     }
 
-    final productCandidates = widget.products.where((m) => !_isServiceItem(m)).toList();
+    final productCandidates = widget.products.where((m) => !isServiceItem(m)).toList();
     final serviceCandidates = [
       ...widget.services,
-      ...widget.products.where((m) => _isServiceItem(m)),
+      ...widget.products.where((m) => isServiceItem(m)),
     ].where((m) => m.isNotEmpty).toList();
 
     showDialog(

@@ -546,7 +546,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
   }
 
   Widget _buildTasksTab(Project project) {
-    final projectId = project.id as int?;
+    final projectId = project.id;
     if (projectId == null) {
       return const Center(
         child: Text('Missing project id'),

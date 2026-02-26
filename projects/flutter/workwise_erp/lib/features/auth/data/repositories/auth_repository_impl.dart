@@ -25,7 +25,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // the stored token is invalid (happens after hot-restart/session expiry).
       // Clear local token to avoid repeated restore attempts and return a
       // friendly failure so the UI doesn't expose internal parsing errors.
-      final msg = e.message?.toLowerCase() ?? '';
+      final msg = e.message.toLowerCase() ?? '';
       if (msg.contains('invalid server response') || msg.contains('invalid server response when fetching user') || msg.contains('invalid server response:')) {
         try {
           await _tokenStorage.deleteToken();

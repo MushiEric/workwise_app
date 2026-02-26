@@ -6,7 +6,6 @@ import 'package:workwise_erp/core/errors/failure.dart';
 import 'package:workwise_erp/features/sales/domain/entities/sales_order.dart';
 import 'package:workwise_erp/features/sales/domain/usecases/get_recent_orders.dart';
 import 'package:workwise_erp/features/sales/presentation/notifier/sales_notifier.dart';
-import 'package:workwise_erp/features/sales/presentation/state/sales_state.dart';
 
 class MockGetRecentOrders extends Mock implements GetRecentOrders {}
 

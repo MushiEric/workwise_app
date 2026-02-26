@@ -42,7 +42,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [dioProvider.overrideWithValue(dio)]);
 
-    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
     await tester.pumpAndSettle();
 
     final subjectField = find.byWidgetPredicate((w) => w is TextField && (w.decoration?.labelText ?? '') == 'Subject');
@@ -73,7 +73,7 @@ void main() {
     // Fake picker returns one small file
     FilePicker.platform = _FakePicker([PlatformFile(name: 'small.png', size: 1024 * 100, path: '/tmp/small.png')]);
 
-    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
     await tester.pumpAndSettle();
 
     // Tap the item attachments attach icon
@@ -98,7 +98,7 @@ void main() {
     // Fake picker returns one large file (6MB)
     FilePicker.platform = _FakePicker([PlatformFile(name: 'big.mov', size: 6 * 1024 * 1024, path: '/tmp/big.mov')]);
 
-    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
     await tester.pumpAndSettle();
 
     final itemAttach = find.byIcon(Icons.attach_file_outlined);

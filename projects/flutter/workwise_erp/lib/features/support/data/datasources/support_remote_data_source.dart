@@ -72,7 +72,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportStatus');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -85,7 +85,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportPriority');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -98,7 +98,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportCategory');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -111,7 +111,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportDepartment');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -124,7 +124,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportLocation');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -137,7 +137,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupportSupervisor');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -150,7 +150,7 @@ class SupportRemoteDataSource {
     try {
       final resp = await client.get('/support/getSupport/Service');
       final list = _extractListFromRaw(resp.data);
-      return list.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {

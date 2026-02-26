@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:workwise_erp/core/errors/failure.dart';
 
-import '../../domain/entities/asset.dart';
 import '../../domain/usecases/get_assets.dart';
 import '../state/assets_state.dart';
 
