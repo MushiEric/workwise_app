@@ -36,16 +36,29 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     final dio = Dio();
-    dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-      handler.resolve(Response(requestOptions: options, data: []));
-    }));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          handler.resolve(Response(requestOptions: options, data: []));
+        },
+      ),
+    );
 
-    final container = ProviderContainer(overrides: [dioProvider.overrideWithValue(dio)]);
+    final container = ProviderContainer(
+      overrides: [dioProvider.overrideWithValue(dio)],
+    );
 
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: JobcardCreatePage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    final subjectField = find.byWidgetPredicate((w) => w is TextField && (w.decoration?.labelText ?? '') == 'Subject');
+    final subjectField = find.byWidgetPredicate(
+      (w) => w is TextField && (w.decoration?.labelText ?? '') == 'Subject',
+    );
     expect(subjectField, findsOneWidget);
     await tester.enterText(subjectField, 'Draft subject');
     await tester.pumpAndSettle();
@@ -65,15 +78,28 @@ void main() {
     SharedPreferences.setMockInitialValues({});
 
     final dio = Dio();
-    dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-      handler.resolve(Response(requestOptions: options, data: []));
-    }));
-    final container = ProviderContainer(overrides: [dioProvider.overrideWithValue(dio)]);
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          handler.resolve(Response(requestOptions: options, data: []));
+        },
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [dioProvider.overrideWithValue(dio)],
+    );
 
     // Fake picker returns one small file
-    FilePicker.platform = _FakePicker([PlatformFile(name: 'small.png', size: 1024 * 100, path: '/tmp/small.png')]);
+    FilePicker.platform = _FakePicker([
+      PlatformFile(name: 'small.png', size: 1024 * 100, path: '/tmp/small.png'),
+    ]);
 
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: JobcardCreatePage()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Tap the item attachments attach icon
@@ -86,30 +112,50 @@ void main() {
     expect(find.textContaining('small.png'), findsWidgets);
   });
 
-  testWidgets('Picking oversized item file (>5MB) shows snackbar and does not add file', (tester) async {
-    SharedPreferences.setMockInitialValues({});
+  testWidgets(
+    'Picking oversized item file (>5MB) shows snackbar and does not add file',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
 
-    final dio = Dio();
-    dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-      handler.resolve(Response(requestOptions: options, data: []));
-    }));
-    final container = ProviderContainer(overrides: [dioProvider.overrideWithValue(dio)]);
+      final dio = Dio();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            handler.resolve(Response(requestOptions: options, data: []));
+          },
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [dioProvider.overrideWithValue(dio)],
+      );
 
-    // Fake picker returns one large file (6MB)
-    FilePicker.platform = _FakePicker([PlatformFile(name: 'big.mov', size: 6 * 1024 * 1024, path: '/tmp/big.mov')]);
+      // Fake picker returns one large file (6MB)
+      FilePicker.platform = _FakePicker([
+        PlatformFile(
+          name: 'big.mov',
+          size: 6 * 1024 * 1024,
+          path: '/tmp/big.mov',
+        ),
+      ]);
 
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: JobcardCreatePage())));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: JobcardCreatePage()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final itemAttach = find.byIcon(Icons.attach_file_outlined);
-    expect(itemAttach, findsOneWidget);
-    await tester.tap(itemAttach);
-    await tester.pumpAndSettle();
+      final itemAttach = find.byIcon(Icons.attach_file_outlined);
+      expect(itemAttach, findsOneWidget);
+      await tester.tap(itemAttach);
+      await tester.pumpAndSettle();
 
-    // Oversize message shown via SnackBar
-    expect(find.textContaining('exceeds 5MB limit'), findsOneWidget);
+      // Oversize message shown via SnackBar
+      expect(find.textContaining('exceeds 5MB limit'), findsOneWidget);
 
-    // File should NOT appear in the UI
-    expect(find.textContaining('big.mov'), findsNothing);
-  });
+      // File should NOT appear in the UI
+      expect(find.textContaining('big.mov'), findsNothing);
+    },
+  );
 }
