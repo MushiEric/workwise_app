@@ -80,52 +80,74 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(2),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // if (_identifier != null) Text('Resetting for: $_identifier', textAlign: TextAlign.center),
-                      const SizedBox(height: 12),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AppPasswordField(
-                              controller: _passwordCtrl,
-                              // labelText: 'New password',
-                              hintText: 'Enter new password',
-                              validator: _passwordValidator,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // if (_identifier != null) Text('Resetting for: $_identifier', textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                           TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 600),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/images/logo2.png',
+                              fit: BoxFit.contain,
                             ),
-                            const SizedBox(height: 12),
-                            AppPasswordField(
-                              controller: _confirmCtrl,
-                              labelText: 'Confirm password',
-                              hintText: "Confirm  Password",
-                              validator: (v) => v != _passwordCtrl.text ? 'Passwords do not match' : null,
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: _submit,
-                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                child: const Text('Set password', style: TextStyle(fontWeight: FontWeight.bold,color: AppColors.white)),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back')),
-                    ],
+                      );
+                    },
                   ),
+                          AppPasswordField(
+                            controller: _passwordCtrl,
+                            // labelText: 'New password',
+                            hintText: 'Enter new password',
+                            validator: _passwordValidator,
+                          ),
+                          const SizedBox(height: 12),
+                          AppPasswordField(
+                            controller: _confirmCtrl,
+                            labelText: 'Confirm password',
+                            hintText: "Confirm  Password",
+                            validator: (v) => v != _passwordCtrl.text ? 'Passwords do not match' : null,
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                              child: const Text('Set password', style: TextStyle(fontWeight: FontWeight.bold,color: AppColors.white)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back')),
+                  ],
                 ),
               ),
             ),

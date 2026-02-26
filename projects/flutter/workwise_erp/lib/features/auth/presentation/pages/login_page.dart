@@ -252,8 +252,8 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       // Logo
                       Center(
                         child: Image.asset(
-                          'assets/images/logo.png',
-                          height: 40,
+                          'assets/images/logo2.png',
+                          height: 50,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -264,6 +264,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                         'Welcome Back',
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          fontSize: 24,
                           color: isDark ? Colors.white : const Color(0xFF1A2634),
                           letterSpacing: -0.5,
                         ),
@@ -282,6 +283,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                             AppTextField(
                               controller: _emailCtrl,
                               labelText: 'Email Address',
+                              hintText: 'Enter your email',
                               keyboardType: TextInputType.emailAddress,
                               prefixIcon: const Icon(LucideIcons.mail),
                               validator: (v) => (v == null || v.isEmpty) ? 'Email is required' : null,
