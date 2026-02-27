@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../../domain/entities/asset.dart';
 import '../models/asset_model.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
 
@@ -38,17 +39,18 @@ class AssetRemoteDataSource {
   }
 
   /// GET /vehicle/getAsset
-  Future<List<AssetModel>> getAssets() async {
+  Future<List<Asset>> getAssets() async {
     try {
       final resp = await client.get('/vehicle/getAsset');
       final list = _extractListFromRaw(resp.data, keys: ['data', 'assets', 'records']);
 
-      final models = <AssetModel>[];
+      final assets = <Asset>[];
       for (final raw in list) {
         try {
           final Map<String, dynamic> src = Map<String, dynamic>.from(raw);
           final normalized = _normalizeAssetJson(src);
-          models.add(AssetModel.fromJson(normalized));
+          final model = AssetModel.fromJson(normalized);
+          assets.add(_buildAsset(model, src));
         } catch (err) {
           // skip malformed items but continue processing the rest
           // ignore: avoid_print
@@ -56,12 +58,79 @@ class AssetRemoteDataSource {
         }
       }
 
-      return models;
+      return assets;
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
       throw ServerException(e.toString());
     }
+  }
+
+  /// Maps an [AssetModel] + the original raw JSON map into a full [Asset]
+  /// domain entity, extracting GPS fields that are not part of [AssetModel].
+  Asset _buildAsset(AssetModel model, Map<String, dynamic> src) {
+    double? toDouble(dynamic v) {
+      if (v == null) return null;
+      if (v is double) return v;
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v);
+      return null;
+    }
+
+    bool? toBool(dynamic v) {
+      if (v == null) return null;
+      if (v is bool) return v;
+      if (v is int) return v == 1;
+      if (v is String) return v == '1' || v.toLowerCase() == 'true';
+      return null;
+    }
+
+    int? toInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+
+    String? str(String key) {
+      final v = src[key];
+      return v is String ? v : null;
+    }
+
+    return Asset(
+      id: model.id,
+      assetId: model.assetId,
+      type: model.type,
+      name: model.name,
+      registrationNumber: model.registrationNumber,
+      model: model.model,
+      image: model.image,
+      year: model.year,
+      status: model.status,
+      isAvailable: model.isAvailable == null ? null : (model.isAvailable == 1),
+      isActive: model.isActive == null ? null : (model.isActive == 1),
+      hasGps: model.hasGps ?? false,
+      vin: model.vin,
+      make: model.make,
+      company: model.company,
+      fuelConsumption: model.fuelConsumption,
+      createdAt: model.createdAt,
+      // GPS fields — parsed directly from the raw response JSON
+      latitude: toDouble(src['latitude']),
+      longitude: toDouble(src['longitude']),
+      speed: toDouble(src['speed']),
+      ignition: toBool(src['ignition']),
+      heading: toDouble(src['heading']),
+      address: str('address'),
+      lastTransmit: str('last_transmit'),
+      battery: toDouble(src['battery']),
+      gpsValid: toBool(src['gps_valid']),
+      satellites: toInt(src['satellites']),
+      gpsLabel: str('gps_label'),
+      unitNumber: str('unit_number'),
+      gpsType: str('gps_type'),
+    );
   }
 
   // Normalize common fields that may arrive as different types

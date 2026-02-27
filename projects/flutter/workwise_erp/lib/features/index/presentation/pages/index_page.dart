@@ -146,7 +146,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
           titleWidget: Padding(
             padding: const EdgeInsets.only(left: 4.0),
             child: Image.asset(
-              'assets/images/logo.png',
+              'assets/images/logo2.png',
               height: 28,
               fit: BoxFit.contain,
             ),

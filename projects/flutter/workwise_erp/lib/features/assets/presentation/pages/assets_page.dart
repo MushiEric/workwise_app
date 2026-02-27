@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/app_bar.dart';
+import '../../domain/entities/asset.dart';
 import '../providers/assets_providers.dart';
-import '../state/assets_state.dart';
 import '../widgets/asset_tile.dart';
 
 class AssetsPage extends ConsumerStatefulWidget {
@@ -15,6 +17,9 @@ class AssetsPage extends ConsumerStatefulWidget {
 }
 
 class _AssetsPageState extends ConsumerState<AssetsPage> {
+  /// 'all' | 'gps' | 'moving'
+  String _filter = 'all';
+
   @override
   void initState() {
     super.initState();
@@ -25,17 +30,41 @@ class _AssetsPageState extends ConsumerState<AssetsPage> {
 
   Future<void> _refresh() => ref.read(assetsNotifierProvider.notifier).loadAssets();
 
+  List<Asset> _applyFilter(List<Asset> assets) {
+    switch (_filter) {
+      case 'gps':
+        return assets.where((a) => (a.hasGps ?? false) && a.latitude != null).toList();
+      case 'moving':
+        return assets.where((a) => (a.speed ?? 0) > 0).toList();
+      default:
+        return assets;
+    }
+  }
+
+  Widget _chip(String value, String label, int count, bool isDark) {
+    final selected = _filter == value;
+    return ChoiceChip(
+      label: Text('$label ($count)'),
+      selected: selected,
+      onSelected: (_) => setState(() => _filter = value),
+      selectedColor: AppColors.primary,
+      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      side: BorderSide(
+        color: selected ? AppColors.primary : (isDark ? Colors.white12 : Colors.grey.shade300),
+      ),
+      labelStyle: TextStyle(
+        fontSize: 12,
+        color: selected ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assetsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    ref.listen<AssetsState>(assetsNotifierProvider, (prev, next) {
-      final prevLoading = prev?.maybeWhen(loading: () => true, orElse: () => false) ?? false;
-      final nextLoading = next.maybeWhen(loading: () => true, orElse: () => false);
-      if (prevLoading == nextLoading) return;
-      // keep UI minimal for assets (no global modal)
-    });
 
     return Scaffold(
       appBar: CustomAppBar(title: 'Assets'),
@@ -60,48 +89,77 @@ class _AssetsPageState extends ConsumerState<AssetsPage> {
             ),
           ),
           loaded: (assets) {
-            if (assets.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.inventory_2_outlined, size: 80, color: isDark ? Colors.white24 : Colors.grey.shade300),
-                    const SizedBox(height: 16),
-                    Text('No assets found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.grey.shade700)),
-                    const SizedBox(height: 8),
-                    Text('You can add assets from the web portal', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600)),
-                  ],
-                ),
-              );
-            }
+            final gpsCount = assets.where((a) => (a.hasGps ?? false) && a.latitude != null).length;
+            final movingCount = assets.where((a) => (a.speed ?? 0) > 0).length;
+            final filtered = _applyFilter(assets);
 
-            return RefreshIndicator(
-              onRefresh: _refresh,
-              child: ListView.builder(
-                itemCount: assets.length,
-                padding: const EdgeInsets.only(top: 8, bottom: 16),
-                itemBuilder: (context, idx) {
-                  final a = assets[idx];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: AssetTile(
-                      asset: a,
-                      onTap: () {
-                        Navigator.pushNamed(context, '/assets/detail', arguments: a.id);
-                      },
-                    ),
-                  );
-                },
-              ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Filter chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: [
+                    _chip('all', 'All', assets.length, isDark),
+                    const SizedBox(width: 8),
+                    _chip('gps', 'GPS Live', gpsCount, isDark),
+                    const SizedBox(width: 8),
+                    _chip('moving', 'Moving', movingCount, isDark),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+
+                // List
+                Expanded(
+                  child: assets.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 80, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                              const SizedBox(height: 16),
+                              Text('No assets found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.grey.shade700)),
+                              const SizedBox(height: 8),
+                              Text('You can add assets from the web portal', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600)),
+                            ],
+                          ),
+                        )
+                      : filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.search_off_rounded, size: 64, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                                  const SizedBox(height: 12),
+                                  Text('No vehicles match this filter', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600)),
+                                ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _refresh,
+                              child: ListView.builder(
+                                itemCount: filtered.length,
+                                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                                itemBuilder: (context, idx) {
+                                  final a = filtered[idx];
+                                  return AssetTile(
+                                    asset: a,
+                                    onTap: () => Navigator.pushNamed(context, '/assets/detail', arguments: a.id),
+                                  );
+                                },
+                              ),
+                            ),
+                ),
+              ],
             );
           },
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Quick action placeholder — navigation to create asset can be added
-        },
-        child: const Icon(Icons.add_rounded),
+        onPressed: () {},
+        child: const Icon(LucideIcons.plus, size: 20),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
     );
   }

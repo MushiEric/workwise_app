@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../domain/entities/asset.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -16,6 +15,46 @@ class AssetTile extends StatelessWidget {
     if (asset.model != null && asset.model!.isNotEmpty) parts.add(asset.model!);
     if (asset.year != null && asset.year!.isNotEmpty) parts.add(asset.year!);
     return parts.join(' • ');
+  }
+
+  /// Small GPS status indicator shown in the tile's trailing column.
+  Widget _gpsBadge(bool isDark) {
+    // No coordinates yet — device registered but no signal
+    if (asset.latitude == null) {
+      return Row(children: [
+        Icon(Icons.gps_not_fixed_rounded, size: 12, color: isDark ? Colors.white30 : Colors.grey.shade400),
+        const SizedBox(width: 3),
+        Text('GPS', style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey.shade500)),
+      ]);
+    }
+
+    final spd = asset.speed ?? 0;
+
+    // Moving
+    if (spd > 0) {
+      return Row(children: [
+        Container(width: 7, height: 7, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text('${spd.toStringAsFixed(0)} km/h',
+            style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w500)),
+      ]);
+    }
+
+    // Stopped — ignition on (idling)
+    if (asset.ignition == true) {
+      return Row(children: [
+        Container(width: 7, height: 7, decoration: BoxDecoration(color: Colors.blue.shade400, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text('Idling', style: TextStyle(fontSize: 11, color: Colors.blue.shade400, fontWeight: FontWeight.w500)),
+      ]);
+    }
+
+    // Stopped — ignition off (parked)
+    return Row(children: [
+      Container(width: 7, height: 7, decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.grey.shade400, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text('Parked', style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey.shade500)),
+    ]);
   }
 
   @override
@@ -100,14 +139,7 @@ class AssetTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (asset.hasGps ?? false)
-                      Row(
-                        children: [
-                          Icon(Icons.location_on_outlined, size: 14, color: Colors.blueGrey),
-                          const SizedBox(width: 4),
-                          Text('GPS', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600)),
-                        ],
-                      ),
+                    if (asset.hasGps ?? false) _gpsBadge(isDark),
                   ],
                 ),
               ],

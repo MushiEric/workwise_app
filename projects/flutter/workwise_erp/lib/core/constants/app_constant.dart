@@ -9,8 +9,8 @@ static const String website = 'https://getcore.workwise.africa';
 static const String supportEmail = 'support@getcore.workwise.africa';
 static const String privacyPolicyUrl = 'https://getcore.workwise.africa/privacy-policy';
 static const String termsOfServiceUrl = 'https://getcore.workwise.africa/terms ';
-// static const String googleMapsApiKey = 'AIzaSyC1SKvVzNxrjWMCO5pqa89AIjlEE2aFIxY';
 static const String googlemapKey = "AIzaSyARuZs3KqeodlNXnSeJUWcHW_zVQ3ZFc0w";
+static const String openAiApiKey = String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
 
 
  }
