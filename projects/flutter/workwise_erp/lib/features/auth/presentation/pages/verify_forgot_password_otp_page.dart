@@ -37,9 +37,9 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
   }
 
   String? _otpValidator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'OTP is required';
+    if (v == null || v.trim().isEmpty) return context.l10n.otpRequired;
     final trimmed = v.trim();
-    if (!RegExp('^\\d{4,8}\$').hasMatch(trimmed)) return 'Enter a valid numeric OTP';
+    if (!RegExp('^\\d{4,8}\$').hasMatch(trimmed)) return context.l10n.invalidOtp;
     return null;
   }
 
@@ -49,13 +49,13 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
     final identifier = _identifierCtrl.text.trim();
     final otp = _otpCtrl.text.trim();
 
-    showAppLoadingDialog(context, message: 'Verifying code...');
+    showAppLoadingDialog(context, message: context.l10n.verifyingCode);
     final usecase = ref.read(verifyForgotPasswordOtpUseCaseProvider);
     final res = await usecase.call(VerifyForgotPasswordOtpParams(emailOrPhone: identifier, otp: otp));
     hideAppLoadingDialog(context);
 
     res.fold(
-      (failure) => AppDialog.showError(context: context, title: 'Verification failed', message: failure.message),
+      (failure) => AppDialog.showError(context: context, title: context.l10n.verificationFailed, message: failure.message),
       (_) {
         Navigator.pushNamed(context, '/forgot-password/change', arguments: {'identifier': identifier, 'otp': otp});
       },

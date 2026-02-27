@@ -294,7 +294,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen> {
 
   Widget _buildFooter(BuildContext context) {
     return Text(
-      'By continuing, you agree to ${AppConstant.appName} Terms of Service.',
+      context.l10n.termsAgreement,
       textAlign: TextAlign.center,
       style: Theme.of(
         context,

@@ -30,15 +30,29 @@ class AuthRepositoryImpl implements AuthRepository {
         try {
           await _tokenStorage.deleteToken();
         } catch (_) {}
+      // Any server-side error (4xx / 5xx) means the stored token is no longer
+      // valid. Always wipe it so the app never gets stuck in a retry loop on
+      // the next launch.
+      try {
+        await _tokenStorage.deleteToken();
+      } catch (_) {}
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid server response')) {
         return const Either.left(ServerFailure('Session expired. Please sign in again.'));
       }
-
       return Either.left(ServerFailure(e.message));
     } on NetworkException catch (e) {
+      // Network / connectivity error — token may still be valid once the device
+      // is back online, so keep it and surface a connectivity failure.
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
+      // Same reasoning as NetworkException — transient; don't clear the token.
       return Either.left(TimeoutFailure(e.message));
     } catch (e) {
+      // Unknown error — wipe token to be safe.
+      try {
+        await _tokenStorage.deleteToken();
+      } catch (_) {}
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }

@@ -10,6 +10,7 @@ import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/forgot_password.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -60,17 +61,17 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
   }
 
   String? _validator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email or phone is required';
+    if (v == null || v.trim().isEmpty) return context.l10n.emailOrPhoneRequired;
     final value = v.trim();
     if (_isEmail(value) || _isPhone(value)) return null;
-    return 'Enter a valid email or phone';
+    return context.l10n.invalidEmailOrPhone;
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final identifier = _identifierCtrl.text.trim();
 
-    showAppLoadingDialog(context, message: 'Sending reset code...');
+    showAppLoadingDialog(context, message: context.l10n.sendingResetCode);
 
     final usecase = ref.read(forgotPasswordUseCaseProvider);
     final res = await usecase.call(

@@ -19,6 +19,7 @@ import '../../../../core/themes/app_colors.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -130,18 +131,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       });
       if (mounted) {
         context.showSuccessModal(
-          title: 'Success!',
-          message: 'Your profile has been updated successfully.',
-          buttonText: 'Done',
+          title: context.l10n.success,
+          message: context.l10n.profileUpdatedSuccess,
+          buttonText: context.l10n.done,
         );
       }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
         context.showInfoModal(
-          title: 'Update Failed',
+          title: context.l10n.updateFailed,
           message: e.toString().replaceFirst('Exception: ', ''),
-          buttonText: 'Try Again',
+          buttonText: context.l10n.tryAgain,
         );
       }
     }
@@ -151,35 +152,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     // Navigate to change password screen or show modal
     if (mounted) {
       context.showFormModal(
-        title: 'Change Password',
+        title: context.l10n.changePassword,
         form: Column(
           children: [
             AppTextField(
               obscureText: true,
-              
             ),
             const SizedBox(height: 16),
             AppTextField(
               obscureText: true,
-                labelText: 'New Password',
+              labelText: context.l10n.newPassword,
             ),
             const SizedBox(height: 16),
             AppTextField(
               obscureText: true,
-            labelText: 'Confirm New Password',
+              labelText: context.l10n.confirmNewPassword,
             ),
           ],
         ),
         onSubmit: () {
-          // Handle password change
           Navigator.pop(context);
           context.showSuccessModal(
-            title: 'Password Updated',
-            message: 'Your password has been changed successfully.',
-            buttonText: 'OK',
+            title: context.l10n.passwordUpdated,
+            message: context.l10n.passwordUpdatedMessage,
+            buttonText: context.l10n.done,
           );
         },
-        submitText: 'Save Changes',
+        submitText: context.l10n.saveChanges,
       );
     }
   }
@@ -215,7 +214,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       child: Scaffold(
         backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
-          title: "My Profile",
+          title: context.l10n.profileTitle,
           actions: [
             if (!_isEditing)
               IconButton(
@@ -403,7 +402,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               Icon(LucideIcons.calendar, size: 14, color: isDark ? Colors.white.withOpacity(0.8) : Colors.grey.shade600),
               const SizedBox(width: 6),
               Text(
-                'Member since ${_formatDate(user?.createdAt)}',
+                context.l10n.memberSince(_formatDate(user?.createdAt)),
                 style: TextStyle(
                   color: isDark ? Colors.white.withOpacity(0.8) : Colors.grey.shade600,
                   fontSize: 13,
@@ -487,7 +486,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Personal Information',
+                    context.l10n.personalInformation,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -501,11 +500,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               
               // Name Field
               _buildFormField(
-                label: 'Full Name',
+                label: context.l10n.fullName,
                 icon: LucideIcons.user,
                 controller: _nameController,
                 enabled: _isEditing,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter name' : null,
+                validator: (v) => (v == null || v.trim().isEmpty) ? context.l10n.pleaseEnterName : null,
                 isDark: isDark,
               ),
               
@@ -513,7 +512,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               
               // Email Field (read-only)
               _buildFormField(
-                label: 'Email Address',
+                label: context.l10n.emailAddress,
                 icon: LucideIcons.mail,
                 controller: _emailController,
                 enabled: false,
@@ -525,7 +524,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               // Phone Field (show only when auth provides phone)
               if (user?.phone != null && user!.phone!.isNotEmpty) ...[
                 _buildFormField(
-                  label: 'Phone Number',
+                  label: context.l10n.phoneNumber,
                   icon: LucideIcons.phone,
                   controller: _phoneController,
                   enabled: _isEditing,
@@ -625,8 +624,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
         children: [
           _buildOptionTile(
             icon: LucideIcons.lock,
-            label: 'Change Password',
-            subtitle: 'Update your password regularly',
+            label: context.l10n.changePassword,
+            subtitle: context.l10n.changePasswordSubtitle,
             color: Colors.blue,
             onTap: _changePassword,
             isDark: isDark,
@@ -634,8 +633,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           _buildDivider(isDark),
           _buildOptionTile(
             icon: LucideIcons.bell,
-            label: 'Notification Settings',
-            subtitle: 'Manage your notifications',
+            label: context.l10n.notificationSettings,
+            subtitle: context.l10n.manageNotifications,
             color: Colors.green,
             onTap: () {},
             isDark: isDark,
@@ -760,9 +759,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Text(
-                'Save Changes',
-                style: TextStyle(
+            : Text(
+                context.l10n.saveChanges,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -798,7 +797,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               const SizedBox(height: 20),
               Text(
-                'Update Profile Photo',
+                context.l10n.updateProfilePhoto,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -807,7 +806,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a photo from your device',
+                context.l10n.choosePhotoFromDevice,
                 style: TextStyle(
                   fontSize: 13,
                   color: isDark ? Colors.white54 : Colors.grey.shade600,
@@ -826,14 +825,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   child: Icon(LucideIcons.image, color: AppColors.primary, size: 20),
                 ),
                 title: Text(
-                  'Choose from Gallery',
+                  context.l10n.chooseFromGallery,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : const Color(0xFF1A2634),
                   ),
                 ),
                 subtitle: Text(
-                  'Pick an image from your photos',
+                  context.l10n.pickImageFromPhotos,
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : Colors.grey.shade600,
@@ -856,9 +855,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                     ),
                     child: const Icon(LucideIcons.trash2, color: Colors.red, size: 20),
                   ),
-                  title: const Text(
-                    'Remove Selected Photo',
-                    style: TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+                  title: Text(
+                    context.l10n.removeSelectedPhoto,
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -920,7 +919,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               const SizedBox(height: 20),
               _buildMenuTile(
                 icon: LucideIcons.moon,
-                label: 'Dark Mode',
+                label: context.l10n.darkMode,
                 trailing: Switch(
                   value: isDark,
                   onChanged: (value) {
@@ -939,7 +938,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   );
                   return _buildMenuTile(
                     icon: LucideIcons.globe,
-                    label: 'Language',
+                    label: context.l10n.language,
                     subtitle: languageLabel(code),
                     onTap: _showLanguageSelection,
                   );
@@ -947,7 +946,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               _buildMenuTile(
                 icon: LucideIcons.volume,
-                label: 'Sound',
+                label: context.l10n.sound,
                 trailing: Switch(
                   value: true,
                   onChanged: (value) {},
@@ -956,8 +955,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               _buildMenuTile(
                 icon: LucideIcons.server,
-                label: 'Switch Workspace',
-                subtitle: 'Change workspace / tenant',
+                label: context.l10n.switchWorkspace,
+                subtitle: context.l10n.changeWorkspaceSubtitle,
                 onTap: () {
                   Navigator.pop(context);
                   _showSwitchWorkspaceConfirmation();
@@ -965,7 +964,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               _buildMenuTile(
                 icon: LucideIcons.logOut,
-                label: 'Sign Out',
+                label: context.l10n.signOut,
                 color: Colors.red,
                 onTap: () {
                   Navigator.pop(context);
@@ -1000,20 +999,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               final currentLang = ref.read(appLocaleProvider);
               if (currentLang == code) return;
 
-              // persist locally and update provider
-              await ref.read(appLocaleProvider.notifier).setLocale(code);
-
-              // show confirmation to user
-              if (mounted) {
-                context.showSuccessModal(
-                  title: 'Success!',
-                  message: 'Language updated successfully.',
-                  buttonText: 'Done',
-                );
-              }
-            },
-          );
-        }
+          Widget langTile(String code, String label) {
+            return ListTile(
+              title: Text(label),
+              trailing: selected == code
+                  ? Icon(LucideIcons.check, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                final changed = selected != code;
+                // Update provider BEFORE closing so innerRef is still valid
+                if (changed) {
+                  innerRef.read(appLocaleProvider.notifier).setLocale(code);
+                }
+                Navigator.pop(sheetCtx);
+                // Show confirmation using the outer page context (still valid)
+                if (changed && mounted) {
+                  context.showSuccessModal(
+                    title: context.l10n.success,
+                    message: context.l10n.languageUpdatedSuccess,
+                    buttonText: context.l10n.done,
+                  );
+                }
+              },
+            );
+          }
 
         return Container(
           decoration: BoxDecoration(
@@ -1037,9 +1046,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 const SizedBox(height: 12),
               ],
             ),
-          ),
-        );
-      }),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        context.l10n.selectLanguage,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  langTile('en', 'English'),
+                  langTile('sw', 'Swahili'),
+                  langTile('fr', 'Français'),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -1080,9 +1121,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
 
   void _showLogoutConfirmation() {
     context.showConfirmationModal(
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of your account?',
-      confirmText: 'Sign Out',
+      title: context.l10n.signOut,
+      message: context.l10n.signOutMessage,
+      confirmText: context.l10n.signOut,
       onConfirm: () async {
         await ref.read(authNotifierProvider.notifier).logout();
         if (mounted) {
@@ -1096,9 +1137,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
 
   void _showSwitchWorkspaceConfirmation() {
     context.showConfirmationModal(
-      title: 'Switch Workspace',
-      message: 'Switching workspace will sign you out and require entering a new workspace URL. Continue?',
-      confirmText: 'Switch',
+      title: context.l10n.switchWorkspace,
+      message: context.l10n.switchWorkspaceMessage,
+      confirmText: context.l10n.switchButton,
       onConfirm: () async {
         // clear tenant and session
         await ref.read(tenantLocalDataSourceProvider).clearTenant();

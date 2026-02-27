@@ -39,8 +39,8 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
   }
 
   String? _passwordValidator(String? v) {
-    if (v == null || v.isEmpty) return 'Password is required';
-    if (v.length < 6) return 'Password must be at least 6 characters';
+    if (v == null || v.isEmpty) return context.l10n.passwordRequired;
+    if (v.length < 6) return context.l10n.passwordMinLength;
     return null;
   }
 
@@ -48,23 +48,23 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
     if (!_formKey.currentState!.validate()) return;
     final password = _passwordCtrl.text.trim();
     if (_identifier == null || _otp == null) {
-      AppDialog.showError(context: context, title: 'Missing data', message: 'Identifier or OTP missing.');
+      AppDialog.showError(context: context, title: context.l10n.missingData, message: context.l10n.identifierOtpMissing);
       return;
     }
 
-    showAppLoadingDialog(context, message: 'Resetting password...');
+    showAppLoadingDialog(context, message: context.l10n.resettingPassword);
     final usecase = ref.read(changePasswordUsingOtpUseCaseProvider);
     final res = await usecase.call(ChangePasswordUsingOtpParams(emailOrPhone: _identifier!, otp: _otp!, newPassword: password));
     hideAppLoadingDialog(context);
 
     res.fold(
-      (failure) => AppDialog.showError(context: context, title: 'Reset failed', message: failure.message),
+      (failure) => AppDialog.showError(context: context, title: context.l10n.resetFailed, message: failure.message),
       (_) {
         AppDialog.showSuccess(
           context: context,
-          title: 'Password changed',
-          message: 'Your password was updated successfully. Please sign in with your new password.',
-          buttonText: 'Back to Login',
+          title: context.l10n.passwordChanged,
+          message: context.l10n.passwordChangedMessage,
+          buttonText: context.l10n.backToLogin,
           onButtonPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
         );
       },

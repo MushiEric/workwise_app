@@ -6,10 +6,10 @@ import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_modal.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
-import 'package:workwise_erp/core/provider/token_provider.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
 import 'package:workwise_erp/core/provider/tenant_provider.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/extensions/l10n_extension.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -52,42 +52,6 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     );
     
     _animationController.forward();
-
-    // Auto-restore session if a token exists on device. Guard against
-    // attempting restoration when tenant is not yet configured — that used to
-    // cause `UninitializedTenantException` and an endless loading dialog.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        final tenant = ref.read(tenantProvider);
-        if (tenant == null) {
-          // redirect user to workspace entry (workspace must be set before API calls)
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/workspace');
-          return;
-        }
-
-        final token = await ref.read(tokenLocalDataSourceProvider).readToken();
-        if (token != null && token.isNotEmpty) {
-          if (!mounted) return;
-          showAppLoadingDialog(context, message: 'Restoring session...');
-          await ref.read(authNotifierProvider.notifier).loadCurrentUser();
-          if (!mounted) return;
-          hideAppLoadingDialog(context);
-
-          final s = ref.read(authNotifierProvider);
-          // only navigate when authenticated
-          s.maybeWhen(
-            authenticated: (u) => Navigator.pushReplacementNamed(context, '/index'),
-            orElse: () {},
-          );
-        }
-      } catch (_) {
-        // ensure any failure doesn't leave a modal open
-        try {
-          hideAppLoadingDialog(context);
-        } catch (_) {}
-      }
-    });
   }
 
   @override
@@ -104,7 +68,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     final notifier = ref.read(authNotifierProvider.notifier);
 
     // show loading dialog
-    showAppLoadingDialog(context, message: 'Signing in...');
+    showAppLoadingDialog(context, message: context.l10n.signingIn);
 
     await notifier.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
 
@@ -126,7 +90,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
       error: (message) {
         AppDialog.showError(
           context: context, 
-          title: 'Login failed', 
+          title: context.l10n.loginFailed, 
           message: message,
         );
       },
@@ -159,9 +123,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
               // show confirmation to user (verify still mounted)
               if (!mounted) return;
               context.showSuccessModal(
-                title: 'Success!',
-                message: 'Language updated successfully.',
-                buttonText: 'Done',
+                title: context.l10n.success,
+                message: context.l10n.languageUpdatedSuccess,
+                buttonText: context.l10n.done,
               );
             },
           );
@@ -180,7 +144,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Align(alignment: Alignment.centerLeft, child: Text('Select Language', style: Theme.of(context).textTheme.titleMedium)),
+                  child: Align(alignment: Alignment.centerLeft, child: Text(context.l10n.selectLanguage, style: Theme.of(context).textTheme.titleMedium)),
                 ),
                 const SizedBox(height: 8),
                 langTile('en', 'English'),
@@ -261,7 +225,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       
                       // Welcome Text
                       Text(
-                        'Welcome Back',
+                        context.l10n.welcomeBack,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 24,
@@ -302,7 +266,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                               child: TextButton(
                                 onPressed: () { Navigator.pushNamed(context, '/forgot-password'); },
                                 child: Text(
-                                  'Forgot Password?',
+                                  context.l10n.forgotPassword,
                                   style: TextStyle(
                                     color: isDark ? Colors.white70 : AppColors.primary,
                                     fontWeight: FontWeight.w600,

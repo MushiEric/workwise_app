@@ -138,6 +138,12 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
           title: 'Support Tickets',
           actions: [
             IconButton(
+              icon: const Icon(Icons.smart_toy_rounded, size: 22),
+              color: AppColors.white,
+              tooltip: 'AI Assistant',
+              onPressed: () => Navigator.of(context).pushNamed('/support/ai'),
+            ),
+            IconButton(
               icon: Icon(
                 _isSearching ? LucideIcons.x : LucideIcons.search,
                 size: 20.r,
