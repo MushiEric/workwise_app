@@ -22,7 +22,7 @@ void main() {
     mockUsecase = MockChangeUsecase();
   });
 
-  Widget _buildApp() {
+  Widget buildApp() {
     return ProviderScope(
       overrides: [changePasswordUsingOtpUseCaseProvider.overrideWithValue(mockUsecase)],
       child: MaterialApp(
@@ -42,7 +42,7 @@ void main() {
   }
 
   testWidgets('validation and mismatch checks', (tester) async {
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -69,7 +69,7 @@ void main() {
   testWidgets('shows success dialog on success', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => const Either.right(null));
 
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -84,7 +84,7 @@ void main() {
   testWidgets('shows error dialog on failure', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => Either.left(ServerFailure('expired')));
 
-    await tester.pumpWidget(_buildApp());
+    await tester.pumpWidget(buildApp());
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 

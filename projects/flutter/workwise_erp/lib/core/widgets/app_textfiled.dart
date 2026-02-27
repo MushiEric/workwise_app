@@ -72,19 +72,48 @@ class AppTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       autofocus: autofocus,
       textCapitalization: textCapitalization,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.black,
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
         labelText: labelText,
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white70 : Colors.grey.shade700,
+        ),
         hintText: hintText,
+        hintStyle: TextStyle(
+          color: isDark ? Colors.white54 : Colors.grey.shade500,
+        ),
         errorText: errorText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.03) : AppColors.surfaceVariantLight,
+        fillColor: isDark ? const Color(0x14FFFFFF) : const Color(0xFFF4F4F4),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
     );
   }
@@ -140,10 +169,14 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       textInputAction: widget.textInputAction,
       validator: widget.validator,
       onFieldSubmitted: widget.onFieldSubmitted,
-      prefixIcon: widget.showPrefixIcon ? const Icon(Icons.lock_outlined) : null,
+      prefixIcon: widget.showPrefixIcon
+          ? const Icon(Icons.lock_outlined)
+          : null,
       suffixIcon: IconButton(
         icon: Icon(
-          _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          _obscureText
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
         ),
         onPressed: _toggleVisibility,
       ),
@@ -195,7 +228,10 @@ class AppSearchField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }

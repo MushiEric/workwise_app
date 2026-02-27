@@ -124,7 +124,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // helper to perform search filtering on a list
-    List<Asset> _applySearch(List<Asset> list) {
+    List<Asset> applySearch(List<Asset> list) {
       final q = _searchController.text.trim().toLowerCase();
       if (q.isEmpty) return list;
       return list.where((a) {
@@ -134,8 +134,8 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
       }).toList();
     }
 
-    List<Asset> _applySearchAndFilter(List<Asset> list) {
-      var res = _applySearch(list);
+    List<Asset> applySearchAndFilter(List<Asset> list) {
+      var res = applySearch(list);
       if (_selectedFilter != null) {
         switch (_selectedFilter) {
           case 'active':
@@ -154,7 +154,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     }
 
     // generic list display for a given asset subset
-    Widget _vehicleList(List<Asset> list) {
+    Widget vehicleList(List<Asset> list) {
       if (list.isEmpty) {
         return Center(
           child: Text('No vehicles found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)),
@@ -211,9 +211,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
             return l.contains('small');
           }).toList();
 
-          final filteredTrucks = _applySearchAndFilter(trucks);
-          final filteredTrailers = _applySearchAndFilter(trailers);
-          final filteredSmalls = _applySearchAndFilter(smalls);
+          final filteredTrucks = applySearchAndFilter(trucks);
+          final filteredTrailers = applySearchAndFilter(trailers);
+          final filteredSmalls = applySearchAndFilter(smalls);
 
           return Padding(
             padding: const EdgeInsets.only(top: 12),
@@ -238,12 +238,12 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                 child: () {
                   switch (_selectedVehicleCategory) {
                     case 'trailer':
-                      return _vehicleList(filteredTrailers);
+                      return vehicleList(filteredTrailers);
                     case 'small':
-                      return _vehicleList(filteredSmalls);
+                      return vehicleList(filteredSmalls);
                     case 'truck':
                     default:
-                      return _vehicleList(filteredTrucks);
+                      return vehicleList(filteredTrucks);
                   }
                 }(),
               ),

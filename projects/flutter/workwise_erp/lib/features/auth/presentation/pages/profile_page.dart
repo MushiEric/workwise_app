@@ -10,9 +10,9 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
-import '../state/auth_state.dart';
+// import '../state/auth_state.dart';
 import '../../../../core/provider/tenant_provider.dart';
-import '../../../../core/storage/tenant_local_data_source.dart';
+// import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -451,47 +451,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1A2634),
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.white54 : Colors.grey.shade600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+ 
 
   Widget _buildProfileForm(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
     return Container(
@@ -712,7 +672,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     required Color color,
     required VoidCallback onTap,
     required bool isDark,
-    bool showBorder = true,
+    // bool showBorder = true,
   }) {
     return Material(
       color: Colors.transparent,
@@ -1025,10 +985,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      // Use a named param (sheetCtx) so the outer page `context` stays accessible
-      builder: (sheetCtx) => Consumer(
-        builder: (_, innerRef, __) {
-          final selected = innerRef.watch(appLocaleProvider);
+      builder: (context) => Consumer(builder: (context, ref, _) {
+        final selected = ref.watch(appLocaleProvider);
+
+        Widget langTile(String code, String label) {
+          return ListTile(
+            title: Text(label),
+            trailing: selected == code ? Icon(LucideIcons.check, color: AppColors.primary) : null,
+            onTap: () async {
+              Navigator.pop(context); // close language selector
+
+              // if no change, skip (prefer local app setting)
+              final currentLang = ref.read(appLocaleProvider);
+              if (currentLang == code) return;
 
           Widget langTile(String code, String label) {
             return ListTile(
@@ -1055,10 +1024,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
             );
           }
 
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF151A2E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Align(alignment: Alignment.centerLeft, child: Text('Select Language', style: Theme.of(context).textTheme.titleMedium)),
+                ),
+                const SizedBox(height: 8),
+                langTile('en', 'English'),
+                langTile('sw', 'Swahili'),
+                langTile('fr', 'French'),
+                const SizedBox(height: 12),
+              ],
             ),
             child: SafeArea(
               child: Column(

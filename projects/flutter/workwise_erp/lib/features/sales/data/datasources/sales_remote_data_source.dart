@@ -78,10 +78,12 @@ class SalesRemoteDataSource {
       if (v is String) return v;
       if (v is num || v is bool) return v.toString();
       if (v is Map) {
-        if (v.containsKey('name') && v['name'] is String)
+        if (v.containsKey('name') && v['name'] is String) {
           return v['name'] as String;
-        if (v.containsKey('title') && v['title'] is String)
+        }
+        if (v.containsKey('title') && v['title'] is String) {
           return v['title'] as String;
+        }
       }
       return v.toString();
     }
@@ -137,11 +139,13 @@ class SalesRemoteDataSource {
 
     // Numeric fields
     if (out.containsKey('id')) out['id'] = asInt(out['id']);
-    if (out.containsKey('customer_id'))
+    if (out.containsKey('customer_id')) {
       out['customer_id'] = asInt(out['customer_id']);
+    }
     if (out.containsKey('amount')) out['amount'] = asNum(out['amount']);
-    if (out.containsKey('payment_status'))
+    if (out.containsKey('payment_status')) {
       out['payment_status'] = asInt(out['payment_status']);
+    }
 
     // Nested objects
     out['customer'] = asMap(out['customer']);

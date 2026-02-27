@@ -40,7 +40,7 @@ Widget projectTaskTile(BuildContext context, Map<String, dynamic> t) {
                 ],
                 Text(status, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const Spacer(),
-                Text('${progress}%', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('$progress%', style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ])
             ],
           ),

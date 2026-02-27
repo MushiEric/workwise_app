@@ -21,6 +21,15 @@ class AuthRepositoryImpl implements AuthRepository {
       final UserModel model = await remote.fetchCurrentUser();
       return Either.right(model.toDomain());
     } on ServerException catch (e) {
+      // Defensive: if server returned an unexpected response it may indicate
+      // the stored token is invalid (happens after hot-restart/session expiry).
+      // Clear local token to avoid repeated restore attempts and return a
+      // friendly failure so the UI doesn't expose internal parsing errors.
+      final msg = e.message.toLowerCase() ?? '';
+      if (msg.contains('invalid server response') || msg.contains('invalid server response when fetching user') || msg.contains('invalid server response:')) {
+        try {
+          await _tokenStorage.deleteToken();
+        } catch (_) {}
       // Any server-side error (4xx / 5xx) means the stored token is no longer
       // valid. Always wipe it so the app never gets stuck in a retry loop on
       // the next launch.

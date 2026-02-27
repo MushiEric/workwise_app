@@ -788,13 +788,13 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
       );
     }
 
-    String _unitLabel(String? id) {
+    String unitLabel(String? id) {
       if (id == null) return 'KG';
       if (id == '1' || id.toUpperCase() == 'KG') return 'KG';
       return id;
     }
 
-    Widget _weightCard(
+    Widget weightCard(
       String title,
       String? weight,
       String? unit,
@@ -822,7 +822,7 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
               const SizedBox(height: 8),
               Text(
                 hasValue
-                    ? '${NumberFormat.decimalPattern().format(num.tryParse((weight ?? '0').replaceAll(',', '')) ?? 0)} ${_unitLabel(unit)}'
+                    ? '${NumberFormat.decimalPattern().format(num.tryParse((weight ?? '0').replaceAll(',', '')) ?? 0)} ${unitLabel(unit)}'
                     : '-',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
@@ -1007,7 +1007,7 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
               const SizedBox(height: 8),
               Row(
                 children: [
-                  _weightCard(
+                  weightCard(
                     'Check-in',
                     t.checkinWeight,
                     t.checkinWeightUnit,
@@ -1015,14 +1015,14 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
                     valueColor: Colors.green,
                   ),
                   const SizedBox(width: 8),
-                  _weightCard(
+                  weightCard(
                     'Checkout',
                     t.checkoutWeight,
                     t.checkoutWeightUnit,
                     t.checkoutDatetime,
                   ),
                   const SizedBox(width: 8),
-                  _weightCard(
+                  weightCard(
                     'Net Weight',
                     t.netWeight,
                     t.netWeightUnit,

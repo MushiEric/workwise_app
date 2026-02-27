@@ -149,19 +149,19 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage> with Sing
       }
 
       // Heuristic split by `type` (defensive: fall back to product if `type` missing)
-      final _prodOnly = <Map<String, dynamic>>[];
-      final _svcFromProducts = <Map<String, dynamic>>[];
+      final prodOnly = <Map<String, dynamic>>[];
+      final svcFromProducts = <Map<String, dynamic>>[];
       for (final m in rawItems) {
         final t = (m['type'] ?? m['item_type'] ?? '').toString().toLowerCase();
         if (t.contains('service')) {
-          _svcFromProducts.add(m);
+          svcFromProducts.add(m);
         } else {
-          _prodOnly.add(m);
+          prodOnly.add(m);
         }
       }
 
-      _products = _prodOnly;
-      servicesFromProducts = _svcFromProducts.map((m) => {'id': m['id'], 'name': m['name'] ?? m['title'] ?? ''}).toList();
+      _products = prodOnly;
+      servicesFromProducts = svcFromProducts.map((m) => {'id': m['id'], 'name': m['name'] ?? m['title'] ?? ''}).toList();
     } catch (_) {
       _products = [];
       servicesFromProducts = [];
@@ -778,7 +778,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage> with Sing
         ListTile(
           title: const Text('Receiver'),
           subtitle: _receiverId != null
-              ? Text(_findReceiverNameById(_receiverId!) ?? _receiverName ?? 'Receiver ${_receiverId}')
+              ? Text(_findReceiverNameById(_receiverId!) ?? _receiverName ?? 'Receiver $_receiverId')
               : Text((_receiverName != null && _receiverName!.isNotEmpty) ? _receiverName! : 'Select via Basic -> Related To'),
           trailing: IconButton(
             icon: const Icon(Icons.edit_rounded),

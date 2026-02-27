@@ -32,7 +32,7 @@ class _SearchableDialogState<T> extends State<SearchableDialog<T>> {
   final _searchController = TextEditingController();
   List<T> _filteredItems = [];
   T? _selectedItem;
-  Set<T> _selectedItems = {};
+  final Set<T> _selectedItems = {};
 
   @override
   void initState() {

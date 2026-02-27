@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_modal.dart';
@@ -215,8 +216,8 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                       // Logo
                       Center(
                         child: Image.asset(
-                          'assets/images/logo.png',
-                          height: 40,
+                          'assets/images/logo2.png',
+                          height: 50,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -227,6 +228,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                         context.l10n.welcomeBack,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          fontSize: 24,
                           color: isDark ? Colors.white : const Color(0xFF1A2634),
                           letterSpacing: -0.5,
                         ),
@@ -244,17 +246,19 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                           children: [
                             AppTextField(
                               controller: _emailCtrl,
-                              labelText: context.l10n.emailAddress,
+                              labelText: 'Email Address',
+                              hintText: 'Enter your email',
                               keyboardType: TextInputType.emailAddress,
-                              prefixIcon: const Icon(Icons.email_outlined),
-                              validator: (v) => (v == null || v.isEmpty) ? context.l10n.emailRequired : null,
+                              prefixIcon: const Icon(LucideIcons.mail),
+                              validator: (v) => (v == null || v.isEmpty) ? 'Email is required' : null,
                             ),
                             const SizedBox(height: 16),
 
                             AppPasswordField(
                               controller: _passCtrl,
-                              labelText: context.l10n.password,
-                              validator: (v) => (v == null || v.isEmpty) ? context.l10n.passwordRequired : null,
+                            
+                              labelText: 'Password',
+                              validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
                             ),
 
                             Align(
@@ -297,9 +301,13 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
                                         //   ),
                                         // ),
                                       )
-                                    : Text(context.l10n.signIn, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
+                                   
+
                               ),
                             ),
+                             _buildSwitchToWorkSpace(context),
                           ],
                         ),
                       ),
@@ -351,3 +359,28 @@ class _LoginPageState extends ConsumerState<LoginPage> with SingleTickerProvider
     );
   }
 }
+  Widget _buildSwitchToWorkSpace(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/workspace');
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+          minimumSize: const Size(50, 50),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          'Switch To Workspace',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white70 : AppColors.primary,
+          ),
+        ),
+      ),]
+    );
+  }

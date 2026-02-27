@@ -165,8 +165,9 @@ class AuthRemoteDataSource {
           final userResp = await client.get('/user');
           final userRaw = userResp.data;
           Map<String, dynamic>? fetchedMap;
-          if (userRaw is Map<String, dynamic>) fetchedMap = userRaw;
-          else if (userRaw is String) {
+          if (userRaw is Map<String, dynamic>) {
+            fetchedMap = userRaw;
+          } else if (userRaw is String) {
             final s = userRaw.trim();
             if (!s.startsWith('<')) {
               try {
@@ -185,7 +186,7 @@ class AuthRemoteDataSource {
       }
 
       return UserModel.fromJson(userMap);
-    } on ServerException catch (e) {
+    } on ServerException {
       // allow explicit ServerException to bubble up unchanged
       rethrow;
     } on DioException catch (e) {
@@ -310,8 +311,9 @@ class AuthRemoteDataSource {
       final raw = resp.data;
       Map<String, dynamic>? data;
 
-      if (raw is Map<String, dynamic>) data = raw;
-      else if (raw is String) {
+      if (raw is Map<String, dynamic>) {
+        data = raw;
+      } else if (raw is String) {
         final s = raw.trim();
         if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
         try {

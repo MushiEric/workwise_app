@@ -22,7 +22,7 @@ void main() {
     mockUsecase = MockForgotPasswordUsecase();
   });
 
-  Widget _buildTestable() {
+  Widget buildTestable() {
     return ProviderScope(
       overrides: [forgotPasswordUseCaseProvider.overrideWithValue(mockUsecase)],
       child: MaterialApp(home: const ForgotPasswordPage()),
@@ -30,7 +30,7 @@ void main() {
   }
 
   testWidgets('shows validation error for invalid input', (tester) async {
-    await tester.pumpWidget(_buildTestable());
+    await tester.pumpWidget(buildTestable());
 
     final submitBtn = find.text('Send Reset Code');
     expect(submitBtn, findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
   testWidgets('shows success dialog when usecase succeeds', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => const Either.right(null));
 
-    await tester.pumpWidget(_buildTestable());
+    await tester.pumpWidget(buildTestable());
 
     await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
     await tester.tap(find.text('Send Reset Code'));
@@ -66,7 +66,7 @@ void main() {
   testWidgets('shows error dialog when usecase fails', (tester) async {
     when(() => mockUsecase.call(any())).thenAnswer((_) async => Either.left(ServerFailure('server error')));
 
-    await tester.pumpWidget(_buildTestable());
+    await tester.pumpWidget(buildTestable());
 
     await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
     await tester.tap(find.text('Send Reset Code'));
