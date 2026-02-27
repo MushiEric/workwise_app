@@ -3,6 +3,7 @@ import 'package:workwise_erp/core/errors/exceptions.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
 
 import '../../domain/entities/jobcard.dart' as domain;
+import '../../domain/entities/jobcard_form_data.dart';
 import '../../domain/repositories/jobcard_repository.dart';
 import '../datasources/jobcard_remote_data_source.dart';
 import '../../domain/entities/jobcard_detail.dart';
@@ -204,6 +205,40 @@ class JobcardRepositoryImpl implements JobcardRepository {
       final s = await remote.generateUniqueNumber();
       if (s == null || s.isEmpty) return Either.left(ServerFailure('Failed to generate jobcard number'));
       return Either.right(s);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<dynamic, JobcardFormData>> getFormData({int? creatorId}) async {
+    try {
+      final results = await Future.wait([
+        remote.getVehicles(),
+        remote.getUsers(),
+        remote.getProducts(creatorId: creatorId),
+        remote.getProductUnits(creatorId: creatorId),
+      ]);
+      return Either.right(JobcardFormData(
+        vehicles: results[0],
+        users: results[1],
+        products: results[2],
+        productUnits: results[3],
+      ));
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(String type) async {
+    try {
+      final list = await remote.getReceiversByType(type);
+      return Either.right(list);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {

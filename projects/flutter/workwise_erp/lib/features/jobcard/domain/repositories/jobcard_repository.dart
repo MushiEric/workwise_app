@@ -1,6 +1,7 @@
 import 'package:workwise_erp/core/errors/either.dart';
 import '../entities/jobcard.dart';
 import '../entities/jobcard_detail.dart';
+import '../entities/jobcard_form_data.dart';
 import '../entities/jobcard_status.dart';
 
 abstract class JobcardRepository {
@@ -24,5 +25,11 @@ abstract class JobcardRepository {
 
   /// Request the server to generate a unique jobcard number.
   Future<Either<dynamic, String>> generateUniqueNumber();
+
+  /// Fetch all dropdown/catalog data required to render the creation form.
+  Future<Either<dynamic, JobcardFormData>> getFormData({int? creatorId});
+
+  /// Fetch receivers filtered by [type] (customer | vendor | user | employee).
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(String type);
 }
 

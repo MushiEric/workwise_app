@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:workwise_erp/core/provider/dio_provider.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
@@ -106,81 +105,39 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage> with Sing
   }
 
   Future<void> _loadAuxData() async {
-    final dio = ref.read(dioProvider);
-    // services that may be embedded inside product/getItem responses
+    final authState = ref.read(authNotifierProvider);
+    final creatorId = authState.maybeWhen(authenticated: (u) => u.id, orElse: () => null);
+
+    // ── form-data (vehicles, users, products, units) via use case ──────────
+    final formDataResult = await ref
+        .read(getJobcardFormDataUseCaseProvider)
+        .call(creatorId: creatorId);
+
     List<Map<String, dynamic>> servicesFromProducts = [];
 
-    // vehicles
-    try {
-      final vResp = await dio.get('/vehicle/getVehicle');
-      if (vResp.data is List) {
-        _vehicles = List<Map<String, dynamic>>.from(vResp.data as List);
-      } else if (vResp.data is Map && vResp.data['data'] is List) {
-        _vehicles = List<Map<String, dynamic>>.from(vResp.data['data'] as List);
-      }
-    } catch (_) {
-      _vehicles = [];
-    }
+    formDataResult.fold(
+      (_) {/* keep empty defaults */},
+      (data) {
+        _vehicles = data.vehicles;
+        _users = data.users;
 
-    // users (technicians)
-    try {
-      final uResp = await dio.get('/user/getUsers');
-      if (uResp.data is List) {
-        _users = List<Map<String, dynamic>>.from(uResp.data as List);
-      } else if (uResp.data is Map && uResp.data['data'] is List) {
-        _users = List<Map<String, dynamic>>.from(uResp.data['data'] as List);
-      }
-    } catch (_) {
-      _users = [];
-    }
-
-    // product catalog (items) — API may return mixed `type` values (product/service)
-    try {
-      final authState = ref.read(authNotifierProvider);
-      final currentUser = authState.maybeWhen(authenticated: (u) => u, orElse: () => null);
-      final creatorId = currentUser?.id;
-      final pResp = await dio.get('/product/getItem', queryParameters: {if (creatorId != null) 'creatorId': creatorId});
-
-      List<Map<String, dynamic>> rawItems = [];
-      if (pResp.data is List) {
-        rawItems = List<Map<String, dynamic>>.from(pResp.data as List);
-      } else if (pResp.data is Map && pResp.data['data'] is List) {
-        rawItems = List<Map<String, dynamic>>.from(pResp.data['data'] as List);
-      }
-
-      // Heuristic split by `type` (defensive: fall back to product if `type` missing)
-      final prodOnly = <Map<String, dynamic>>[];
-      final svcFromProducts = <Map<String, dynamic>>[];
-      for (final m in rawItems) {
-        final t = (m['type'] ?? m['item_type'] ?? '').toString().toLowerCase();
-        if (t.contains('service')) {
-          svcFromProducts.add(m);
-        } else {
-          prodOnly.add(m);
+        final prodOnly = <Map<String, dynamic>>[];
+        final svcOnly = <Map<String, dynamic>>[];
+        for (final m in data.products) {
+          final t = (m['type'] ?? m['item_type'] ?? '').toString().toLowerCase();
+          if (t.contains('service')) {
+            svcOnly.add(m);
+          } else {
+            prodOnly.add(m);
+          }
         }
-      }
-
-      _products = prodOnly;
-      servicesFromProducts = svcFromProducts.map((m) => {'id': m['id'], 'name': m['name'] ?? m['title'] ?? ''}).toList();
-    } catch (_) {
-      _products = [];
-      servicesFromProducts = [];
-    }
-
-    // product UOMs
-    try {
-      final authState = ref.read(authNotifierProvider);
-      final currentUser = authState.maybeWhen(authenticated: (u) => u, orElse: () => null);
-      final creatorId = currentUser?.id;
-      final uResp = await dio.get('/product/getProductUnit', queryParameters: {if (creatorId != null) 'creatorId': creatorId});
-      if (uResp.data is List) {
-        _productUnits = List<Map<String, dynamic>>.from(uResp.data as List);
-      } else if (uResp.data is Map && uResp.data['data'] is List) {
-        _productUnits = List<Map<String, dynamic>>.from(uResp.data['data'] as List);
-      }
-    } catch (_) {
-      _productUnits = [];
-    }
+        _products = prodOnly;
+        _productUnits = data.productUnits;
+        servicesFromProducts = svcOnly
+            .map((m) => {'id': m['id'], 'name': m['name'] ?? m['title'] ?? ''})
+            .toList();
+      },
+    );
 
     // services (reuse support services use-case) — include any `service` entries embedded in product/getItem
     try {
@@ -228,22 +185,25 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage> with Sing
 
   /// Load receiver names for a given receiver `type` (customer, vendor, user, employee)
   Future<void> _loadReceiversByType(String type) async {
-    final dio = ref.read(dioProvider);
     setState(() {
       _receiverType = type;
       _receiverId = null;
       _receivers = [];
     });
 
-    try {
-      final resp = await dio.get('/logistic/getReceiverNames/$type');
-      List<Map<String, dynamic>> list = [];
-      if (resp.data is List) list = List<Map<String, dynamic>>.from(resp.data as List);
-      if (resp.data is Map && resp.data['data'] is List) list = List<Map<String, dynamic>>.from(resp.data['data'] as List);
-      if (mounted) setState(() => _receivers = list);
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load receivers')));
-    }
+    final result = await ref.read(getReceiversByTypeUseCaseProvider).call(type);
+    result.fold(
+      (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to load receivers')),
+          );
+        }
+      },
+      (list) {
+        if (mounted) setState(() => _receivers = list);
+      },
+    );
   }
 
   String? _findReceiverNameById(int id) {

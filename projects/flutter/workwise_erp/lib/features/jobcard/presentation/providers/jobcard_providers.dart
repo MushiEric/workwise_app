@@ -10,6 +10,8 @@ import '../../domain/usecases/get_jobcard_config.dart';
 import '../../domain/usecases/delete_jobcard.dart';
 import '../../domain/usecases/create_jobcard.dart';
 import '../../domain/usecases/generate_jobcard_number.dart';
+import '../../domain/usecases/get_jobcard_form_data.dart';
+import '../../domain/usecases/get_receivers_by_type.dart';
 import '../notifier/jobcard_notifier.dart';
 
 final jobcardRemoteDataSourceProvider = Provider<JobcardRemoteDataSource>((ref) {
@@ -50,6 +52,16 @@ final createJobcardUseCaseProvider = Provider((ref) {
 final generateJobcardNumberUseCaseProvider = Provider((ref) {
   final repo = ref.watch(jobcardRepositoryProvider);
   return GenerateJobcardNumber(repo);
+});
+
+final getJobcardFormDataUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(jobcardRepositoryProvider);
+  return GetJobcardFormData(repo);
+});
+
+final getReceiversByTypeUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(jobcardRepositoryProvider);
+  return GetReceiversByType(repo);
 });
 
 final jobcardNotifierProvider = StateNotifierProvider<JobcardNotifier, JobcardState>((ref) {

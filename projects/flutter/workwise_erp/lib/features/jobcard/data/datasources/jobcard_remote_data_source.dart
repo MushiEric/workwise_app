@@ -201,6 +201,77 @@ class JobcardRemoteDataSource {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Form-data helpers (dropdown catalogs required when creating a jobcard)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /// GET /vehicle/getVehicle
+  Future<List<Map<String, dynamic>>> getVehicles() async {
+    try {
+      final resp = await client.get('/vehicle/getVehicle');
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error fetching vehicles');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// GET /user/getUsers
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    try {
+      final resp = await client.get('/user/getUsers');
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error fetching users');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// GET /product/getItem?creatorId={creatorId}
+  Future<List<Map<String, dynamic>>> getProducts({int? creatorId}) async {
+    try {
+      final resp = await client.get(
+        '/product/getItem',
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+      );
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error fetching products');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// GET /product/getProductUnit?creatorId={creatorId}
+  Future<List<Map<String, dynamic>>> getProductUnits({int? creatorId}) async {
+    try {
+      final resp = await client.get(
+        '/product/getProductUnit',
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+      );
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error fetching product units');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// GET /logistic/getReceiverNames/{type}
+  /// `type` can be: customer | vendor | user | employee
+  Future<List<Map<String, dynamic>>> getReceiversByType(String type) async {
+    try {
+      final resp = await client.get('/logistic/getReceiverNames/$type');
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error fetching receivers');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
   /// POST /jobcard/saveJobCard
   /// Supports multipart upload when `item_attachemt` or `service_attachemt` are provided as
   /// lists of local file paths inside `payload`.
