@@ -24,11 +24,11 @@ class AppIcon extends StatelessWidget {
 
   const AppIcon(
     this.icon, {
-    Key? key,
+    super.key,
     this.size = 20,
     this.color,
     this.padding = EdgeInsets.zero,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

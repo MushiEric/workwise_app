@@ -8,7 +8,9 @@ import 'package:workwise_erp/features/jobcard/presentation/providers/jobcard_det
 import 'package:workwise_erp/features/jobcard/domain/entities/jobcard_detail.dart';
 
 void main() {
-  testWidgets('JobcardDetailPage shows tabs and Overview/Repairs content', (tester) async {
+  testWidgets('JobcardDetailPage shows tabs and Overview/Repairs content', (
+    tester,
+  ) async {
     final jobcard = JobcardDetail(
       id: 20,
       jobcardNumber: 'JB-2025/124016',
@@ -25,18 +27,32 @@ void main() {
         {'item_name': 'SINKS', 'qty': 5, 'item_description': 'Test item'},
       ],
       logs: [
-        {'id': 1, 'status': '1', 'created_at': '2025-11-14T12:41:48.000000Z', 'status_row': {'id': 1, 'name': 'Open'}},
-        {'id': 2, 'status': '2', 'created_at': '2025-11-14T13:09:14.000000Z', 'status_row': {'id': 2, 'name': 'In progress'}},
+        {
+          'id': 1,
+          'status': '1',
+          'created_at': '2025-11-14T12:41:48.000000Z',
+          'status_row': {'id': 1, 'name': 'Open'},
+        },
+        {
+          'id': 2,
+          'status': '2',
+          'created_at': '2025-11-14T13:09:14.000000Z',
+          'status_row': {'id': 2, 'name': 'In progress'},
+        },
       ],
       statusRow: {'id': 2, 'name': 'In progress'},
     );
 
     final container = ProviderContainer();
     // pre-populate notifier state in the container
-    container.read(jobcardDetailNotifierProvider.notifier).state = JobcardDetailState.loaded(jobcard);
+    container.read(jobcardDetailNotifierProvider.notifier).state =
+        JobcardDetailState.loaded(jobcard);
 
     await tester.pumpWidget(
-      ProviderScope(container: container, child: const MaterialApp(home: JobcardDetailPage())),
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: JobcardDetailPage()),
+      ),
     );
 
     await tester.pumpAndSettle();

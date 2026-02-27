@@ -21,7 +21,7 @@ class GeofenceRemoteDataSource {
       final uri = '${client.options.baseUrl}$_geofenceEndpoint';
       // ignore: avoid_print
       print('[Geofence] fetching from $uri (endpoint=$_geofenceEndpoint)');
-      final resp = await client.get('$_geofenceEndpoint');
+      final resp = await client.get(_geofenceEndpoint);
       final list = _extractList(resp.data);
       return list
           .map((j) => GeofenceModel.fromJson(Map<String, dynamic>.from(j)))

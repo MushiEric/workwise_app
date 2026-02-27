@@ -342,9 +342,50 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
                   myLocationButtonEnabled: false,
                   mapToolbarEnabled: false,
                 ),
+                ),
+                ),
+                const Divider(height: 1),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(isDark ? Colors.white10 : Colors.grey.shade100),
+                  columns: const [
+                    DataColumn(label: Text('S/N')),
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('File')),
+                  ],
+                  rows: const [],
+                ),
+              ),
+          ] else ...[
+            // Registered but not transmitting
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
+                child: Row(children: [
+                  Icon(Icons.gps_not_fixed_rounded, color: Colors.orange.shade400, size: 34),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('GPS Not Transmitting',
+                          style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1A2634))),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Device registered${a.gpsType != null ? ' via ${a.gpsType}' : ''}. '
+                        'Awaiting first signal.',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                      ),
+                    ]),
+                  ),
+                ]),
               ),
             ),
-
             // Stats row
             Padding(
               padding: const EdgeInsets.all(14),
@@ -355,7 +396,7 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
                   Row(children: [
                     _gpsChip(
                       icon: (a.speed ?? 0) > 0 ? Icons.directions_car_rounded : Icons.local_parking_rounded,
-                      label: a.speed != null ? '${a.speed!.toStringAsFixed(0)} km/h' : '— km/h',
+                      label: a.speed != null ? '${a.speed!.toStringAsFixed(0)} km/h' : '— km/h',
                       color: (a.speed ?? 0) > 0 ? Colors.green : Colors.blueGrey,
                       isDark: isDark,
                     ),
@@ -405,37 +446,7 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
                   ]),
                 ],
               ),
-            ),
-          ] else ...[
-            // Registered but not transmitting
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-                ),
-                child: Row(children: [
-                  Icon(Icons.gps_not_fixed_rounded, color: Colors.orange.shade400, size: 34),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('GPS Not Transmitting',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1A2634))),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Device registered${a.gpsType != null ? ' via ${a.gpsType}' : ''}. '
-                        'Awaiting first signal.',
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey.shade600),
-                      ),
-                    ]),
-                  ),
-                ]),
-              ),
-            ),
-          ],
+            ),          ],
         ],
       ),
     );

@@ -31,7 +31,7 @@ Color hexToColor(String? hex, {Color? fallback}) {
     }
 
     if (s.length == 6) {
-      s = 'FF' + s; // add full opacity
+      s = 'FF$s'; // add full opacity
     }
 
     if (s.length != 8) return fb;

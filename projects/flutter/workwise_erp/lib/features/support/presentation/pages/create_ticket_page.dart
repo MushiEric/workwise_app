@@ -28,7 +28,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   final _descriptionController = TextEditingController();
   DateTime? _endDate;
 
-  List<Map<String, dynamic>> _localFiles = [];
+  final List<Map<String, dynamic>> _localFiles = [];
 
   List<Priority> _priorities = [];
   List<SupportCategory> _categories = [];
@@ -82,7 +82,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       for (final f in result.files) {
         _localFiles.add({
           'name': f.name,
-          'size': f.size != null ? _humanFileSize(f.size) : 'Unknown',
+          'size': _humanFileSize(f.size),
           'path': f.path,
         });
       }
@@ -105,9 +105,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     final params = SupportCreateParams(
       subject: _subjectController.text.trim(),
       priorityId: _selectedPriorityId,
-      endDate: _endDate != null
-          ? _endDate!.toIso8601String().split('T').first
-          : null,
+      endDate: _endDate?.toIso8601String().split('T').first,
       description: _descriptionController.text.trim(),
       assignees:
           _selectedAssignees.isNotEmpty ? _selectedAssignees : null,

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workwise_erp/core/errors/failure.dart';
 
 import '../../domain/usecases/get_project_tasks.dart';
 import '../state/project_tasks_state.dart';

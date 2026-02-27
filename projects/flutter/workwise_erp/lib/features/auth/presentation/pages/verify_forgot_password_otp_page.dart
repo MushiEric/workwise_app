@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workwise_erp/core/themes/app_colors.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/verify_forgot_password_otp.dart';
-import 'package:workwise_erp/core/extensions/l10n_extension.dart';
+import 'package:workwise_erp/core/widgets/app_bar.dart';
 
 class VerifyForgotPasswordOtpPage extends ConsumerStatefulWidget {
   const VerifyForgotPasswordOtpPage({super.key});
@@ -63,61 +64,84 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.verifyResetCode), backgroundColor: isDark ? null : Colors.transparent, elevation: 0, foregroundColor: isDark ? null : const Color(0xFF1A2634)),
+      appBar: CustomAppBar(title:'Verify Reset Code', backgroundColor:AppColors.primary, foregroundColor: Colors.white),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(2),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(context.l10n.enterOtpDesc, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-                      const SizedBox(height: 16),
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AppTextField(
-                              controller: _identifierCtrl,
-                              labelText: context.l10n.emailOrPhone,
-                              prefixIcon: const Icon(Icons.mail_outline),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (v) => (v == null || v.trim().isEmpty) ? context.l10n.emailOrPhoneRequired : null,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                     TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 600),
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    curve: Curves.easeOutBack,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/images/logo2.png',
+                              fit: BoxFit.contain,
                             ),
-                            const SizedBox(height: 12),
-                            AppTextField(
-                              controller: _otpCtrl,
-                              labelText: context.l10n.otpCode,
-                              prefixIcon: const Icon(Icons.confirmation_number_outlined),
-                              keyboardType: TextInputType.number,
-                              validator: _otpValidator,
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: _submit,
-                                style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                                child: Text(context.l10n.verify, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.back)),
-                    ],
+                      );
+                    },
                   ),
+                    // Text('Enter the 6‑digit code we sent to your email or phone', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 16),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AppTextField(
+                            controller: _identifierCtrl,
+                            labelText: 'Email or phone',
+                            prefixIcon: const Icon(Icons.mail_outline),
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Identifier is required' : null,
+                          ),
+                          const SizedBox(height: 12),
+                          AppTextField(
+                            controller: _otpCtrl,
+                            labelText: 'OTP code',
+                            hintText: 'Enter the code',
+                            prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                            keyboardType: TextInputType.number,
+                            validator: _otpValidator,
+                          ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), backgroundColor: AppColors.primary),
+                              child: const Text('Verify', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back')),
+                  ],
                 ),
               ),
             ),

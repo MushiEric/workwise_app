@@ -507,7 +507,7 @@ class AppIconButton extends StatelessWidget {
                   ]
                 : null,
           ),
-          child: Container(
+          child: SizedBox(
             width: size,
             height: size,
             child: Center(

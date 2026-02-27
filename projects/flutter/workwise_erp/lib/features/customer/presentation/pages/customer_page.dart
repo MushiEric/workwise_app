@@ -150,11 +150,11 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
 
 class _CustomerListTab extends ConsumerWidget {
   const _CustomerListTab({
-    Key? key,
+    super.key,
     required this.query,
     required this.searchCtrl,
     required this.onQueryChanged,
-  }) : super(key: key);
+  });
 
   final String query;
   final TextEditingController searchCtrl;
@@ -165,7 +165,7 @@ class _CustomerListTab extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(customersNotifierProvider);
 
-    List<Customer> _filter(List<Customer> all) {
+    List<Customer> filter(List<Customer> all) {
       if (query.isEmpty) return all;
       final q = query.toLowerCase();
       return all.where((c) {
@@ -195,7 +195,7 @@ class _CustomerListTab extends ConsumerWidget {
                   .loadCustomers(),
             ),
             loaded: (customers) {
-              final filtered = _filter(customers);
+              final filtered = filter(customers);
               if (filtered.isEmpty) {
                 return _EmptyBody(
                   icon: Icons.people_outline_rounded,

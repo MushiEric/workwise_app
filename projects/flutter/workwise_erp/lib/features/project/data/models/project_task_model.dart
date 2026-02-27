@@ -1,7 +1,7 @@
 import '../../domain/entities/project_task.dart';
 
 class ProjectTaskModel extends ProjectTask {
-  const ProjectTaskModel({int? id, String? title, String? description, String? status, Map<String, dynamic>? assignee, int? progress, String? startDate, String? dueDate, int? priority}) : super(id: id, title: title, description: description, status: status, assignee: assignee, progress: progress, startDate: startDate, dueDate: dueDate, priority: priority);
+  const ProjectTaskModel({super.id, super.title, super.description, super.status, super.assignee, super.progress, super.startDate, super.dueDate, super.priority});
 
   factory ProjectTaskModel.fromJson(Map<String, dynamic> json) {
     return ProjectTaskModel(

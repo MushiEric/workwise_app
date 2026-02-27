@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
 
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/features/auth/domain/entities/user.dart';
@@ -23,7 +21,7 @@ void main() {
       currentUserProvider.overrideWithValue(FutureProvider((ref) async => const Either.right(user))),
     ]);
 
-    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: Scaffold(body: ProfilePage()))));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: Scaffold(body: ProfilePage()))));
     await tester.pumpAndSettle();
 
     // open settings
@@ -64,7 +62,7 @@ void main() {
       currentUserProvider.overrideWithValue(FutureProvider((ref) async => Either.right(user))),
     ]);
 
-    await tester.pumpWidget(ProviderScope(container: container, child: const MaterialApp(home: Scaffold(body: ProfilePage()))));
+    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: Scaffold(body: ProfilePage()))));
     await tester.pumpAndSettle();
 
     // role badge should display the role name from roles[0]
