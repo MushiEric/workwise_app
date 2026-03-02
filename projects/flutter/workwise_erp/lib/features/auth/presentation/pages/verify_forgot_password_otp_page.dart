@@ -7,7 +7,7 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/verify_forgot_password_otp.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
-
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 class VerifyForgotPasswordOtpPage extends ConsumerStatefulWidget {
   const VerifyForgotPasswordOtpPage({super.key});
 

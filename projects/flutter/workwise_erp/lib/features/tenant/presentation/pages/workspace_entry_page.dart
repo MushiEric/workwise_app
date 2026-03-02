@@ -12,7 +12,7 @@ import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/widgets/app_textfiled.dart';
-
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 typedef DioFactory = Dio Function(String baseUrl);
 
 class WorkspaceEntryScreen extends ConsumerStatefulWidget {

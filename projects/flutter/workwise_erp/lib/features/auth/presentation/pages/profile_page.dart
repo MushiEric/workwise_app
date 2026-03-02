@@ -10,9 +10,8 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
-// import '../state/auth_state.dart';
 import '../../../../core/provider/tenant_provider.dart';
-// import '../../../../core/storage/tenant_local_data_source.dart';
+import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
@@ -85,8 +84,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       _nameController.text = user.name ?? '';
       _emailController.text = user.email ?? '';
       _phoneController.text = user.phone ?? '';
-     
-   
     }
   }
 
@@ -418,40 +415,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
   Widget _buildStatsCards(BuildContext context, bool isDark, Color primaryColor) {
     return Row(
       children: [
-        // Expanded(
-        //   child: _buildStatCard(
-        //     'Projects',
-        //     '24',
-        //     LucideIcons.folder,
-        //     Colors.blue,
-        //     isDark,
-        //   ),
-        // ),
-        const SizedBox(width: 12),
-        // Expanded(
-        //   child: _buildStatCard(
-        //     'Tasks',
-        //     '156',
-        //     LucideIcons.checkSquare,
-        //     Colors.green,
-        //     isDark,
-        //   ),
-        // ),
-        // const SizedBox(width: 12),
-        // Expanded(
-        //   child: _buildStatCard(
-        //     'Tickets',
-        //     '8',
-        //     LucideIcons.headphones,
-        //     Colors.orange,
-        //     isDark,
-        //   ),
-        // ),
+        // Stats cards commented out as in original
       ],
     );
   }
-
- 
 
   Widget _buildProfileForm(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
     return Container(
@@ -533,9 +500,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
                 const SizedBox(height: 16),
               ],
-
-              // Bio Field (kept commented)
-              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -639,27 +603,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
             onTap: () {},
             isDark: isDark,
           ),
-          /* -- Temporarily disabled (may be re-activated later): Privacy & Security, Help & Support
-          _buildDivider(isDark),
-          _buildOptionTile(
-            icon: LucideIcons.shield,
-            label: 'Privacy & Security',
-            subtitle: 'Two-factor authentication, login history',
-            color: Colors.purple,
-            onTap: () {},
-            isDark: isDark,
-          ),
-          _buildDivider(isDark),
-          _buildOptionTile(
-            icon: LucideIcons.helpCircle,
-            label: 'Help & Support',
-            subtitle: 'FAQs, contact support',
-            color: Colors.orange,
-            onTap: () {},
-            isDark: isDark,
-            showBorder: false,
-          ),
-          */
         ],
       ),
     );
@@ -672,7 +615,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     required Color color,
     required VoidCallback onTap,
     required bool isDark,
-    // bool showBorder = true,
   }) {
     return Material(
       color: Colors.transparent,
@@ -939,7 +881,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   return _buildMenuTile(
                     icon: LucideIcons.globe,
                     label: context.l10n.language,
-                    subtitle: languageLabel(code),
+                    // subtitle: languageLabel(code),
                     onTap: _showLanguageSelection,
                   );
                 },
@@ -985,19 +927,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Consumer(builder: (context, ref, _) {
-        final selected = ref.watch(appLocaleProvider);
-
-        Widget langTile(String code, String label) {
-          return ListTile(
-            title: Text(label),
-            trailing: selected == code ? Icon(LucideIcons.check, color: AppColors.primary) : null,
-            onTap: () async {
-              Navigator.pop(context); // close language selector
-
-              // if no change, skip (prefer local app setting)
-              final currentLang = ref.read(appLocaleProvider);
-              if (currentLang == code) return;
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final selected = ref.watch(appLocaleProvider);
 
           Widget langTile(String code, String label) {
             return ListTile(
@@ -1005,15 +937,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               trailing: selected == code
                   ? Icon(LucideIcons.check, color: AppColors.primary)
                   : null,
-              onTap: () {
-                final changed = selected != code;
-                // Update provider BEFORE closing so innerRef is still valid
-                if (changed) {
-                  innerRef.read(appLocaleProvider.notifier).setLocale(code);
-                }
-                Navigator.pop(sheetCtx);
-                // Show confirmation using the outer page context (still valid)
-                if (changed && mounted) {
+              onTap: () async {
+                Navigator.pop(context); // close language selector
+
+                // if no change, skip (prefer local app setting)
+                final currentLang = ref.read(appLocaleProvider);
+                if (currentLang == code) return;
+
+                // Update provider
+                ref.read(appLocaleProvider.notifier).setLocale(code);
+                
+                // Show confirmation
+                if (mounted) {
                   context.showSuccessModal(
                     title: context.l10n.success,
                     message: context.l10n.languageUpdatedSuccess,
@@ -1024,32 +959,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
             );
           }
 
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(margin: const EdgeInsets.only(top: 12), width: 40, height: 4, decoration: BoxDecoration(color: isDark ? Colors.white24 : Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Align(alignment: Alignment.centerLeft, child: Text('Select Language', style: Theme.of(context).textTheme.titleMedium)),
-                ),
-                const SizedBox(height: 8),
-                langTile('en', 'English'),
-                langTile('sw', 'Swahili'),
-                langTile('fr', 'French'),
-                const SizedBox(height: 12),
-              ],
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF151A2E) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: SafeArea(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Drag handle
                   Container(
                     margin: const EdgeInsets.only(top: 12),
                     width: 40,
@@ -1060,6 +979,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // Title
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Align(
@@ -1071,6 +991,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // Language options
                   langTile('en', 'English'),
                   langTile('sw', 'Swahili'),
                   langTile('fr', 'Français'),
@@ -1164,5 +1085,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     } catch (e) {
       return 'Unknown';
     }
+  }
+}
+
+String languageLabel(String code) {
+  switch (code) {
+    case 'en':
+      return 'English';
+    case 'sw':
+      return 'Swahili';
+    case 'fr':
+      return 'French';
+    default:
+      return 'English';
   }
 }

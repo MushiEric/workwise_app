@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:workwise_erp/core/constants/app_constant.dart';
 import '../../domain/entities/chat_message.dart';
-
+import 'package:flutter/material.dart';
 /// Calls the OpenAI Chat Completions API with a Workwise ERP system prompt.
 class AiChatDataSource {
   late final Dio _dio;
