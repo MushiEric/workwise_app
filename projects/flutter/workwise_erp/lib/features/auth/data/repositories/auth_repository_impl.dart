@@ -15,56 +15,70 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl(this.remote, this._tokenStorage);
 
+  // ─────────────────────────────────────────────────────────────
+  // FETCH CURRENT USER
+  // ─────────────────────────────────────────────────────────────
   @override
   Future<Either<Failure, domain.User>> fetchCurrentUser() async {
     try {
       final UserModel model = await remote.fetchCurrentUser();
       return Either.right(model.toDomain());
-    } on ServerException catch (e) {
-      // Defensive: if server returned an unexpected response it may indicate
-      // the stored token is invalid (happens after hot-restart/session expiry).
-      // Clear local token to avoid repeated restore attempts and return a
-      // friendly failure so the UI doesn't expose internal parsing errors.
-      final msg = e.message.toLowerCase() ?? '';
-      if (msg.contains('invalid server response') || msg.contains('invalid server response when fetching user') || msg.contains('invalid server response:')) {
-        try {
-          await _tokenStorage.deleteToken();
-        } catch (_) {}
-      // Any server-side error (4xx / 5xx) means the stored token is no longer
-      // valid. Always wipe it so the app never gets stuck in a retry loop on
-      // the next launch.
-      try {
-        await _tokenStorage.deleteToken();
-      } catch (_) {}
+    }
+
+    // ── SERVER EXCEPTION ───────────────────────────────────────
+    on ServerException catch (e) {
       final msg = e.message.toLowerCase();
-      if (msg.contains('invalid server response')) {
-        return const Either.left(ServerFailure('Session expired. Please sign in again.'));
-      }
-      return Either.left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      // Network / connectivity error — token may still be valid once the device
-      // is back online, so keep it and surface a connectivity failure.
-      return Either.left(NetworkFailure(e.message));
-    } on TimeoutException catch (e) {
-      // Same reasoning as NetworkException — transient; don't clear the token.
-      return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
-      // Unknown error — wipe token to be safe.
+
+      // Any server-side error likely means token is invalid
       try {
         await _tokenStorage.deleteToken();
       } catch (_) {}
+
+      if (msg.contains('invalid server response')) {
+        return const Either.left(
+          ServerFailure('Session expired. Please sign in again.'),
+        );
+      }
+
+      return Either.left(ServerFailure(e.message));
+    }
+
+    // ── NETWORK EXCEPTION ──────────────────────────────────────
+    on NetworkException catch (e) {
+      return Either.left(NetworkFailure(e.message));
+    }
+
+    // ── TIMEOUT EXCEPTION ──────────────────────────────────────
+    on TimeoutException catch (e) {
+      return Either.left(TimeoutFailure(e.message));
+    }
+
+    // ── UNKNOWN ERROR ───────────────────────────────────────────
+    catch (_) {
+      try {
+        await _tokenStorage.deleteToken();
+      } catch (_) {}
+
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // LOGIN
+  // ─────────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, domain.User>> login({required String email, required String password}) async {
+  Future<Either<Failure, domain.User>> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final UserModel model = await remote.login(email: email, password: password);
-      // persist token if available
+      final UserModel model =
+          await remote.login(email: email, password: password);
+
       if (model.apiToken != null && model.apiToken!.isNotEmpty) {
         await _tokenStorage.saveToken(model.apiToken!);
       }
+
       return Either.right(model.toDomain());
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -72,13 +86,18 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
       return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // FORGOT PASSWORD
+  // ─────────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, void>> forgotPassword({required String emailOrPhone}) async {
+  Future<Either<Failure, void>> forgotPassword({
+    required String emailOrPhone,
+  }) async {
     try {
       await remote.forgotPassword(emailOrPhone: emailOrPhone);
       return const Either.right(null);
@@ -88,15 +107,24 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
       return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // VERIFY OTP
+  // ─────────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, void>> verifyForgotPasswordOtp({required String emailOrPhone, required String otp}) async {
+  Future<Either<Failure, void>> verifyForgotPasswordOtp({
+    required String emailOrPhone,
+    required String otp,
+  }) async {
     try {
-      await remote.verifyForgotPasswordOtp(emailOrPhone: emailOrPhone, otp: otp);
+      await remote.verifyForgotPasswordOtp(
+        emailOrPhone: emailOrPhone,
+        otp: otp,
+      );
       return const Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -104,15 +132,26 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
       return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // CHANGE PASSWORD
+  // ─────────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, void>> changePasswordUsingOtp({required String emailOrPhone, required String otp, required String newPassword}) async {
+  Future<Either<Failure, void>> changePasswordUsingOtp({
+    required String emailOrPhone,
+    required String otp,
+    required String newPassword,
+  }) async {
     try {
-      await remote.changePasswordUsingOtp(emailOrPhone: emailOrPhone, otp: otp, password: newPassword);
+      await remote.changePasswordUsingOtp(
+        emailOrPhone: emailOrPhone,
+        otp: otp,
+        password: newPassword,
+      );
       return const Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -120,13 +159,17 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
       return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // UPDATE PROFILE
+  // ─────────────────────────────────────────────────────────────
   @override
-  Future<Either<Failure, domain.User>> updateProfile(Map<String, dynamic> payload) async {
+  Future<Either<Failure, domain.User>> updateProfile(
+      Map<String, dynamic> payload) async {
     try {
       final UserModel model = await remote.updateProfile(payload);
       return Either.right(model.toDomain());
@@ -136,19 +179,21 @@ class AuthRepositoryImpl implements AuthRepository {
       return Either.left(NetworkFailure(e.message));
     } on TimeoutException catch (e) {
       return Either.left(TimeoutFailure(e.message));
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Unexpected error'));
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // LOGOUT
+  // ─────────────────────────────────────────────────────────────
   @override
   Future<Either<Failure, void>> logout() async {
     try {
       await _tokenStorage.deleteToken();
       return const Either.right(null);
-    } catch (e) {
+    } catch (_) {
       return const Either.left(ServerFailure('Failed to clear session'));
     }
   }
 }
-

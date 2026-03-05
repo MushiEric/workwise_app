@@ -7,6 +7,8 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/change_password_using_otp.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
+
 class ChangePasswordUsingOtpPage extends ConsumerStatefulWidget {
   const ChangePasswordUsingOtpPage({super.key});
 
@@ -42,6 +44,7 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
     if (v == null || v.isEmpty) return context.l10n.passwordRequired;
     if (v.length < 6) return context.l10n.passwordMinLength;
     return null;
+    
   }
 
   Future<void> _submit() async {
@@ -76,7 +79,7 @@ class _ChangePasswordUsingOtpPageState extends ConsumerState<ChangePasswordUsing
     // final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: CustomAppBar(title: 'Set New Password', backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+      appBar: CustomAppBar(title: context.l10n.setNewPassword, backgroundColor: AppColors.primary, foregroundColor: Colors.white),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
