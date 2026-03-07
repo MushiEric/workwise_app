@@ -192,10 +192,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     domain.User? user;
     authState.maybeWhen(authenticated: (u) => user = u, orElse: () {});
 
+    // Also watch currentUserProvider (backend profile endpoint) to get the
+    // avatar URL, which may not be present in the auth token response.
+    final currentUserAsync = ref.watch(currentUserProvider);
+    String? backendAvatar;
+    currentUserAsync.maybeWhen(
+      data: (either) {
+        either.fold((_) => null, (u) {
+          backendAvatar =
+              (u.avatar != null && u.avatar!.isNotEmpty) ? u.avatar : null;
+        });
+      },
+      orElse: () {},
+    );
+
     // Always keep the last known good user so the UI never collapses to
     // defaults while the notifier is in loading state.
     if (user != null) _cachedUser = user;
     final displayUser = _cachedUser;
+
+    // Resolved avatar: prefer backend profile endpoint over auth-token user.
+    final resolvedAvatar =
+        backendAvatar ??
+        (displayUser?.avatar?.isNotEmpty == true ? displayUser!.avatar : null);
 
     // Populate form controllers exactly once (when user first becomes available).
     if (!_hasPopulated && displayUser != null) {
@@ -241,7 +260,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               child: Column(
                 children: [
                   // Profile Header with Avatar
-                  _buildProfileHeader(context, displayUser, isDark, primaryColor),
+                  _buildProfileHeader(context, displayUser, isDark, primaryColor, avatarUrl: resolvedAvatar),
                   
                   const SizedBox(height: 24),
                   
@@ -271,9 +290,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
+  Widget _buildProfileHeader(BuildContext context, domain.User? user, bool isDark, Color primaryColor, {String? avatarUrl}) {
     final initials = _getInitials(user?.name);
     final avatarColor = primaryColor;
+    final effectiveAvatar = avatarUrl ?? user?.avatar;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -314,9 +334,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   backgroundColor: avatarColor,
                   backgroundImage: _pickedAvatarFile != null
                       ? FileImage(_pickedAvatarFile!) as ImageProvider
-                      : imageProviderFromUrl(user?.avatar),
+                      : imageProviderFromUrl(effectiveAvatar),
                   child: (_pickedAvatarFile == null &&
-                          (user?.avatar == null || user!.avatar!.isEmpty))
+                          (effectiveAvatar == null || effectiveAvatar.isEmpty))
                       ? Text(
                           initials,
                           style: TextStyle(

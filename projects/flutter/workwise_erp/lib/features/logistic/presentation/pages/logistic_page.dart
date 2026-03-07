@@ -8,9 +8,10 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../assets/presentation/providers/assets_providers.dart';
-import '../../../assets/presentation/widgets/asset_tile.dart';
-import '../../../assets/domain/entities/asset.dart';
+// TODO(assets): Temporarily disabled — uncomment when assets module is restored
+// import '../../../assets/presentation/providers/assets_providers.dart';
+// import '../../../assets/presentation/widgets/asset_tile.dart';
+// import '../../../assets/domain/entities/asset.dart';
 import '../providers/operators_providers.dart';
 import '../providers/trips_providers.dart';
 import '../providers/geofence_providers.dart';
@@ -31,15 +32,29 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String? _selectedFilter; // 'active','idle','offline' (UI only)
-
-  /// current vehicle category shown on the vehicle tab; 'truck','trailer','small'
-  String _selectedVehicleCategory = 'truck';
+  // TODO(assets): Temporarily disabled — uncomment when assets module is restored
+  // /// current vehicle category shown on the vehicle tab; 'truck','trailer','small'
+  // String _selectedVehicleCategory = 'truck';
 
   /// controller for the geofence map — used to auto-fit bounds after creation
   GoogleMapController? _geofenceMapController;
 
-  static const List<String> _labels = ['Vehicle', 'Geofences', 'Journey', 'Trip', 'Operators', 'Workshop'];
-  static const List<IconData> _icons = [Icons.car_rental, Icons.map, Icons.timeline, Icons.directions_car, Icons.person, Icons.build];
+  static const List<String> _labels = [
+    'Vehicle',
+    'Geofences',
+    'Journey',
+    'Trip',
+    'Operators',
+    'Workshop',
+  ];
+  static const List<IconData> _icons = [
+    Icons.car_rental,
+    Icons.map,
+    Icons.timeline,
+    Icons.directions_car,
+    Icons.person,
+    Icons.build,
+  ];
 
   /// Computes the tightest [LatLngBounds] that contains all [points].
   LatLngBounds _computeBounds(List<LatLng> points) {
@@ -85,7 +100,12 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     try {
       final list = jsonDecode(coords) as List;
       return list
-          .map((e) => LatLng((e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
+          .map(
+            (e) => LatLng(
+              (e['lat'] as num).toDouble(),
+              (e['lng'] as num).toDouble(),
+            ),
+          )
           .toList();
     } catch (_) {
       return [];
@@ -95,11 +115,10 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
   @override
   void initState() {
     super.initState();
-    // prefetch assets & operators so tabs render quickly
+    // Prefetch available logistic data providers.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        ref.read(assetsNotifierProvider.notifier).loadAssets();
-      } catch (_) {}
+      // TODO(assets): Temporarily disabled — uncomment when assets module is restored
+      // try { ref.read(assetsNotifierProvider.notifier).loadAssets(); } catch (_) {}
       try {
         ref.read(geofenceNotifierProvider.notifier).loadGeofences();
       } catch (_) {}
@@ -119,138 +138,103 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     super.dispose();
   }
 
+  // TODO(assets): Temporarily disabled — uncomment full body and remove placeholder when assets module is restored
   Widget _buildVehicleTab(BuildContext context) {
-    final state = ref.watch(assetsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // helper to perform search filtering on a list
-    List<Asset> applySearch(List<Asset> list) {
-      final q = _searchController.text.trim().toLowerCase();
-      if (q.isEmpty) return list;
-      return list.where((a) {
-        final name = a.name?.toLowerCase() ?? '';
-        final reg = a.registrationNumber?.toLowerCase() ?? '';
-        return name.contains(q) || reg.contains(q);
-      }).toList();
-    }
-
-    List<Asset> applySearchAndFilter(List<Asset> list) {
-      var res = applySearch(list);
-      if (_selectedFilter != null) {
-        switch (_selectedFilter) {
-          case 'active':
-            res = res.where((a) => a.isActive == true).toList();
-            break;
-          case 'idle':
-            // placeholder condition; adjust when backend defines idle status
-            res = res.where((a) => a.status?.toLowerCase() == 'idle').toList();
-            break;
-          case 'offline':
-            res = res.where((a) => a.isAvailable == false).toList();
-            break;
-        }
-      }
-      return res;
-    }
-
-    // generic list display for a given asset subset
-    Widget vehicleList(List<Asset> list) {
-      if (list.isEmpty) {
-        return Center(
-          child: Text('No vehicles found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)),
-        );
-      }
-      return RefreshIndicator(
-        onRefresh: () => ref.read(assetsNotifierProvider.notifier).loadAssets(),
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 8, bottom: 16),
-          itemCount: list.length,
-          itemBuilder: (context, idx) {
-            final a = list[idx];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: AssetTile(asset: a, onTap: () => Navigator.pushNamed(context, '/assets/detail', arguments: a.id)),
-            );
-          },
-        ),
-      );
-    }
+    // -- ASSETS MODULE DISABLED --
+    // final state = ref.watch(assetsNotifierProvider);
+    //
+    // List<Asset> applySearch(List<Asset> list) {
+    //   final q = _searchController.text.trim().toLowerCase();
+    //   if (q.isEmpty) return list;
+    //   return list.where((a) {
+    //     final name = a.name?.toLowerCase() ?? '';
+    //     final reg = a.registrationNumber?.toLowerCase() ?? '';
+    //     return name.contains(q) || reg.contains(q);
+    //   }).toList();
+    // }
+    //
+    // List<Asset> applySearchAndFilter(List<Asset> list) {
+    //   var res = applySearch(list);
+    //   if (_selectedFilter != null) {
+    //     switch (_selectedFilter) {
+    //       case 'active': res = res.where((a) => a.isActive == true).toList(); break;
+    //       case 'idle': res = res.where((a) => a.status?.toLowerCase() == 'idle').toList(); break;
+    //       case 'offline': res = res.where((a) => a.isAvailable == false).toList(); break;
+    //     }
+    //   }
+    //   return res;
+    // }
+    //
+    // Widget vehicleList(List<Asset> list) {
+    //   if (list.isEmpty) return Center(child: Text('No vehicles found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+    //   return RefreshIndicator(
+    //     onRefresh: () => ref.read(assetsNotifierProvider.notifier).loadAssets(),
+    //     child: ListView.builder(
+    //       padding: const EdgeInsets.only(top: 8, bottom: 16),
+    //       itemCount: list.length,
+    //       itemBuilder: (context, idx) {
+    //         final a = list[idx];
+    //         return Padding(
+    //           padding: const EdgeInsets.only(bottom: 8),
+    //           child: AssetTile(asset: a, onTap: () => Navigator.pushNamed(context, '/assets/detail', arguments: a.id)),
+    //         );
+    //       },
+    //     ),
+    //   );
+    // }
+    //
+    // return Padding(
+    //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    //   child: state.when(
+    //     initial: () => const SizedBox.shrink(),
+    //     loading: () => const Center(child: CircularProgressIndicator()),
+    //     error: (msg) => Center(child: Text(msg)),
+    //     loaded: (assets) {
+    //       if (assets.isEmpty) return Center(child: Text('No vehicles found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+    //       final trucks = assets.where((a) { final t = a.type; if (t == '1') return true; return t?.toLowerCase().contains('truck') ?? false; }).toList();
+    //       final trailers = assets.where((a) { final t = a.type; if (t == '2') return true; return t?.toLowerCase().contains('trailer') ?? false; }).toList();
+    //       final smalls = assets.where((a) { final t = a.type; if (t == '3') return true; return t?.toLowerCase().contains('small') ?? false; }).toList();
+    //       final filteredTrucks = applySearchAndFilter(trucks);
+    //       final filteredTrailers = applySearchAndFilter(trailers);
+    //       final filteredSmalls = applySearchAndFilter(smalls);
+    //       return Padding(
+    //         padding: const EdgeInsets.only(top: 12),
+    //         child: Column(
+    //           crossAxisAlignment: CrossAxisAlignment.stretch,
+    //           children: [
+    //             Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('Vehicles: \${assets.length}', style: Theme.of(context).textTheme.bodyMedium)),
+    //             Row(children: [
+    //               _categoryTile(context, 'truck', 'Trucks', filteredTrucks.length),
+    //               _categoryTile(context, 'trailer', 'Trailers', filteredTrailers.length),
+    //               _categoryTile(context, 'small', 'Small vehicles', filteredSmalls.length),
+    //             ]),
+    //             const SizedBox(height: 8),
+    //             Expanded(child: () {
+    //               switch (_selectedVehicleCategory) {
+    //                 case 'trailer': return vehicleList(filteredTrailers);
+    //                 case 'small': return vehicleList(filteredSmalls);
+    //                 default: return vehicleList(filteredTrucks);
+    //               }
+    //             }()),
+    //           ],
+    //         ),
+    //       );
+    //     },
+    //   ),
+    // );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: state.when(
-        initial: () => const SizedBox.shrink(),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (msg) => Center(child: Text(msg)),
-        loaded: (assets) {
-          if (assets.isEmpty) {
-            return Center(
-              child: Text('No vehicles found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)),
-            );
-          }
-
-          // partition by type. backend currently sends numeric codes as strings
-          // 1 -> truck, 2 -> trailer, 3 -> small vehicles. fall back to checking
-          // for the word just in case (older data).
-          final trucks = assets.where((a) {
-            final t = a.type;
-            if (t == '1') return true;
-            final l = t?.toLowerCase() ?? '';
-            return l.contains('truck');
-          }).toList();
-          final trailers = assets.where((a) {
-            final t = a.type;
-            if (t == '2') return true;
-            final l = t?.toLowerCase() ?? '';
-            return l.contains('trailer');
-          }).toList();
-          final smalls = assets.where((a) {
-            final t = a.type;
-            if (t == '3') return true;
-            final l = t?.toLowerCase() ?? '';
-            return l.contains('small');
-          }).toList();
-
-          final filteredTrucks = applySearchAndFilter(trucks);
-          final filteredTrailers = applySearchAndFilter(trailers);
-          final filteredSmalls = applySearchAndFilter(smalls);
-
-          return Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // optional total count header
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text('Vehicles: ${assets.length}', style: Theme.of(context).textTheme.bodyMedium),
-                ),
-              // category selection row (clickable containers)
-              Row(
-                children: [
-                  _categoryTile(context, 'truck', 'Trucks', filteredTrucks.length),
-                  _categoryTile(context, 'trailer', 'Trailers', filteredTrailers.length),
-                  _categoryTile(context, 'small', 'Small vehicles', filteredSmalls.length),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: () {
-                  switch (_selectedVehicleCategory) {
-                    case 'trailer':
-                      return vehicleList(filteredTrailers);
-                    case 'small':
-                      return vehicleList(filteredSmalls);
-                    case 'truck':
-                    default:
-                      return vehicleList(filteredTrucks);
-                  }
-                }(),
-              ),
-            ],
-            )
-          );
-        },
+      child: Center(
+        child: Text(
+          'Asset module is temporarily disabled.',
+          style: TextStyle(
+            fontSize: 16,
+            color: isDark ? Colors.white54 : Colors.grey.shade700,
+          ),
+        ),
       ),
     );
   }
@@ -264,10 +248,24 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
       child: state.when(
         initial: () => const SizedBox.shrink(),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (msg) => Center(child: Text(msg, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700))),
+        error: (msg) => Center(
+          child: Text(
+            msg,
+            style: TextStyle(
+              color: isDark ? Colors.white54 : Colors.grey.shade700,
+            ),
+          ),
+        ),
         loaded: (geofences) {
           if (geofences.isEmpty) {
-            return Center(child: Text('No geofences found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+            return Center(
+              child: Text(
+                'No geofences found',
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.grey.shade700,
+                ),
+              ),
+            );
           }
 
           // ── collect all geofence shapes ─────────────────────────────
@@ -279,26 +277,38 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
             if (g.type == 'polygon') {
               final pts = _parsePoints(g.coordinates);
               if (pts.isNotEmpty) {
-                polygons.add(Polygon(
+                polygons.add(
+                  Polygon(
                     polygonId: PolygonId(g.id.toString()),
                     points: pts,
                     strokeWidth: 2,
                     strokeColor: _colorFromHex(g.color) ?? Colors.blue,
-                    fillColor: (_colorFromHex(g.color) ?? Colors.blue).withOpacity(0.2)));
+                    fillColor: (_colorFromHex(g.color) ?? Colors.blue)
+                        .withOpacity(0.2),
+                  ),
+                );
                 allPoints.addAll(pts);
               }
             } else if (g.type == 'circle') {
-              final lat = g.centerLat != null ? double.tryParse(g.centerLat!) : g.latitude;
-              final lng = g.centerLng != null ? double.tryParse(g.centerLng!) : g.longitude;
+              final lat = g.centerLat != null
+                  ? double.tryParse(g.centerLat!)
+                  : g.latitude;
+              final lng = g.centerLng != null
+                  ? double.tryParse(g.centerLng!)
+                  : g.longitude;
               final rad = g.radius != null ? double.tryParse(g.radius!) : null;
               if (lat != null && lng != null && rad != null) {
-                circles.add(Circle(
+                circles.add(
+                  Circle(
                     circleId: CircleId(g.id.toString()),
                     center: LatLng(lat, lng),
                     radius: rad,
                     strokeWidth: 2,
                     strokeColor: _colorFromHex(g.color) ?? Colors.blue,
-                    fillColor: (_colorFromHex(g.color) ?? Colors.blue).withOpacity(0.2)));
+                    fillColor: (_colorFromHex(g.color) ?? Colors.blue)
+                        .withOpacity(0.2),
+                  ),
+                );
                 // Approximate circle extent for bounds
                 final degOffset = rad / 111000;
                 allPoints.add(LatLng(lat + degOffset, lng + degOffset));
@@ -308,8 +318,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
           }
 
           // Fallback centre when no shapes parsed
-          final LatLng fallbackCenter =
-              allPoints.isNotEmpty ? allPoints.first : const LatLng(0, 0);
+          final LatLng fallbackCenter = allPoints.isNotEmpty
+              ? allPoints.first
+              : const LatLng(0, 0);
 
           return Column(
             children: [
@@ -349,7 +360,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
               Expanded(
                 flex: 45,
                 child: RefreshIndicator(
-                  onRefresh: () => ref.read(geofenceNotifierProvider.notifier).loadGeofences(),
+                  onRefresh: () => ref
+                      .read(geofenceNotifierProvider.notifier)
+                      .loadGeofences(),
                   child: ListView.builder(
                     padding: const EdgeInsets.only(top: 4, bottom: 16),
                     itemCount: geofences.length,
@@ -367,8 +380,11 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                           style: const TextStyle(fontSize: 11),
                         ),
                         trailing: g.isCurrentlyInside
-                            ? const Icon(Icons.check_circle,
-                                color: Colors.green, size: 18)
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 18,
+                              )
                             : null,
                       );
                     },
@@ -393,9 +409,18 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (msg) => Center(child: Text(msg)),
         loaded: (operators) {
-          if (operators.isEmpty) return Center(child: Text('No operators found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+          if (operators.isEmpty)
+            return Center(
+              child: Text(
+                'No operators found',
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.grey.shade700,
+                ),
+              ),
+            );
           return RefreshIndicator(
-            onRefresh: () => ref.read(operatorsNotifierProvider.notifier).loadOperators(),
+            onRefresh: () =>
+                ref.read(operatorsNotifierProvider.notifier).loadOperators(),
             child: ListView.builder(
               padding: const EdgeInsets.only(top: 8, bottom: 16),
               itemCount: operators.length,
@@ -403,7 +428,14 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                 final o = operators[idx];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: OperatorTile(operatorModel: o, onTap: () => Navigator.pushNamed(context, '/logistic/operators/detail', arguments: o.id)),
+                  child: OperatorTile(
+                    operatorModel: o,
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/logistic/operators/detail',
+                      arguments: o.id,
+                    ),
+                  ),
                 );
               },
             ),
@@ -422,13 +454,28 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
       child: state.when(
         initial: () => const SizedBox.shrink(),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (msg) => Center(child: Text(msg, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700))),
+        error: (msg) => Center(
+          child: Text(
+            msg,
+            style: TextStyle(
+              color: isDark ? Colors.white54 : Colors.grey.shade700,
+            ),
+          ),
+        ),
         loaded: (trips) {
           if (trips.isEmpty) {
-            return Center(child: Text('No trips found', style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade700)));
+            return Center(
+              child: Text(
+                'No trips found',
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.grey.shade700,
+                ),
+              ),
+            );
           }
           return RefreshIndicator(
-            onRefresh: () => ref.read(tripsNotifierProvider.notifier).loadTrips(),
+            onRefresh: () =>
+                ref.read(tripsNotifierProvider.notifier).loadTrips(),
             child: ListView.builder(
               padding: const EdgeInsets.only(top: 8, bottom: 16),
               itemCount: trips.length,
@@ -438,7 +485,8 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: TripTile(
                     trip: t,
-                    onTap: () => Navigator.pushNamed(context, '/logistic/trips'),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/logistic/trips'),
                   ),
                 );
               },
@@ -454,100 +502,80 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Text(text, style: TextStyle(fontSize: 16, color: isDark ? Colors.white54 : Colors.grey.shade700)),
-      ),
-    );
-  }
-
-  /// clickable category card used instead of tabs
-  Widget _categoryTile(BuildContext context, String key, String label, int count) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selected = _selectedVehicleCategory == key;
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedVehicleCategory = key;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey.shade300),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? AppColors.primary : (isDark ? Colors.white : Colors.black))),
-              const SizedBox(height: 4),
-              Text('$count', style: TextStyle(fontSize: 12, color: selected ? AppColors.primary : (isDark ? Colors.white54 : Colors.grey.shade600))),
-            ],
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 16,
+            color: isDark ? Colors.white54 : Colors.grey.shade700,
           ),
         ),
       ),
     );
   }
 
-  /// Animated search bar shown when [_isSearching] is true.
-  Widget _buildSearchBar(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: 70,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white10 : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextField(
-            controller: _searchController,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Search vehicles...',
-              hintStyle: TextStyle(
-                color: isDark ? Colors.white54 : Colors.grey.shade500,
-              ),
-              prefixIcon: Icon(
-                LucideIcons.search,
-                color: isDark ? Colors.white54 : Colors.grey.shade600,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  LucideIcons.x,
-                  color: isDark ? Colors.white54 : Colors.grey.shade600,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _searchController.clear();
-                    _isSearching = false;
-                  });
-                },
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1A2634)),
-            onChanged: (_) {
-              setState(() {});
-            },
-          ),
-        ),
-      ),
-    );
-  }
+  // TODO(assets): Temporarily disabled — uncomment when assets module is restored
+  // /// Clickable category card used in vehicle tab.
+  // Widget _categoryTile(BuildContext context, String key, String label, int count) {
+  //   final isDark = Theme.of(context).brightness == Brightness.dark;
+  //   final selected = _selectedVehicleCategory == key;
+  //   return Expanded(
+  //     child: InkWell(
+  //       onTap: () => setState(() => _selectedVehicleCategory = key),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(vertical: 12),
+  //         decoration: BoxDecoration(
+  //           color: selected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+  //           borderRadius: BorderRadius.circular(8),
+  //           border: Border.all(color: selected ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey.shade300)),
+  //         ),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? AppColors.primary : (isDark ? Colors.white : Colors.black))),
+  //             const SizedBox(height: 4),
+  //             Text('$count', style: TextStyle(fontSize: 12, color: selected ? AppColors.primary : (isDark ? Colors.white54 : Colors.grey.shade600))),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  //
+  // /// Animated search bar shown when _isSearching is true.
+  // Widget _buildSearchBar(BuildContext context) {
+  //   final isDark = Theme.of(context).brightness == Brightness.dark;
+  //   return AnimatedContainer(
+  //     duration: const Duration(milliseconds: 300),
+  //     height: 70,
+  //     child: Padding(
+  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //       child: Container(
+  //         decoration: BoxDecoration(
+  //           color: isDark ? Colors.white10 : Colors.white,
+  //           borderRadius: BorderRadius.circular(16),
+  //           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+  //         ),
+  //         child: TextField(
+  //           controller: _searchController,
+  //           autofocus: true,
+  //           decoration: InputDecoration(
+  //             hintText: 'Search vehicles...',
+  //             hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade500),
+  //             prefixIcon: Icon(LucideIcons.search, color: isDark ? Colors.white54 : Colors.grey.shade600),
+  //             suffixIcon: IconButton(
+  //               icon: Icon(LucideIcons.x, color: isDark ? Colors.white54 : Colors.grey.shade600),
+  //               onPressed: () => setState(() { _searchController.clear(); _isSearching = false; }),
+  //             ),
+  //             border: InputBorder.none,
+  //             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //           ),
+  //           style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1A2634)),
+  //           onChanged: (_) => setState(() {}),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
@@ -558,7 +586,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
           children: [
             ListTile(
               title: const Text('Active vehicles'),
-              trailing: _selectedFilter == 'active' ? const Icon(Icons.check) : null,
+              trailing: _selectedFilter == 'active'
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 setState(() => _selectedFilter = 'active');
                 Navigator.pop(ctx);
@@ -566,7 +596,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
             ),
             ListTile(
               title: const Text('Idle'),
-              trailing: _selectedFilter == 'idle' ? const Icon(Icons.check) : null,
+              trailing: _selectedFilter == 'idle'
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 setState(() => _selectedFilter = 'idle');
                 Navigator.pop(ctx);
@@ -574,7 +606,9 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
             ),
             ListTile(
               title: const Text('Offline'),
-              trailing: _selectedFilter == 'offline' ? const Icon(Icons.check) : null,
+              trailing: _selectedFilter == 'offline'
+                  ? const Icon(Icons.check)
+                  : null,
               onTap: () {
                 setState(() => _selectedFilter = 'offline');
                 Navigator.pop(ctx);
@@ -614,7 +648,10 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
         actions: [
           if (_currentIndex == 0) ...[
             IconButton(
-              icon: Icon(_isSearching ? LucideIcons.x : LucideIcons.search, size: 20),
+              icon: Icon(
+                _isSearching ? LucideIcons.x : LucideIcons.search,
+                size: 20,
+              ),
               onPressed: () {
                 setState(() {
                   if (_isSearching) {
@@ -634,12 +671,11 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
       drawer: const AppDrawer(),
       body: Column(
         children: [
-          if (_currentIndex == 0 && _isSearching) _buildSearchBar(context),
-          Expanded(
-            child: _currentIndex == 0
-                ? DefaultTabController(length: 3, child: tabs[0])
-                : tabs[_currentIndex],
-          ),
+          // TODO(assets): Temporarily disabled — uncomment when assets module is restored
+          // if (_currentIndex == 0 && _isSearching) _buildSearchBar(context),
+          // NOTE: also restore DefaultTabController wrapping for vehicle tab:
+          // _currentIndex == 0 ? DefaultTabController(length: 3, child: tabs[0]) : tabs[_currentIndex]
+          Expanded(child: tabs[_currentIndex]),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -648,7 +684,11 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
         selectedItemColor: primary,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: List.generate(_labels.length, (i) => BottomNavigationBarItem(icon: Icon(_icons[i]), label: _labels[i])),
+        items: List.generate(
+          _labels.length,
+          (i) =>
+              BottomNavigationBarItem(icon: Icon(_icons[i]), label: _labels[i]),
+        ),
       ),
     );
   }

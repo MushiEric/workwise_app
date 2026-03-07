@@ -27,7 +27,6 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
 
     // Header user info (prefer backend/currentUserProvider, fall back to auth state)
     final currentUserAsync = ref.watch(currentUserProvider);
@@ -234,35 +233,36 @@ class AppDrawer extends ConsumerWidget {
                     );
                   }
 
-                  if (m.id == 'assets') {
-                    return _buildExpansionGroup(
-                      context: context,
-                      title: m.title,
-                      icon: m.icon,
-                      children: [
-                        _DrawerChild(
-                          title: 'List',
-                          route: '/assets/list',
-                          icon: Icons.list,
-                        ),
-                        _DrawerChild(
-                          title: 'Accessory',
-                          route: '/assets/accessory',
-                          icon: Icons.extension,
-                        ),
-                        _DrawerChild(
-                          title: 'Components',
-                          route: '/assets/components',
-                          icon: Icons.widgets,
-                        ),
-                        _DrawerChild(
-                          title: 'Activity Logs',
-                          route: '/assets/activity-logs',
-                          icon: Icons.history_toggle_off,
-                        ),
-                      ],
-                    );
-                  }
+                  // TODO(assets): Temporarily disabled — uncomment when assets module is restored
+                  // if (m.id == 'assets') {
+                  //   return _buildExpansionGroup(
+                  //     context: context,
+                  //     title: m.title,
+                  //     icon: m.icon,
+                  //     children: [
+                  //       _DrawerChild(
+                  //         title: 'List',
+                  //         route: '/assets/list',
+                  //         icon: Icons.list,
+                  //       ),
+                  //       _DrawerChild(
+                  //         title: 'Accessory',
+                  //         route: '/assets/accessory',
+                  //         icon: Icons.extension,
+                  //       ),
+                  //       _DrawerChild(
+                  //         title: 'Components',
+                  //         route: '/assets/components',
+                  //         icon: Icons.widgets,
+                  //       ),
+                  //       _DrawerChild(
+                  //         title: 'Activity Logs',
+                  //         route: '/assets/activity-logs',
+                  //         icon: Icons.history_toggle_off,
+                  //       ),
+                  //     ],
+                  //   );
+                  // }
 
                   if (m.id == 'support') {
                     return _buildExpansionGroup(
@@ -284,93 +284,43 @@ class AppDrawer extends ConsumerWidget {
                     );
                   }
 
-                  // Default single menu tile
-                  final isSelected = index == 0; // You can track selected index
-
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    margin: const EdgeInsets.symmetric(vertical: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: isSelected
-                          ? primaryColor.withOpacity(0.1)
-                          : Colors.transparent,
+                  // Default single menu tile (no active/highlight state)
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? primaryColor.withOpacity(0.15)
-                              : (isDark
-                                    ? Colors.white.withOpacity(0.05)
-                                    : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(14),
-                          border: isSelected
-                              ? Border.all(
-                                  color: primaryColor.withOpacity(0.3),
-                                  width: 1,
-                                )
-                              : null,
-                        ),
-                        child: Icon(
-                          m.icon,
-                          color: isSelected
-                              ? primaryColor
-                              : (isDark
-                                    ? Colors.white70
-                                    : Colors.grey.shade600),
-                          size: 20,
-                        ),
+                      child: Icon(
+                        m.icon,
+                        color: isDark ? Colors.white70 : Colors.grey.shade600,
+                        size: 20,
                       ),
-                      title: Text(
-                        m.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? primaryColor
-                                  : (isDark
-                                        ? Colors.white
-                                        : Colors.grey.shade800),
-                              fontSize: 15,
-                            ),
-                      ),
-                      trailing: isSelected
-                          ? Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: primaryColor,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: primaryColor.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Icon(
-                              Icons.chevron_right_rounded,
-                              color: isDark
-                                  ? Colors.white24
-                                  : Colors.grey.shade400,
-                              size: 20,
-                            ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, m.route);
-                      },
                     ),
+                    title: Text(
+                      m.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.grey.shade800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDark ? Colors.white24 : Colors.grey.shade400,
+                      size: 20,
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, m.route);
+                    },
                   );
                 },
               ),

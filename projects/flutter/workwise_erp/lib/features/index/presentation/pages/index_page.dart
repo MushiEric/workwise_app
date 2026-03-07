@@ -308,11 +308,13 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       ? username.split(' ').first
                       : username;
                   final hour = DateTime.now().toLocal().hour;
-                  final greeting = hour < 12
-                      ? 'Good Morning'
-                      : (hour < 17
-                            ? 'Good Afternoon'
-                            : (hour < 21 ? 'Good Evening' : 'Good Night'));
+                  final greeting = hour < 5
+                      ? 'Good Night'
+                      : (hour < 12
+                            ? 'Good Morning'
+                            : (hour < 17
+                                  ? 'Good Afternoon'
+                                  : (hour < 21 ? 'Good Evening' : 'Good Night')));
 
                   return Container(
                     padding: const EdgeInsets.all(20),
@@ -392,13 +394,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       color: isDark ? Colors.white : const Color(0xFF1A2634),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                    ),
-                    child: const Text('View All'),
-                  ),
+
                 ],
               ),
             ),

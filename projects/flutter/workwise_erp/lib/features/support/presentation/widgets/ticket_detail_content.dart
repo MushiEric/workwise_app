@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-
 import '../../domain/entities/support_ticket.dart';
 import '../../domain/entities/support_reply.dart';
 import '../../domain/entities/status.dart';
@@ -13,6 +12,7 @@ import 'dropdown_helpers.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../../core/widgets/app_modal.dart';
 import '../../../../../core/widgets/app_dialog.dart';
+import '../../../../../core/widgets/app_tab_bar.dart';
 import '../../../../../core/themes/app_colors.dart';
 
 class TicketDetailContent extends ConsumerStatefulWidget {
@@ -20,10 +20,12 @@ class TicketDetailContent extends ConsumerStatefulWidget {
   const TicketDetailContent({super.key, required this.ticket});
 
   @override
-  ConsumerState<TicketDetailContent> createState() => _TicketDetailContentState();
+  ConsumerState<TicketDetailContent> createState() =>
+      _TicketDetailContentState();
 }
 
-class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with SingleTickerProviderStateMixin {
+class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<SupportReply> replies;
   late List<dynamic> history;
@@ -111,7 +113,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     if (widget.ticket.createdAt != null) {
       history.add({
         'action': 'Ticket created',
-        'user': widget.ticket.createdBy != null ? 'User ${widget.ticket.createdBy}' : 'System',
+        'user': widget.ticket.createdBy != null
+            ? 'User ${widget.ticket.createdBy}'
+            : 'System',
         'timestamp': widget.ticket.createdAt,
         'type': 'create',
       });
@@ -131,8 +135,12 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
     // Sort by timestamp (newest first)
     history.sort((a, b) {
-      final aTime = a['timestamp'] is DateTime ? a['timestamp'] : DateTime.parse(a['timestamp'].toString());
-      final bTime = b['timestamp'] is DateTime ? b['timestamp'] : DateTime.parse(b['timestamp'].toString());
+      final aTime = a['timestamp'] is DateTime
+          ? a['timestamp']
+          : DateTime.parse(a['timestamp'].toString());
+      final bTime = b['timestamp'] is DateTime
+          ? b['timestamp']
+          : DateTime.parse(b['timestamp'].toString());
       return bTime.compareTo(aTime);
     });
 
@@ -141,10 +149,12 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
   String _timeAgo(dynamic dateTime) {
     try {
-      final when = dateTime is DateTime ? dateTime : DateTime.parse(dateTime.toString());
+      final when = dateTime is DateTime
+          ? dateTime
+          : DateTime.parse(dateTime.toString());
       final now = DateTime.now();
       final difference = now.difference(when);
-      
+
       if (difference.inDays > 365) {
         return '${(difference.inDays / 365).floor()}y ago';
       }
@@ -162,8 +172,23 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
   String _formatDate(dynamic dateTime) {
     try {
-      final date = dateTime is DateTime ? dateTime : DateTime.parse(dateTime.toString()).toLocal();
-      final monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      final date = dateTime is DateTime
+          ? dateTime
+          : DateTime.parse(dateTime.toString()).toLocal();
+      final monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       final month = monthNames[date.month - 1];
       final day = date.day;
       final year = date.year;
@@ -216,7 +241,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
     if (statusObj.id == null || widget.ticket.id == null) {
       // No id to send — show info and keep UI selection but do not call server
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Status set locally to $newStatus')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Status set locally to $newStatus')),
+      );
       return;
     }
 
@@ -226,36 +253,48 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     // show global loading dialog while updating ticket status
     showAppLoadingDialog(context, message: 'Updating Ticket...');
 
-    final res = await change.call(ticketId: widget.ticket.id!, statusId: statusObj.id!);
+    final res = await change.call(
+      ticketId: widget.ticket.id!,
+      statusId: statusObj.id!,
+    );
 
     // hide loading dialog when operation completes
     hideAppLoadingDialog(context);
 
-    res.fold((failure) {
-      // revert on failure
-      setState(() {
-        selectedStatus = previous;
-        _isChangingStatus = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update status: ${failure.message}')));
-    }, (_) {
-      setState(() {
-        history.insert(0, {
-          'action': 'Status changed to $newStatus',
-          'user': 'You',
-          'timestamp': DateTime.now(),
-          'type': 'status',
+    res.fold(
+      (failure) {
+        // revert on failure
+        setState(() {
+          selectedStatus = previous;
+          _isChangingStatus = false;
         });
-        _isChangingStatus = false;
-      });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update status: ${failure.message}'),
+          ),
+        );
+      },
+      (_) {
+        setState(() {
+          history.insert(0, {
+            'action': 'Status changed to $newStatus',
+            'user': 'You',
+            'timestamp': DateTime.now(),
+            'type': 'status',
+          });
+          _isChangingStatus = false;
+        });
 
-      // refresh ticket list so callers see the change immediately
-      try {
-        ref.read(supportNotifierProvider.notifier).loadTickets();
-      } catch (_) {}
+        // refresh ticket list so callers see the change immediately
+        try {
+          ref.read(supportNotifierProvider.notifier).loadTickets();
+        } catch (_) {}
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Status updated to $newStatus')));
-    });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Status updated to $newStatus')));
+      },
+    );
   }
 
   Future<void> _updatePriority(String newPriority) async {
@@ -269,38 +308,52 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     );
 
     if (pObj.id == null || widget.ticket.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Priority set locally to $newPriority')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Priority set locally to $newPriority')),
+      );
       return;
     }
 
     final change = ref.read(changeTicketPriorityUseCaseProvider);
     setState(() => _isChangingPriority = true);
-    final res = await change.call(ticketId: widget.ticket.id!, priorityId: pObj.id!);
+    final res = await change.call(
+      ticketId: widget.ticket.id!,
+      priorityId: pObj.id!,
+    );
 
-    res.fold((failure) {
-      setState(() {
-        selectedPriority = previous;
-        _isChangingPriority = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update priority: ${failure.message}')));
-    }, (_) {
-      setState(() {
-        history.insert(0, {
-          'action': 'Priority changed to $newPriority',
-          'user': 'You',
-          'timestamp': DateTime.now(),
-          'type': 'status',
+    res.fold(
+      (failure) {
+        setState(() {
+          selectedPriority = previous;
+          _isChangingPriority = false;
         });
-        _isChangingPriority = false;
-      });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update priority: ${failure.message}'),
+          ),
+        );
+      },
+      (_) {
+        setState(() {
+          history.insert(0, {
+            'action': 'Priority changed to $newPriority',
+            'user': 'You',
+            'timestamp': DateTime.now(),
+            'type': 'status',
+          });
+          _isChangingPriority = false;
+        });
 
-      // refresh ticket list so callers see the change immediately
-      try {
-        ref.read(supportNotifierProvider.notifier).loadTickets();
-      } catch (_) {}
+        // refresh ticket list so callers see the change immediately
+        try {
+          ref.read(supportNotifierProvider.notifier).loadTickets();
+        } catch (_) {}
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Priority updated to $newPriority')));
-    });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Priority updated to $newPriority')),
+        );
+      },
+    );
   }
 
   Future<void> _sendComment() async {
@@ -357,36 +410,14 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
 
     return Column(
       children: [
-        // Enhanced Tab Bar
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: 16.w),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Document'),
-              Tab(text: 'Comment'),
-              Tab(text: 'History'),
-            ],
-            labelColor: primaryColor,
-            labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: TextStyle(fontSize: 13.sp),
-            unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
-            indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.r),
-              color: primaryColor.withOpacity(0.15),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          ),
+        // Tab Bar
+        AppTabBar(
+          controller: _tabController,
+          tabs: const ['Overview', 'Document', 'Comment', 'History'],
+          isScrollable: false,
         ),
         SizedBox(height: 12.h),
-        
+
         // Tab Bar Views
         Expanded(
           child: TabBarView(
@@ -395,13 +426,13 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
             children: [
               // Overview Tab
               _buildOverviewTab(context, isDark, primaryColor),
-              
+
               // Document Tab
               _buildDocumentTab(context, isDark, primaryColor),
-              
+
               // Comment Tab
               _buildCommentTab(context, isDark, primaryColor, currentUser),
-              
+
               // History Tab
               _buildHistoryTab(context, isDark, primaryColor),
             ],
@@ -411,7 +442,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     );
   }
 
-  Widget _buildOverviewTab(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildOverviewTab(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
     final statusColor = _getStatusColor(selectedStatus);
     final priorityColor = _getPriorityColor(selectedPriority);
 
@@ -426,7 +461,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
           Container(
             padding: EdgeInsets.all(16.r),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
+              color: isDark
+                  ? Colors.white.withOpacity(0.03)
+                  : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16.r),
               border: Border.all(
                 color: isDark ? Colors.white10 : Colors.grey.shade200,
@@ -438,7 +475,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               children: [
                 Row(
                   children: [
-                    Icon(Icons.subject_rounded, size: 16.r, color: primaryColor),
+                    Icon(
+                      Icons.subject_rounded,
+                      size: 16.r,
+                      color: primaryColor,
+                    ),
                     SizedBox(width: 8.w),
                     Expanded(
                       child: Text(
@@ -452,7 +493,10 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
                     ),
                     if ((widget.ticket.ticketCode ?? '').isNotEmpty)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           color: primaryColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12.r),
@@ -515,7 +559,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
           ),
 
           SizedBox(height: 20.h),
-          
+
           // Customer Information Card
           _buildInfoCard(
             context,
@@ -525,19 +569,27 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               _infoRow('Name', widget.ticket.customer?.name ?? '-'),
               _infoRow('Email', widget.ticket.customer?.email ?? '-'),
               _infoRow('Phone', widget.ticket.customer?.phone ?? '-'),
-              _infoRow('Contact', widget.ticket.customer?.email ?? widget.ticket.customer?.phone ?? '-'),
+              _infoRow(
+                'Contact',
+                widget.ticket.customer?.email ??
+                    widget.ticket.customer?.phone ??
+                    '-',
+              ),
               // Assigned user (API: assign_user) — show only name and type when available
               if (widget.ticket.assignUser != null) ...[
                 const SizedBox(height: 6),
                 _infoRow('Assigned', widget.ticket.assignUser!.name ?? '-'),
-                _infoRow('Assignee type', widget.ticket.assignUser!.type ?? '-'),
+                _infoRow(
+                  'Assignee type',
+                  widget.ticket.assignUser!.type ?? '-',
+                ),
               ],
             ],
             isDark: isDark,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Details Card
           _buildInfoCard(
             context,
@@ -548,13 +600,16 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               _infoRow('Services', widget.ticket.services?.join(', ') ?? '-'),
               _infoRow('Location', widget.ticket.location ?? '-'),
               _infoRow('Department', widget.ticket.department ?? '-'),
-              _infoRow('Supervisors', widget.ticket.supervisors?.join(', ') ?? '-'),
+              _infoRow(
+                'Supervisors',
+                widget.ticket.supervisors?.join(', ') ?? '-',
+              ),
             ],
             isDark: isDark,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Description Card
           _buildInfoCard(
             context,
@@ -579,9 +634,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
             ],
             isDark: isDark,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Attachments Section
           if (localAttachments.isNotEmpty)
             _buildAttachmentsSection(context, isDark),
@@ -604,10 +659,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Padding(
         padding: EdgeInsets.all(12.r),
@@ -633,40 +685,64 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
               // Deduplicate options and ensure the current value exists exactly once.
               initialValue: (() {
                 final unique = uniqueOptions(options);
-                final localValue = unique.contains(value) ? value : (unique.isNotEmpty ? unique.first : null);
+                final localValue = unique.contains(value)
+                    ? value
+                    : (unique.isNotEmpty ? unique.first : null);
                 return localValue;
               })(),
-              items: uniqueOptions(options).map((s) => DropdownMenuItem(
-                value: s,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: label == 'Status' ? _getStatusColor(s) : _getPriorityColor(s),
-                        shape: BoxShape.circle,
+              items: uniqueOptions(options)
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: label == 'Status'
+                                  ? _getStatusColor(s)
+                                  : _getPriorityColor(s),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(s, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        s,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
-              onChanged: onChanged != null ? (v) => v != null ? onChanged(v) : null : null,
+                  )
+                  .toList(),
+              onChanged: onChanged != null
+                  ? (v) => v != null ? onChanged(v) : null
+                  : null,
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              icon: ((label == 'Status' && _isChangingStatus) || (label == 'Priority' && _isChangingPriority))
-                  ? SizedBox(width: 24, height: 24, child: Padding(padding: EdgeInsets.all(2), child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(isDark ? Colors.white54 : Colors.grey.shade600))))
-                  : Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.white54 : Colors.grey.shade600),
+              icon:
+                  ((label == 'Status' && _isChangingStatus) ||
+                      (label == 'Priority' && _isChangingPriority))
+                  ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Padding(
+                        padding: EdgeInsets.all(2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isDark ? Colors.white54 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    ),
               dropdownColor: isDark ? const Color(0xFF151A2E) : Colors.white,
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF1A2634),
@@ -679,7 +755,13 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, {required String title, required IconData icon, required List<Widget> children, required bool isDark}) {
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+    required bool isDark,
+  }) {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
@@ -765,7 +847,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
         children: [
           Row(
             children: [
-              Icon(Icons.attach_file_rounded, size: 18.r, color: AppColors.primary),
+              Icon(
+                Icons.attach_file_rounded,
+                size: 18.r,
+                color: AppColors.primary,
+              ),
               SizedBox(width: 8.w),
               Text(
                 'Attachments (${localAttachments.length})',
@@ -778,847 +864,966 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent> with 
             ],
           ),
           SizedBox(height: 12.h),
-          ...localAttachments.map((attachment) => Padding(
-            padding: EdgeInsets.only(bottom: 8.h),
-            child: Container(
-              padding: EdgeInsets.all(12.r),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8.r),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10.r),
+          ...localAttachments.map(
+            (attachment) => Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: Container(
+                padding: EdgeInsets.all(12.r),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      child: Icon(
+                        Icons.insert_drive_file_rounded,
+                        size: 16.r,
+                        color: AppColors.primary,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.insert_drive_file_rounded,
-                      size: 16.r,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          attachment['name'] ?? 'File',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13.sp,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF1A2634),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            attachment['name'] ?? 'File',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13.sp,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          attachment['size'] ?? 'Unknown size',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: isDark
-                                ? Colors.white38
-                                : Colors.grey.shade500,
+                          Text(
+                            attachment['size'] ?? 'Unknown size',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: isDark
+                                  ? Colors.white38
+                                  : Colors.grey.shade500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.download_rounded,
-                      size: 20.r,
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    IconButton(
+                      icon: Icon(
+                        Icons.download_rounded,
+                        size: 20.r,
+                        color: isDark ? Colors.white54 : Colors.grey.shade600,
+                      ),
+                      onPressed: () {},
                     ),
-                    onPressed: () {},
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          )),
+          ),
         ],
       ),
     );
   }
 
- Widget _buildDocumentTab(BuildContext context, bool isDark, Color primaryColor) {
-  return SingleChildScrollView(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      children: [
-        // Enhanced Upload Area with better visual feedback
-        Container(
-          height: 260,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                primaryColor.withOpacity(0.08),
-                primaryColor.withOpacity(0.03),
+  Widget _buildDocumentTab(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Enhanced Upload Area with better visual feedback
+          Container(
+            height: 260,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  primaryColor.withOpacity(0.08),
+                  primaryColor.withOpacity(0.03),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: primaryColor.withOpacity(0.3),
+                width: 2,
+                style: BorderStyle.solid,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                  spreadRadius: 0,
+                ),
               ],
             ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: primaryColor.withOpacity(0.3),
-              width: 2,
-              style: BorderStyle.solid,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _onUploadDocuments,
-              borderRadius: BorderRadius.circular(28),
-              splashColor: primaryColor.withOpacity(0.1),
-              highlightColor: primaryColor.withOpacity(0.05),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                // make inner content scroll when it doesn't fit while keeping it centered
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Animated upload icon
-                            TweenAnimationBuilder(
-                              duration: const Duration(milliseconds: 1500),
-                              tween: Tween<double>(begin: 0.8, end: 1.0),
-                              curve: Curves.easeInOut,
-                              builder: (context, double scale, child) {
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      gradient: RadialGradient(
-                                        colors: [
-                                          primaryColor.withOpacity(0.2),
-                                          primaryColor.withOpacity(0.05),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _onUploadDocuments,
+                borderRadius: BorderRadius.circular(28),
+                splashColor: primaryColor.withOpacity(0.1),
+                highlightColor: primaryColor.withOpacity(0.05),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  // make inner content scroll when it doesn't fit while keeping it centered
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Animated upload icon
+                              TweenAnimationBuilder(
+                                duration: const Duration(milliseconds: 1500),
+                                tween: Tween<double>(begin: 0.8, end: 1.0),
+                                curve: Curves.easeInOut,
+                                builder: (context, double scale, child) {
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        gradient: RadialGradient(
+                                          colors: [
+                                            primaryColor.withOpacity(0.2),
+                                            primaryColor.withOpacity(0.05),
+                                          ],
+                                        ),
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: primaryColor.withOpacity(
+                                              0.2,
+                                            ),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 5),
+                                          ),
                                         ],
                                       ),
-                                      shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: primaryColor.withOpacity(0.2),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(
-                                      Icons.cloud_upload_rounded,
-                                      size: 56,
-                                      color: primaryColor,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                            const SizedBox(height: 16),
-                            
-                            // Title with gradient effect
-                            ShaderMask(
-                              shaderCallback: (bounds) => LinearGradient(
-                                colors: [primaryColor, primaryColor.withBlue(primaryColor.blue + 50)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ).createShader(bounds),
-                              child: Text(
-                                'Upload Documents',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 8),
-                            
-                            // Subtitle with better styling (allow wrapping)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 14,
-                                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      'Supported: PDF, DOC, XLS, JPG, PNG (Max 10MB)',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: isDark ? Colors.white54 : Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
+                                      child: Icon(
+                                        Icons.cloud_upload_rounded,
+                                        size: 56,
+                                        color: primaryColor,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  );
+                                },
                               ),
-                            ),
-                            
-                            const SizedBox(height: 20),
-                            
-                            // Select Files Button with hover effect
-                            MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      primaryColor,
-                                      primaryColor.withBlue(primaryColor.blue + 40),
-                                    ],
+
+                              const SizedBox(height: 16),
+
+                              // Title with gradient effect
+                              ShaderMask(
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: [
+                                    primaryColor,
+                                    primaryColor.withBlue(
+                                      primaryColor.blue + 50,
+                                    ),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ).createShader(bounds),
+                                child: Text(
+                                  'Upload Documents',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
                                   ),
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryColor.withOpacity(0.4),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Subtitle with better styling (allow wrapping)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 14,
+                                      color: isDark
+                                          ? Colors.white54
+                                          : Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        'Supported: PDF, DOC, XLS, JPG, PNG (Max 10MB)',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: isDark
+                                              ? Colors.white54
+                                              : Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: _onUploadDocuments,
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Select Files Button with hover effect
+                              MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        primaryColor,
+                                        primaryColor.withBlue(
+                                          primaryColor.blue + 40,
+                                        ),
+                                      ],
+                                    ),
                                     borderRadius: BorderRadius.circular(30),
-                                    splashColor: Colors.white.withOpacity(0.2),
-                                    highlightColor: Colors.transparent,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.add_rounded,
-                                            color: Colors.white,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            'Browse Files',
-                                            style: TextStyle(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryColor.withOpacity(0.4),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: _onUploadDocuments,
+                                      borderRadius: BorderRadius.circular(30),
+                                      splashColor: Colors.white.withOpacity(
+                                        0.2,
+                                      ),
+                                      highlightColor: Colors.transparent,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 12,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.add_rounded,
                                               color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
+                                              size: 20,
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Browse Files',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Selected / Uploaded Documents (localAttachments)
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.attach_file_rounded,
-                      size: 18,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Selected Documents',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF1A2634),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${localAttachments.length}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+
+          const SizedBox(height: 24),
+
+          // Selected / Uploaded Documents (localAttachments)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.attach_file_rounded,
+                        size: 18,
                         color: primaryColor,
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Selected Documents',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF1A2634),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${localAttachments.length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (localAttachments.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.upload_rounded, size: 16),
+                    label: const Text('Upload All'),
+                    style: TextButton.styleFrom(foregroundColor: primaryColor),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Show selected files (no hardcoded demo items)
+          if (localAttachments.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.folder_open_rounded,
+                    size: 56,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No files selected',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Tap "Browse Files" to add attachments',
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.grey.shade600,
+                    ),
                   ),
                 ],
               ),
-              if (localAttachments.isNotEmpty)
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.upload_rounded, size: 16),
-                  label: const Text('Upload All'),
-                  style: TextButton.styleFrom(foregroundColor: primaryColor),
-                ),
-            ],
-          ),
-        ),
+            )
+          else
+            Column(
+              children: localAttachments.map((att) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.03)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                att['name'] ?? 'File',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1A2634),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                att['size'] ?? 'Unknown size',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.red.shade400,
+                          ),
+                          onPressed: () {
+                            setState(() => localAttachments.remove(att));
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
 
-        const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
-        // Show selected files (no hardcoded demo items)
-        if (localAttachments.isEmpty)
+          // Storage / selection summary (keeps existing visual card but shows selected count)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Column(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryColor.withOpacity(0.05), Colors.transparent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white10 : Colors.grey.shade200,
+                width: 1,
+              ),
+            ),
+            child: Row(
               children: [
-                Icon(Icons.folder_open_rounded, size: 56, color: isDark ? Colors.white24 : Colors.grey.shade300),
-                const SizedBox(height: 12),
-                Text(
-                  'No files selected',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.storage_rounded,
+                    color: primaryColor,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Tap "Browse Files" to add attachments',
-                  style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Selected files',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${localAttachments.length} file(s) selected',
+                        style: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          )
-        else
-          Column(
-            children: localAttachments.map((att) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentTile(
+    BuildContext context,
+    int index,
+    bool isDark,
+    Color primaryColor,
+  ) {
+    final fileNames = [
+      'Annual_Report_2024.pdf',
+      'Contract_Agreement.docx',
+      'Product_Catalog.xlsx',
+      'Meeting_Minutes.pdf',
+    ];
+
+    final fileSizes = ['2.4 MB', '1.8 MB', '856 KB', '3.2 MB'];
+    final fileDates = [
+      'Today, 10:30 AM',
+      'Yesterday',
+      'Mar 15, 2024',
+      'Mar 12, 2024',
+    ];
+    final fileTypes = ['pdf', 'docx', 'xlsx', 'pdf'];
+
+    final Color fileColor = _getFileColor(fileTypes[index % fileTypes.length]);
+    final IconData fileIcon = _getFileIcon(fileTypes[index % fileTypes.length]);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // Preview document
+          },
+          borderRadius: BorderRadius.circular(16),
+          splashColor: fileColor.withOpacity(0.1),
+          highlightColor: fileColor.withOpacity(0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // File Icon with animated background
+                Container(
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                    gradient: LinearGradient(
+                      colors: [
+                        fileColor.withOpacity(0.15),
+                        fileColor.withOpacity(0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: fileColor.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
-                  child: Row(
+                  child: Icon(fileIcon, color: fileColor, size: 24),
+                ),
+
+                const SizedBox(width: 12),
+
+                // File Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(att['name'] ?? 'File', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF1A2634))),
-                            const SizedBox(height: 6),
-                            Text(att['size'] ?? 'Unknown size', style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey.shade600)),
-                          ],
+                      Text(
+                        fileNames[index % fileNames.length],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A2634),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade400),
-                        onPressed: () {
-                          setState(() => localAttachments.remove(att));
-                        },
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          // File size
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              fileSizes[index % fileSizes.length],
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Date
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 12,
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey.shade400,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                fileDates[index % fileDates.length],
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
+                  ),
+                ),
+
+                // Actions
+                Row(
+                  children: [
+                    // Download button
+                    Container(
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.download_rounded,
+                          size: 18,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        ),
+                        onPressed: () {
+                          // Download file
+                          _showDownloadConfirmation(
+                            context,
+                            fileNames[index % fileNames.length],
+                          );
+                        },
+                        splashRadius: 28,
+                      ),
+                    ),
+
+                    // More options button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert_rounded,
+                          size: 18,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        color: isDark ? const Color(0xFF151A2E) : Colors.white,
+                        onSelected: (value) {
+                          if (value == 'delete') {
+                            _showDeleteFileConfirmation(context);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'preview',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.visibility_rounded,
+                                  size: 18,
+                                  color: primaryColor,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('Preview'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.share_rounded,
+                                  size: 18,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('Share'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'rename',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.edit_rounded,
+                                  size: 18,
+                                  color: Colors.orange,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('Rename'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_rounded,
+                                  size: 18,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text('Delete'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getFileColor(String fileType) {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return Colors.red;
+      case 'docx':
+      case 'doc':
+        return Colors.blue;
+      case 'xlsx':
+      case 'xls':
+        return Colors.green;
+      case 'jpg':
+      case 'png':
+      case 'jpeg':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getFileIcon(String fileType) {
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        return Icons.picture_as_pdf_rounded;
+      case 'docx':
+      case 'doc':
+        return Icons.description_rounded;
+      case 'xlsx':
+      case 'xls':
+        return Icons.table_chart_rounded;
+      case 'jpg':
+      case 'png':
+      case 'jpeg':
+        return Icons.image_rounded;
+      default:
+        return Icons.insert_drive_file_rounded;
+    }
+  }
+
+  void _showDownloadConfirmation(BuildContext context, String fileName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.download_done_rounded,
+                color: Colors.green,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Download Started',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                  ),
+                  Text(
+                    fileName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white70 : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showDeleteFileConfirmation(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_rounded,
+                color: Colors.red,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Delete File',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete this file? This action cannot be undone.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('File deleted successfully'),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               );
-            }).toList(),
-          ),
-
-        const SizedBox(height: 12),
-
-        // Storage / selection summary (keeps existing visual card but shows selected count)
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryColor.withOpacity(0.05), Colors.transparent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200, width: 1),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
-                child: Icon(Icons.storage_rounded, color: primaryColor, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Selected files', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 4),
-                    Text('${localAttachments.length} file(s) selected', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey.shade600)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildDocumentTile(BuildContext context, int index, bool isDark, Color primaryColor) {
-  final fileNames = [
-    'Annual_Report_2024.pdf',
-    'Contract_Agreement.docx',
-    'Product_Catalog.xlsx',
-    'Meeting_Minutes.pdf',
-  ];
-  
-  final fileSizes = ['2.4 MB', '1.8 MB', '856 KB', '3.2 MB'];
-  final fileDates = ['Today, 10:30 AM', 'Yesterday', 'Mar 15, 2024', 'Mar 12, 2024'];
-  final fileTypes = ['pdf', 'docx', 'xlsx', 'pdf'];
-  
-  final Color fileColor = _getFileColor(fileTypes[index % fileTypes.length]);
-  final IconData fileIcon = _getFileIcon(fileTypes[index % fileTypes.length]);
-  
-  return Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(
-      color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: isDark ? Colors.white10 : Colors.grey.shade200,
-        width: 1,
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.02),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Preview document
-        },
-        borderRadius: BorderRadius.circular(16),
-        splashColor: fileColor.withOpacity(0.1),
-        highlightColor: fileColor.withOpacity(0.05),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // File Icon with animated background
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      fileColor.withOpacity(0.15),
-                      fileColor.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: fileColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  fileIcon,
-                  color: fileColor,
-                  size: 24,
-                ),
-              ),
-              
-              const SizedBox(width: 12),
-              
-              // File Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      fileNames[index % fileNames.length],
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: isDark ? Colors.white : const Color(0xFF1A2634),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        // File size
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            fileSizes[index % fileSizes.length],
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white54 : Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        
-                        // Date
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time_rounded,
-                              size: 12,
-                              color: isDark ? Colors.white38 : Colors.grey.shade400,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              fileDates[index % fileDates.length],
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: isDark ? Colors.white38 : Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Actions
-              Row(
-                children: [
-                  // Download button
-                  Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.download_rounded,
-                        size: 18,
-                        color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      ),
-                      onPressed: () {
-                        // Download file
-                        _showDownloadConfirmation(context, fileNames[index % fileNames.length]);
-                      },
-                      splashRadius: 28,
-                    ),
-                  ),
-                  
-                  // More options button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert_rounded,
-                        size: 18,
-                        color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      color: isDark ? const Color(0xFF151A2E) : Colors.white,
-                      onSelected: (value) {
-                        if (value == 'delete') {
-                          _showDeleteFileConfirmation(context);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'preview',
-                          child: Row(
-                            children: [
-                              Icon(Icons.visibility_rounded, size: 18, color: primaryColor),
-                              const SizedBox(width: 8),
-                              const Text('Preview'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'share',
-                          child: Row(
-                            children: [
-                              Icon(Icons.share_rounded, size: 18, color: Colors.blue),
-                              const SizedBox(width: 8),
-                              const Text('Share'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'rename',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit_rounded, size: 18, color: Colors.orange),
-                              const SizedBox(width: 8),
-                              const Text('Rename'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete_rounded, size: 18, color: Colors.red),
-                              const SizedBox(width: 8),
-                              const Text('Delete'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-Color _getFileColor(String fileType) {
-  switch (fileType.toLowerCase()) {
-    case 'pdf':
-      return Colors.red;
-    case 'docx':
-    case 'doc':
-      return Colors.blue;
-    case 'xlsx':
-    case 'xls':
-      return Colors.green;
-    case 'jpg':
-    case 'png':
-    case 'jpeg':
-      return Colors.purple;
-    default:
-      return Colors.grey;
-  }
-}
-
-IconData _getFileIcon(String fileType) {
-  switch (fileType.toLowerCase()) {
-    case 'pdf':
-      return Icons.picture_as_pdf_rounded;
-    case 'docx':
-    case 'doc':
-      return Icons.description_rounded;
-    case 'xlsx':
-    case 'xls':
-      return Icons.table_chart_rounded;
-    case 'jpg':
-    case 'png':
-    case 'jpeg':
-      return Icons.image_rounded;
-    default:
-      return Icons.insert_drive_file_rounded;
-  }
-}
-
-void _showDownloadConfirmation(BuildContext context, String fileName) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.download_done_rounded,
-              color: Colors.green,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Download Started',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
-                ),
-                Text(
-                  fileName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white70 : Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
+            child: const Text('Delete'),
           ),
         ],
       ),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-    ),
-  );
-}
-
-void _showDeleteFileConfirmation(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
-      backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.delete_rounded,
-              color: Colors.red,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Delete File',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-        ],
-      ),
-      content: const Text(
-        'Are you sure you want to delete this file? This action cannot be undone.',
-        style: TextStyle(fontSize: 14),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.grey,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('File deleted successfully'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   // Color _getFileColor(int index) {
   //   final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple];
@@ -1636,7 +1841,12 @@ void _showDeleteFileConfirmation(BuildContext context) {
   // }
 
   String _getFileName(int index) {
-    final names = ['invoice_2024.pdf', 'contract_agreement.docx', 'product_image.jpg', 'specifications.pdf'];
+    final names = [
+      'invoice_2024.pdf',
+      'contract_agreement.docx',
+      'product_image.jpg',
+      'specifications.pdf',
+    ];
     return names[index % names.length];
   }
 
@@ -1646,7 +1856,12 @@ void _showDeleteFileConfirmation(BuildContext context) {
     return '${sizes[index % sizes.length]} • ${dates[index % dates.length]}';
   }
 
-  Widget _buildCommentTab(BuildContext context, bool isDark, Color primaryColor, dynamic currentUser) {
+  Widget _buildCommentTab(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+    dynamic currentUser,
+  ) {
     return Column(
       children: [
         // Comments List
@@ -1690,21 +1905,29 @@ void _showDeleteFileConfirmation(BuildContext context) {
                   itemBuilder: (context, i) {
                     final r = replies[i];
                     final isCurrentUser = r.createdBy == currentUser?.id;
-                    final author = isCurrentUser ? 'You' : 'User ${r.createdBy ?? '-'}';
+                    final author = isCurrentUser
+                        ? 'You'
+                        : 'User ${r.createdBy ?? '-'}';
                     final time = _timeAgo(r.createdAt);
-                    final avatarText = author.isNotEmpty ? author[0].toUpperCase() : '?';
+                    final avatarText = author.isNotEmpty
+                        ? author[0].toUpperCase()
+                        : '?';
 
                     return Container(
                       padding: EdgeInsets.all(12.r),
                       decoration: BoxDecoration(
                         color: isCurrentUser
                             ? primaryColor.withOpacity(0.1)
-                            : (isDark ? Colors.white.withOpacity(0.03) : Colors.white),
+                            : (isDark
+                                  ? Colors.white.withOpacity(0.03)
+                                  : Colors.white),
                         borderRadius: BorderRadius.circular(16.r),
                         border: Border.all(
                           color: isCurrentUser
                               ? primaryColor.withOpacity(0.3)
-                              : (isDark ? Colors.white10 : Colors.grey.shade200),
+                              : (isDark
+                                    ? Colors.white10
+                                    : Colors.grey.shade200),
                           width: 1,
                         ),
                       ),
@@ -1718,8 +1941,16 @@ void _showDeleteFileConfirmation(BuildContext context) {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: isCurrentUser
-                                    ? [primaryColor, primaryColor.withBlue(primaryColor.blue + 50)]
-                                    : [Colors.grey.shade400, Colors.grey.shade600],
+                                    ? [
+                                        primaryColor,
+                                        primaryColor.withBlue(
+                                          primaryColor.blue + 50,
+                                        ),
+                                      ]
+                                    : [
+                                        Colors.grey.shade400,
+                                        Colors.grey.shade600,
+                                      ],
                               ),
                               shape: BoxShape.circle,
                             ),
@@ -1751,7 +1982,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                                           fontSize: 14.sp,
                                           color: isCurrentUser
                                               ? primaryColor
-                                              : (isDark ? Colors.white : const Color(0xFF1A2634)),
+                                              : (isDark
+                                                    ? Colors.white
+                                                    : const Color(0xFF1A2634)),
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -1759,10 +1992,15 @@ void _showDeleteFileConfirmation(BuildContext context) {
                                     SizedBox(width: 8.w),
                                     if (isCurrentUser)
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 6.w,
+                                          vertical: 2.h,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: primaryColor.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(10.r),
+                                          borderRadius: BorderRadius.circular(
+                                            10.r,
+                                          ),
                                         ),
                                         child: Text(
                                           'You',
@@ -1778,7 +2016,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                                       time,
                                       style: TextStyle(
                                         fontSize: 11.sp,
-                                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                                        color: isDark
+                                            ? Colors.white38
+                                            : Colors.grey.shade500,
                                       ),
                                     ),
                                   ],
@@ -1789,7 +2029,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                                   style: TextStyle(
                                     fontSize: 14.sp,
                                     height: 1.4,
-                                    color: isDark ? Colors.white70 : Colors.grey.shade800,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.grey.shade800,
                                   ),
                                 ),
                               ],
@@ -1821,7 +2063,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
               Container(
                 margin: EdgeInsets.only(right: 8.w),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade100,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -1838,7 +2082,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: TextField(
@@ -1892,10 +2138,16 @@ void _showDeleteFileConfirmation(BuildContext context) {
                           height: 20.r,
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : Icon(Icons.send_rounded, color: Colors.white, size: 20.r),
+                      : Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 20.r,
+                        ),
                   onPressed: _isSendingComment ? null : _sendComment,
                 ),
               ),
@@ -1906,7 +2158,11 @@ void _showDeleteFileConfirmation(BuildContext context) {
     );
   }
 
-  Widget _buildHistoryTab(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildHistoryTab(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
     if (history.isEmpty) {
       return Center(
         child: Column(
@@ -1992,7 +2248,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                   margin: EdgeInsets.only(bottom: 16.h),
                   padding: EdgeInsets.all(12.r),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.03)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
                       color: isDark ? Colors.white10 : Colors.grey.shade200,
@@ -2007,7 +2265,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14.sp,
-                          color: isDark ? Colors.white : const Color(0xFF1A2634),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A2634),
                         ),
                       ),
                       SizedBox(height: 4.h),
@@ -2016,7 +2276,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                           Icon(
                             Icons.person_outline_rounded,
                             size: 12.r,
-                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
                           ),
                           SizedBox(width: 4.w),
                           Flexible(
@@ -2024,7 +2286,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                               entry['user'] ?? 'System',
                               style: TextStyle(
                                 fontSize: 12.sp,
-                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.grey.shade600,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2033,7 +2297,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                           Icon(
                             Icons.access_time_rounded,
                             size: 12.r,
-                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
                           ),
                           SizedBox(width: 4.w),
                           Flexible(
@@ -2041,7 +2307,9 @@ void _showDeleteFileConfirmation(BuildContext context) {
                               _formatDate(entry['timestamp']),
                               style: TextStyle(
                                 fontSize: 11.sp,
-                                color: isDark ? Colors.white38 : Colors.grey.shade500,
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey.shade500,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2061,7 +2329,7 @@ void _showDeleteFileConfirmation(BuildContext context) {
 
   void _showMoreOptions(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -2136,12 +2404,16 @@ void _showDeleteFileConfirmation(BuildContext context) {
   // --- New / placeholder actions ------------------------------------------------
   void _onCreatePfi() {
     // TODO: integrate with PFI create flow / route
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create PFI — not implemented')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Create PFI — not implemented')),
+    );
   }
 
   void _onCreateJobCard() {
     // TODO: navigate to jobcard create screen or open modal
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Create JobCard — not implemented')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Create JobCard — not implemented')),
+    );
   }
 
   void _onUploadDocuments() async {
@@ -2160,9 +2432,13 @@ void _showDeleteFileConfirmation(BuildContext context) {
         }
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${result.count} file(s) selected')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${result.count} file(s) selected')),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to pick files')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to pick files')));
     }
   }
 
@@ -2184,7 +2460,7 @@ void _showDeleteFileConfirmation(BuildContext context) {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -2208,7 +2484,8 @@ void _showDeleteFileConfirmation(BuildContext context) {
   void _showDeleteConfirmation(BuildContext context) {
     context.showConfirmationModal(
       title: 'Delete Ticket',
-      message: 'Are you sure you want to delete this ticket? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete this ticket? This action cannot be undone.',
       confirmText: 'Delete',
       onConfirm: () async {
         final ticketId = widget.ticket.id;
@@ -2218,33 +2495,45 @@ void _showDeleteFileConfirmation(BuildContext context) {
 
         try {
           final res = await deleteUc.call(ticketId: ticketId);
-          res.fold((failure) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete ticket: ${failure.message}')));
-          }, (_) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Ticket deleted'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            );
+          res.fold(
+            (failure) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to delete ticket: ${failure.message}'),
+                ),
+              );
+            },
+            (_) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Ticket deleted'),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
 
-            // close confirmation modal
-            if (Navigator.canPop(context)) Navigator.pop(context);
-
-            // close the detail route (if present) and refresh ticket list
-            Future.microtask(() {
+              // close confirmation modal
               if (Navigator.canPop(context)) Navigator.pop(context);
-              try {
-                ref.read(supportNotifierProvider.notifier).loadTickets();
-              } catch (_) {}
-            });
-          });
+
+              // close the detail route (if present) and refresh ticket list
+              Future.microtask(() {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                try {
+                  ref.read(supportNotifierProvider.notifier).loadTickets();
+                } catch (_) {}
+              });
+            },
+          );
         } catch (e) {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete ticket')));
+          if (mounted)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to delete ticket')),
+            );
         }
       },
       icon: Icons.delete_rounded,

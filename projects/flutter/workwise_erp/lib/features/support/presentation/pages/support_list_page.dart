@@ -12,11 +12,14 @@ import '../../domain/entities/status.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/widgets/app_dialog.dart';
+import '../../../../core/widgets/dashboard_stat_card.dart';
+import '../../../../core/widgets/dashboard_stats_row.dart';
 import 'package:intl/intl.dart';
 
 import '../widgets/ticket_detail_content.dart';
 import 'support_view_page.dart';
 import 'create_ticket_page.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class SupportListPage extends ConsumerStatefulWidget {
   const SupportListPage({super.key});
@@ -86,8 +89,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     final state = ref.watch(supportNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final expectedTabCount =
-        availableStatuses.isNotEmpty ? availableStatuses.length : 1;
+    final expectedTabCount = availableStatuses.isNotEmpty
+        ? availableStatuses.length
+        : 1;
     if (_tabController.length != expectedTabCount) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -247,63 +251,35 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ),
 
             // Stats Header
-            if (_showStats)
-              Padding(
-                padding: EdgeInsets.all(16.r),
-                child: SizedBox(
-                  height: 96.h,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 150.w,
-                          child: _buildStatCard(
-                            'Total',
-                            _getTotalCount(state),
-                            Icons.support_agent_rounded,
-                            AppColors.primary,
-                            isDark,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        SizedBox(
-                          width: 150.w,
-                          child: _buildStatCard(
-                            'Open',
-                            _getOpenCount(state),
-                            Icons.lock_open_rounded,
-                            Colors.blue,
-                            isDark,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        SizedBox(
-                          width: 150.w,
-                          child: _buildStatCard(
-                            'In Progress',
-                            _getInProgressCount(state),
-                            Icons.hourglass_top_rounded,
-                            Colors.orange,
-                            isDark,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        SizedBox(
-                          width: 150.w,
-                          child: _buildStatCard(
-                            'Resolved',
-                            _getResolvedCount(state),
-                            Icons.check_circle_rounded,
-                            Colors.green,
-                            isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            DashboardStatsRow(
+              visible: _showStats,
+              cards: [
+                DashboardStatCard(
+                  label: 'Total',
+                  count: _getTotalCount(state),
+                  icon: Icons.support_agent_rounded,
+                  borderColor: AppColors.primary,
                 ),
-              ),
+                DashboardStatCard(
+                  label: 'Open',
+                  count: _getOpenCount(state),
+                  icon: Icons.lock_open_rounded,
+                  borderColor: Colors.blue,
+                ),
+                DashboardStatCard(
+                  label: 'In Progress',
+                  count: _getInProgressCount(state),
+                  icon: Icons.hourglass_top_rounded,
+                  borderColor: Colors.orange,
+                ),
+                DashboardStatCard(
+                  label: 'Resolved',
+                  count: _getResolvedCount(state),
+                  icon: Icons.check_circle_rounded,
+                  borderColor: Colors.green,
+                ),
+              ],
+            ),
 
             // Tab Bar
             Container(
@@ -407,80 +383,20 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CreateTicketPage()),
-            );
+            await Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const CreateTicketPage()));
           },
-          icon: Icon(Icons.add_rounded, size: 20.r),
-          label: Text(
-            'New Ticket',
-            style: TextStyle(fontSize: 14.sp),
-          ),
-          backgroundColor: const Color(0xFF4A6FA5),
-          foregroundColor: Colors.white,
+          icon: isDark
+              ? const Icon(LucideIcons.plus, size: 20)
+              : const Icon(LucideIcons.plus, size: 20, color: Colors.white),
+          label: Text('New Ticket', style: TextStyle(fontSize: 14.sp)),
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String label,
-    int count,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      height: 96.h,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border(left: BorderSide(color: color, width: 3.w)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
-                Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Opacity(
-            opacity: 0.12,
-            child: Icon(icon, size: 40.r, color: color),
-          ),
-        ],
       ),
     );
   }
@@ -693,8 +609,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         Text(
                           ticket.priority?.priority ?? 'Normal',
                           style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 12.sp,
                           ),
@@ -708,8 +623,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       ticket.ticketCode ?? 'N/A',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color:
-                            isDark ? Colors.white70 : Colors.grey.shade700,
+                        color: isDark ? Colors.white70 : Colors.grey.shade700,
                         fontSize: 13.sp,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -735,8 +649,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                           width: 8.r,
                           height: 8.r,
                           decoration: BoxDecoration(
-                            color: _getStatusColor(
-                                ticket.status?.status ?? ''),
+                            color: _getStatusColor(ticket.status?.status ?? ''),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -744,8 +657,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         Text(
                           ticket.status?.status ?? 'Unknown',
                           style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 12.sp,
                           ),
@@ -777,12 +689,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 children: [
                   CircleAvatar(
                     radius: 14.r,
-                    backgroundColor:
-                        const Color(0xFF4A6FA5).withOpacity(0.1),
+                    backgroundColor: const Color(0xFF4A6FA5).withOpacity(0.1),
                     child: Text(
-                      ticket.customer?.name
-                              ?.substring(0, 1)
-                              .toUpperCase() ??
+                      ticket.customer?.name?.substring(0, 1).toUpperCase() ??
                           '?',
                       style: TextStyle(
                         color: const Color(0xFF4A6FA5),
@@ -798,9 +707,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? Colors.white70
-                            : Colors.grey.shade700,
+                        color: isDark ? Colors.white70 : Colors.grey.shade700,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -823,28 +730,22 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                     formattedDate,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: isDark
-                          ? Colors.white38
-                          : Colors.grey.shade500,
+                      color: isDark ? Colors.white38 : Colors.grey.shade500,
                     ),
                   ),
                   const Spacer(),
-                  if (ticket.replies != null &&
-                      ticket.replies!.isNotEmpty) ...[
+                  if (ticket.replies != null && ticket.replies!.isNotEmpty) ...[
                     Icon(
                       Icons.chat_bubble_outline_rounded,
                       size: 16.r,
-                      color:
-                          isDark ? Colors.white38 : Colors.grey.shade400,
+                      color: isDark ? Colors.white38 : Colors.grey.shade400,
                     ),
                     SizedBox(width: 4.w),
                     Text(
                       ticket.priority?.priority ?? 'Unknown',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: isDark
-                            ? Colors.white38
-                            : Colors.grey.shade500,
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
                       ),
                     ),
                   ],
@@ -908,10 +809,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             SizedBox(height: 20.h),
             Text(
               'Priority',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 12.h),
             Wrap(
@@ -927,10 +825,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             SizedBox(height: 20.h),
             Text(
               'Date Range',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 12.h),
             _buildDateRangeOption('Today'),
@@ -950,10 +845,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                    child: Text(
-                      'Reset',
-                      style: TextStyle(fontSize: 14.sp),
-                    ),
+                    child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -968,10 +860,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                     ),
-                    child: Text(
-                      'Apply',
-                      style: TextStyle(fontSize: 14.sp),
-                    ),
+                    child: Text('Apply', style: TextStyle(fontSize: 14.sp)),
                   ),
                 ),
               ],
@@ -986,10 +875,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return FilterChip(
-      label: Text(
-        label,
-        style: TextStyle(fontSize: 13.sp),
-      ),
+      label: Text(label, style: TextStyle(fontSize: 13.sp)),
       selected: isSelected,
       onSelected: (selected) {},
       backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
@@ -1018,10 +904,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RadioListTile<String>(
-      title: Text(
-        label,
-        style: TextStyle(fontSize: 14.sp),
-      ),
+      title: Text(label, style: TextStyle(fontSize: 14.sp)),
       value: label,
       groupValue: 'Today',
       onChanged: (value) {},
@@ -1029,9 +912,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       contentPadding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
     );
   }
 }

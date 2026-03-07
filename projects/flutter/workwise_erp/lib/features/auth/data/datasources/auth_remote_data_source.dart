@@ -10,10 +10,10 @@ class AuthRemoteDataSource {
   final Dio client;
   AuthRemoteDataSource(this.client);
 
-  /// Example: GET /user
+  /// GET /getProfile — returns the authenticated user's full profile including avatar URL.
   Future<UserModel> fetchCurrentUser() async {
     try {
-      final resp = await client.get('/user');
+      final resp = await client.get('/getProfile');
 
       // resp.data may sometimes be a Map, or (unexpectedly) a String that
       // contains JSON. Be defensive and try to parse string responses.
@@ -21,12 +21,17 @@ class AuthRemoteDataSource {
       Map<String, dynamic>? dataMap;
 
       if (raw is Map<String, dynamic>) {
-        dataMap = raw;
+        // /getProfile wraps the user object inside { "status": ..., "data": { ... } }
+        // Unwrap if the envelope is present, otherwise fall back to the raw map.
+        final inner = raw['data'];
+        dataMap = (inner is Map<String, dynamic>) ? inner : raw;
       } else if (raw is String) {
-        // try to decode JSON string responses
         try {
           final decoded = json.decode(raw);
-          if (decoded is Map<String, dynamic>) dataMap = decoded;
+          if (decoded is Map<String, dynamic>) {
+            final inner = decoded['data'];
+            dataMap = (inner is Map<String, dynamic>) ? inner : decoded;
+          }
         } catch (_) {
           // ignore and fallthrough to error
         }
@@ -36,17 +41,24 @@ class AuthRemoteDataSource {
         throw ServerException('Invalid server response when fetching user');
       }
 
+      // /getProfile returns a full avatar URL in the `profile` field.
+      // Promote it into `avatar` so the rest of the app can use it without
+      // any model changes — imageProviderFromUrl already handles full URLs.
+      final profileUrl = dataMap['profile'];
+      if (profileUrl is String && profileUrl.isNotEmpty) {
+        dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = profileUrl;
+      }
+
       // normalize older backend responses that use `type` (string/number)
       // as the user's role — convert `type` -> `roles` so `UserModel` can
       // deserialize into `roles: List<RoleModel>`.
       if ((dataMap['roles'] == null || (dataMap['roles'] is List && (dataMap['roles'] as List).isEmpty)) && dataMap.containsKey('type')) {
         final t = dataMap['type'];
         if (t != null) {
-          dataMap['roles'] = [
-            {
-              'name': t.toString(),
-            }
-          ];
+          dataMap = Map<String, dynamic>.from(dataMap)
+            ..['roles'] = [
+              {'name': t.toString()}
+            ];
         }
       }
 

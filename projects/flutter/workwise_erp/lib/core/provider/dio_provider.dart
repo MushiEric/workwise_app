@@ -1,21 +1,20 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../config/environment.dart';
 import '../errors/exceptions.dart';
-import '../models/tenant.dart';
 import 'tenant_provider.dart';
 import 'token_provider.dart';
 import 'cache_interceptor.dart';
 import 'response_validation_interceptor.dart';
 import 'auth_interceptor.dart';
 import 'logging_interceptor.dart';
+import 'navigator_key_provider.dart';
+import 'unauthorized_interceptor.dart';
 
 /// Provides a configured Dio instance for the app.
 final dioProvider = Provider<Dio>((ref) {
@@ -27,7 +26,8 @@ final dioProvider = Provider<Dio>((ref) {
     }
     // ensure we have a valid uri
     final uri = Uri.tryParse(s);
-    if (uri == null || uri.scheme.isEmpty) throw ArgumentError('Invalid baseUrl: $raw');
+    if (uri == null || uri.scheme.isEmpty)
+      throw ArgumentError('Invalid baseUrl: $raw');
     return s;
   }
 
@@ -43,12 +43,18 @@ final dioProvider = Provider<Dio>((ref) {
     // Dio instance that will throw on any network call. This mirrors the
     // previous behaviour but defers the failure until the first request.
     final stub = Dio();
-    stub.interceptors.add(InterceptorsWrapper(onRequest: (opts, handler) {
-      handler.reject(DioException(
-        requestOptions: opts,
-        error: UninitializedTenantException(),
-      ));
-    }));
+    stub.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (opts, handler) {
+          handler.reject(
+            DioException(
+              requestOptions: opts,
+              error: UninitializedTenantException(),
+            ),
+          );
+        },
+      ),
+    );
     return stub;
   }
 
@@ -63,22 +69,30 @@ final dioProvider = Provider<Dio>((ref) {
 
   // Attach a request-id for traceability (added to headers and `extra` so
   // downstream interceptors / Sentry / logs can correlate requests).
-  String generateRequestId() => '${DateTime.now().toUtc().toIso8601String()}-${Random().nextInt(1 << 32).toRadixString(16)}';
+  String generateRequestId() =>
+      '${DateTime.now().toUtc().toIso8601String()}-${Random().nextInt(1 << 32).toRadixString(16)}';
 
-  dio.interceptors.add(InterceptorsWrapper(onRequest: (opts, handler) {
-    final existing = opts.headers['X-Request-Id'] ?? opts.headers['x-request-id'];
-    final id = existing?.toString() ?? generateRequestId();
-    opts.headers['X-Request-Id'] = id;
-    opts.extra['requestId'] = id;
-    handler.next(opts);
-  }));
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (opts, handler) {
+        final existing =
+            opts.headers['X-Request-Id'] ?? opts.headers['x-request-id'];
+        final id = existing?.toString() ?? generateRequestId();
+        opts.headers['X-Request-Id'] = id;
+        opts.extra['requestId'] = id;
+        handler.next(opts);
+      },
+    ),
+  );
 
   // Attach auth interceptor that injects Authorization header when token is present
   // Requests can opt-out of auth by passing `Options(extra: {'noAuth': true})`.
-  dio.interceptors.add(AuthInterceptor(() async {
-    final tokenStorage = ref.read(tokenLocalDataSourceProvider);
-    return tokenStorage.readToken();
-  }));
+  dio.interceptors.add(
+    AuthInterceptor(() async {
+      final tokenStorage = ref.read(tokenLocalDataSourceProvider);
+      return tokenStorage.readToken();
+    }),
+  );
 
   // Cache interceptor: used for GET request graceful offline fallback
   dio.interceptors.add(CacheInterceptor(ttlSeconds: env.cacheTtlSeconds));
@@ -91,69 +105,85 @@ final dioProvider = Provider<Dio>((ref) {
   // - do NOT retry when the request was cancelled by the user
   // - only retry idempotent methods (GET/HEAD/OPTIONS)
   // - refuse to retry when the request body is non-replayable (streams/files)
-  dio.interceptors.add(InterceptorsWrapper(onError: (DioException err, handler) async {
-    final opts = err.requestOptions;
-    final method = opts.method.toUpperCase();
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onError: (DioException err, handler) async {
+        final opts = err.requestOptions;
+        final method = opts.method.toUpperCase();
 
-    // don't retry user-initiated cancellations — avoid hidden retries
-    if (err.type == DioExceptionType.cancel) return handler.next(err);
+        // don't retry user-initiated cancellations — avoid hidden retries
+        if (err.type == DioExceptionType.cancel) return handler.next(err);
 
-    // only retry idempotent methods
-    const idempotent = {'GET', 'HEAD', 'OPTIONS'};
-    if (!idempotent.contains(method)) return handler.next(err);
+        // only retry idempotent methods
+        const idempotent = {'GET', 'HEAD', 'OPTIONS'};
+        if (!idempotent.contains(method)) return handler.next(err);
 
-    // protect against retrying non-replayable request bodies
-    bool isReplayableBody(Object? data) {
-      if (data == null) return true;
-      if (data is String || data is num || data is bool) return true;
-      if (data is Map || data is List || data is List<int>) return true;
-      if (data is FormData) {
-        // FormData without files is replayable; with files it is not.
-        return data.files.isEmpty;
-      }
-      // Streams, MultipartFile, and unknown types are treated as non-replayable
-      return false;
-    }
+        // protect against retrying non-replayable request bodies
+        bool isReplayableBody(Object? data) {
+          if (data == null) return true;
+          if (data is String || data is num || data is bool) return true;
+          if (data is Map || data is List || data is List<int>) return true;
+          if (data is FormData) {
+            // FormData without files is replayable; with files it is not.
+            return data.files.isEmpty;
+          }
+          // Streams, MultipartFile, and unknown types are treated as non-replayable
+          return false;
+        }
 
-    if (!isReplayableBody(opts.data)) return handler.next(err);
+        if (!isReplayableBody(opts.data)) return handler.next(err);
 
-    final maxRetries = env.maxRetries;
-    final retries = (opts.extra['__retry_count'] as int?) ?? 0;
+        final maxRetries = env.maxRetries;
+        final retries = (opts.extra['__retry_count'] as int?) ?? 0;
 
-    bool shouldRetry = false;
+        bool shouldRetry = false;
 
-    // transient error kinds we consider retryable
-    if (err.type == DioExceptionType.connectionTimeout ||
-        err.type == DioExceptionType.sendTimeout ||
-        err.type == DioExceptionType.receiveTimeout ||
-        err.type == DioExceptionType.connectionError) {
-      shouldRetry = true;
-    }
+        // transient error kinds we consider retryable
+        if (err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.sendTimeout ||
+            err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.connectionError) {
+          shouldRetry = true;
+        }
 
-    final status = err.response?.statusCode ?? 0;
-    if (status == 429 || (status >= 500 && status < 600)) shouldRetry = true;
+        final status = err.response?.statusCode ?? 0;
+        if (status == 429 || (status >= 500 && status < 600))
+          shouldRetry = true;
 
-    if (shouldRetry && retries < maxRetries) {
-      final delayMs = env.retryBaseDelay.inMilliseconds * pow(2, retries).toInt();
-      await Future<void>.delayed(Duration(milliseconds: delayMs));
+        if (shouldRetry && retries < maxRetries) {
+          final delayMs =
+              env.retryBaseDelay.inMilliseconds * pow(2, retries).toInt();
+          await Future<void>.delayed(Duration(milliseconds: delayMs));
 
-      // update retry count and re-issue request
-      opts.extra['__retry_count'] = retries + 1;
-      try {
-        final r = await dio.fetch(opts);
-        return handler.resolve(r);
-      } catch (e) {
-        return handler.next(e as DioException);
-      }
-    }
+          // update retry count and re-issue request
+          opts.extra['__retry_count'] = retries + 1;
+          try {
+            final r = await dio.fetch(opts);
+            return handler.resolve(r);
+          } catch (e) {
+            return handler.next(e as DioException);
+          }
+        }
 
-    // report the last attempt to Sentry (if available)
-    try {
-      await Sentry.captureException(err, stackTrace: err.stackTrace);
-    } catch (_) {}
+        // report the last attempt to Sentry (if available)
+        try {
+          await Sentry.captureException(err, stackTrace: err.stackTrace);
+        } catch (_) {}
 
-    return handler.next(err);
-  }));
+        return handler.next(err);
+      },
+    ),
+  );
+
+  // Intercept 401/403 and connection errors — show friendly snack-bars and
+  // redirect unauthenticated users back to the login screen.
+  dio.interceptors.add(
+    UnauthorizedInterceptor(
+      navigatorKey: ref.read(navigatorKeyProvider),
+      messengerKey: ref.read(scaffoldMessengerKeyProvider),
+      tokenStorage: ref.read(tokenLocalDataSourceProvider),
+    ),
+  );
 
   // Log requests/responses/errors to console (helpful during development)
   // Only enable HTTP logging for non-production environments.

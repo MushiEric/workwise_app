@@ -5,6 +5,7 @@ import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/jobcard_detail_providers.dart';
 import '../../../../core/widgets/app_bar.dart';
+import '../../../../core/widgets/app_tab_bar.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class JobcardDetailPage extends ConsumerStatefulWidget {
@@ -14,7 +15,8 @@ class JobcardDetailPage extends ConsumerStatefulWidget {
   ConsumerState<JobcardDetailPage> createState() => _JobcardDetailPageState();
 }
 
-class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with SingleTickerProviderStateMixin {
+class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
   int? _id;
 
@@ -48,7 +50,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: state.item != null
               ? 'Jobcard #${_getJobcardNumber(state.item)}'
@@ -64,12 +68,17 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
             //   },
             // ),
             PopupMenuButton<String>(
-              icon: Icon(LucideIcons.moreVertical, color: isDark ? Colors.white70 : AppColors.white),
+              icon: Icon(
+                LucideIcons.moreVertical,
+                color: isDark ? Colors.white70 : AppColors.white,
+              ),
               onSelected: (v) {
                 switch (v) {
                   case 'print':
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Print jobcard — not implemented')),
+                      const SnackBar(
+                        content: Text('Print jobcard — not implemented'),
+                      ),
                     );
                     break;
                   case 'more':
@@ -89,8 +98,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
         body: state.loading
             ? const Center(child: CircularProgressIndicator())
             : state.item == null
-                ? _buildErrorState(context, state.error, isDark)
-                : _buildDetailContent(context, state.item, isDark),
+            ? _buildErrorState(context, state.error, isDark)
+            : _buildDetailContent(context, state.item, isDark),
       ),
     );
   }
@@ -148,43 +157,28 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     );
   }
 
-  Widget _buildDetailContent(BuildContext context, dynamic jobcard, bool isDark) {
-    final primaryColor = AppColors.primary;
-
+  Widget _buildDetailContent(
+    BuildContext context,
+    dynamic jobcard,
+    bool isDark,
+  ) {
     return Column(
       children: [
-        // Enhanced Tab Bar
-        Container(
+        // Tab Bar
+        AppTabBar(
+          controller: _tabController!,
+          tabs: const [
+            'Overview',
+            'Approval Logs',
+            'Repairs & Replacement',
+            'Logs',
+            'Inspection',
+            'Picking Slip',
+          ],
           margin: const EdgeInsets.only(top: 20, left: 4, right: 16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Approval Logs'),
-              Tab(text: 'Repairs & Replacement'),
-              Tab(text: 'Logs'),
-              Tab(text: 'Inspection'),
-              Tab(text: 'Picking Slip'),
-            ],
-            labelColor: primaryColor,
-            unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
-            indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: primaryColor.withOpacity(0.15),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          ),
         ),
         const SizedBox(height: 12),
 
-        // Tab Bar Views
         Expanded(
           child: TabBarView(
             controller: _tabController,
@@ -205,7 +199,10 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
 
   Widget _buildOverviewTab(BuildContext context, dynamic jobcard, bool isDark) {
     final primaryColor = AppColors.primary;
-    final statusName = jobcard.statusRow?['name']?.toString() ?? jobcard.status?.toString() ?? 'Unknown';
+    final statusName =
+        jobcard.statusRow?['name']?.toString() ??
+        jobcard.status?.toString() ??
+        'Unknown';
     final statusColor = _getStatusColor(statusName);
 
     return SingleChildScrollView(
@@ -255,7 +252,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
-                          color: isDark ? Colors.white : const Color(0xFF1A2634),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A2634),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -303,11 +302,36 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
             title: 'Jobcard Information',
             icon: Icons.info_rounded,
             children: [
-              _infoRow('Related to', jobcard.relatedTo?.toString() ?? (jobcard is Map ? jobcard['related_to']?.toString() : null) ?? '-'),
-              _infoRow('Receiver', jobcard.receiverName?.toString() ?? jobcard.receiver?.toString() ?? (jobcard is Map ? jobcard['receiver_name']?.toString() : null) ?? '-'),
-              _infoRow('Assigned Staff', jobcard.technicianId?.toString() ?? (jobcard is Map ? jobcard['technician_id']?.toString() : null) ?? '-'),
+              _infoRow(
+                'Related to',
+                jobcard.relatedTo?.toString() ??
+                    (jobcard is Map
+                        ? jobcard['related_to']?.toString()
+                        : null) ??
+                    '-',
+              ),
+              _infoRow(
+                'Receiver',
+                jobcard.receiverName?.toString() ??
+                    jobcard.receiver?.toString() ??
+                    (jobcard is Map
+                        ? jobcard['receiver_name']?.toString()
+                        : null) ??
+                    '-',
+              ),
+              _infoRow(
+                'Assigned Staff',
+                jobcard.technicianId?.toString() ??
+                    (jobcard is Map
+                        ? jobcard['technician_id']?.toString()
+                        : null) ??
+                    '-',
+              ),
               _infoRow('Started On', jobcard.reportedDate?.toString() ?? '-'),
-              _infoRow('Completed On', jobcard.dispatchedDate?.toString() ?? '-'),
+              _infoRow(
+                'Completed On',
+                jobcard.dispatchedDate?.toString() ?? '-',
+              ),
             ],
             isDark: isDark,
           ),
@@ -330,7 +354,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
               children: [
                 Row(
                   children: [
-                    Icon(Icons.summarize_rounded, size: 18, color: primaryColor),
+                    Icon(
+                      Icons.summarize_rounded,
+                      size: 18,
+                      color: primaryColor,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Summary of Tasks',
@@ -469,7 +497,12 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, bool isDark) {
+  Widget _buildSummaryItem(
+    String label,
+    String value,
+    IconData icon,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -575,7 +608,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
                         ),
                       ),
@@ -586,7 +621,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -598,7 +635,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
                         ),
                       ),
@@ -627,7 +666,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                             item['item_name']?.toString() ?? '-',
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDark ? Colors.white70 : Colors.grey.shade800,
+                              color: isDark
+                                  ? Colors.white70
+                                  : Colors.grey.shade800,
                             ),
                           ),
                         ),
@@ -638,7 +679,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF1A2634),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -646,10 +689,14 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
                         Expanded(
                           flex: 2,
                           child: Text(
-                            item['item_description']?.toString() ?? item['item_description2']?.toString() ?? '-',
+                            item['item_description']?.toString() ??
+                                item['item_description2']?.toString() ??
+                                '-',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? Colors.white54 : Colors.grey.shade600,
+                              color: isDark
+                                  ? Colors.white54
+                                  : Colors.grey.shade600,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -707,7 +754,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
       itemBuilder: (context, index) {
         final log = logs[index];
         final sr = log['status_row'];
-        final statusName = sr?['name']?.toString() ?? log['status']?.toString() ?? '';
+        final statusName =
+            sr?['name']?.toString() ?? log['status']?.toString() ?? '';
         final statusColor = _getStatusColor(statusName);
 
         return Container(
@@ -771,7 +819,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     );
   }
 
-  Widget _buildApprovalLogsTab(BuildContext context, dynamic jobcard, bool isDark) {
+  Widget _buildApprovalLogsTab(
+    BuildContext context,
+    dynamic jobcard,
+    bool isDark,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -802,7 +854,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     );
   }
 
-  Widget _buildInspectionTab(BuildContext context, dynamic jobcard, bool isDark) {
+  Widget _buildInspectionTab(
+    BuildContext context,
+    dynamic jobcard,
+    bool isDark,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -833,7 +889,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     );
   }
 
-  Widget _buildPickingSlipTab(BuildContext context, dynamic jobcard, bool isDark) {
+  Widget _buildPickingSlipTab(
+    BuildContext context,
+    dynamic jobcard,
+    bool isDark,
+  ) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -868,21 +928,21 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage> with Sing
     if (jobcard == null) return 'N/A';
     if (jobcard is Map) {
       return jobcard['jobcard_number']?.toString() ??
-             jobcard['jobcard_no']?.toString() ??
-             jobcard['jobcard']?.toString() ??
-             jobcard['id']?.toString() ??
-             'N/A';
+          jobcard['jobcard_no']?.toString() ??
+          jobcard['jobcard']?.toString() ??
+          jobcard['id']?.toString() ??
+          'N/A';
     }
 
     // model-like object
-    return jobcard.jobcardNumber?.toString() ??
-           jobcard.id?.toString() ??
-           'N/A';
+    return jobcard.jobcardNumber?.toString() ?? jobcard.id?.toString() ?? 'N/A';
   }
 
   Color _getStatusColor(String status) {
     final lower = status.toLowerCase();
-    if (lower.contains('completed') || lower.contains('done') || lower.contains('closed')) {
+    if (lower.contains('completed') ||
+        lower.contains('done') ||
+        lower.contains('closed')) {
       return Colors.green;
     } else if (lower.contains('pending') || lower.contains('waiting')) {
       return Colors.orange;

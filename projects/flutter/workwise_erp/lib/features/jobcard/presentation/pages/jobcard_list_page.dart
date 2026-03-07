@@ -10,6 +10,8 @@ import '../providers/jobcard_providers.dart';
 import '../widgets/jobcard_tile.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_dialog.dart';
+import '../../../../core/widgets/dashboard_stat_card.dart';
+import '../../../../core/widgets/dashboard_stats_row.dart';
 import '../../domain/entities/jobcard.dart';
 
 class JobcardListPage extends ConsumerStatefulWidget {
@@ -29,8 +31,10 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     final lower = statusName.toLowerCase();
     if (lower.contains('open')) return const Color(0xFF4A6FA5);
     if (lower.contains('progress')) return Colors.orange;
-    if (lower.contains('awaiting') || lower.contains('pending')) return Colors.blue;
-    if (lower.contains('closed') || lower.contains('completed')) return Colors.grey;
+    if (lower.contains('awaiting') || lower.contains('pending'))
+      return Colors.blue;
+    if (lower.contains('closed') || lower.contains('completed'))
+      return Colors.grey;
     return AppColors.primary;
   }
 
@@ -102,7 +106,8 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             IconButton(
               icon: Icon(LucideIcons.settings, size: 20.r),
               color: AppColors.white,
-              onPressed: () => Navigator.pushNamed(context, '/jobcards/settings'),
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/jobcards/settings'),
             ),
             Row(
               children: [
@@ -186,19 +191,11 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
               ),
 
             // ── Stats Header ──
-            if (_showStats)
-              Padding(
-                padding: EdgeInsets.all(16.r),
-                child: SizedBox(
-                  height: 96.h,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _buildStatusCards(state, isDark),
-                    ),
-                  ),
-                ),
-              ),
+            DashboardStatsRow(
+              visible: _showStats,
+              cards: _buildStatusCards(state),
+            ),
+            SizedBox(height: 16.h),
 
             // ── Main Content ──
             Expanded(child: _buildBody(state, isDark)),
@@ -218,107 +215,29 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     );
   }
 
-  // ── Stat cards matching support list style ──
-  List<Widget> _buildStatusCards(JobcardState state, bool isDark) {
+  List<DashboardStatCard> _buildStatusCards(JobcardState state) {
     final counts = <String, int>{};
     for (final item in state.items.cast<Jobcard>()) {
-      final name = item.statusRow?['name']?.toString() ??
-          item.status?.toString() ??
-          '';
+      final name =
+          item.statusRow?['name']?.toString() ?? item.status?.toString() ?? '';
       counts[name] = (counts[name] ?? 0) + 1;
     }
 
-    final widgets = <Widget>[
-      SizedBox(
-        width: 150.w,
-        child: _buildStatCard(
-          'Total',
-          _getJobcardCount(state),
-          Icons.assignment_rounded,
-          AppColors.primary,
-          isDark,
-        ),
+    return [
+      DashboardStatCard(
+        label: 'Total',
+        count: _getJobcardCount(state),
+        icon: Icons.assignment_rounded,
+        borderColor: AppColors.primary,
       ),
+      for (final entry in counts.entries)
+        DashboardStatCard(
+          label: entry.key.isEmpty ? 'Unknown' : entry.key,
+          count: entry.value,
+          icon: Icons.circle,
+          borderColor: _statusColorFromName(entry.key),
+        ),
     ];
-
-    counts.forEach((status, cnt) {
-      widgets.add(SizedBox(width: 12.w));
-      widgets.add(
-        SizedBox(
-          width: 150.w,
-          child: _buildStatCard(
-            status.isEmpty ? 'Unknown' : status,
-            cnt,
-            Icons.circle,
-            _statusColorFromName(status),
-            isDark,
-          ),
-        ),
-      );
-    });
-
-    return widgets;
-  }
-
-  Widget _buildStatCard(
-    String label,
-    int count,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      height: 96.h,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border(left: BorderSide(color: color, width: 3.w)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Opacity(
-            opacity: 0.12,
-            child: Icon(icon, size: 40.r, color: color),
-          ),
-        ],
-      ),
-    );
   }
 
   int _getJobcardCount(JobcardState state) {
@@ -454,8 +373,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
           final jobcard = filteredJobcards[idx];
           return JobcardTile(
             jobcard: jobcard,
-            onTap: () => Navigator.of(context)
-                .pushNamed('/jobcards/detail', arguments: jobcard.id),
+            onTap: () => Navigator.of(
+              context,
+            ).pushNamed('/jobcards/detail', arguments: jobcard.id),
             onDelete: () => _confirmDelete(jobcard),
           );
         },
@@ -488,8 +408,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         ),
       ),
       (_) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Jobcard deleted')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Jobcard deleted')));
         ref.read(jobcardNotifierProvider.notifier).loadJobcards();
       },
     );
@@ -628,9 +549,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
       contentPadding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
     );
   }
 }

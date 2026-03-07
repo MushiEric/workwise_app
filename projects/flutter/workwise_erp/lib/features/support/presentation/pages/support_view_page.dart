@@ -30,9 +30,7 @@ class SupportViewPage extends ConsumerWidget {
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Share ticket — not implemented'),
-                ),
+                const SnackBar(content: Text('Share ticket — not implemented')),
               );
             },
           ),
@@ -47,13 +45,15 @@ class SupportViewPage extends ConsumerWidget {
                 case 'create_pfi':
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Create PFI — not implemented')),
+                      content: Text('Create PFI — not implemented'),
+                    ),
                   );
                   break;
                 case 'create_jobcard':
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Create JobCard — not implemented')),
+                      content: Text('Create JobCard — not implemented'),
+                    ),
                   );
                   break;
                 case 'more':
@@ -64,10 +64,7 @@ class SupportViewPage extends ConsumerWidget {
             itemBuilder: (ctx) => [
               PopupMenuItem(
                 value: 'create_pfi',
-                child: Text(
-                  'Create PFI',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                child: Text('Create PFI', style: TextStyle(fontSize: 14.sp)),
               ),
               PopupMenuItem(
                 value: 'create_jobcard',
@@ -79,24 +76,28 @@ class SupportViewPage extends ConsumerWidget {
               const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'more',
-                child: Text(
-                  'More...',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                child: Text('More...', style: TextStyle(fontSize: 14.sp)),
               ),
             ],
           ),
         ],
       ),
+
       body: DefaultTabController(
         length: 4,
-        child: TicketDetailContent(ticket: ticket),
+        child: Padding(
+          padding: EdgeInsets.only(top: 16.h),
+          child: TicketDetailContent(ticket: ticket),
+        ),
       ),
     );
   }
 
   void _showMoreOptions(
-      BuildContext context, WidgetRef ref, SupportTicket ticket) {
+    BuildContext context,
+    WidgetRef ref,
+    SupportTicket ticket,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -134,10 +135,7 @@ class SupportViewPage extends ConsumerWidget {
                     size: 20.r,
                   ),
                 ),
-                title: Text(
-                  'Edit Ticket',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                title: Text('Edit Ticket', style: TextStyle(fontSize: 14.sp)),
                 onTap: () => Navigator.pop(sheetCtx),
               ),
               ListTile(
@@ -153,10 +151,7 @@ class SupportViewPage extends ConsumerWidget {
                     size: 20.r,
                   ),
                 ),
-                title: Text(
-                  'Assign To',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                title: Text('Assign To', style: TextStyle(fontSize: 14.sp)),
                 onTap: () => Navigator.pop(sheetCtx),
               ),
               ListTile(
@@ -172,10 +167,7 @@ class SupportViewPage extends ConsumerWidget {
                     size: 20.r,
                   ),
                 ),
-                title: Text(
-                  'Delete Ticket',
-                  style: TextStyle(fontSize: 14.sp),
-                ),
+                title: Text('Delete Ticket', style: TextStyle(fontSize: 14.sp)),
                 onTap: () {
                   Navigator.pop(sheetCtx);
                   _showDeleteConfirmation(context, ref, ticket);
@@ -190,7 +182,10 @@ class SupportViewPage extends ConsumerWidget {
   }
 
   void _showDeleteConfirmation(
-      BuildContext context, WidgetRef ref, SupportTicket ticket) {
+    BuildContext context,
+    WidgetRef ref,
+    SupportTicket ticket,
+  ) {
     context.showConfirmationModal(
       title: 'Delete Ticket',
       message:
@@ -203,34 +198,36 @@ class SupportViewPage extends ConsumerWidget {
         final deleteUc = ref.read(deleteSupportTicketUseCaseProvider);
         try {
           final res = await deleteUc.call(ticketId: ticketId);
-          res.fold((failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    'Failed to delete ticket: ${failure.message}'),
-              ),
-            );
-          }, (_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Ticket deleted'),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          res.fold(
+            (failure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to delete ticket: ${failure.message}'),
                 ),
-              ),
-            );
+              );
+            },
+            (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Ticket deleted'),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
 
-            if (Navigator.canPop(context)) Navigator.pop(context);
-
-            Future.microtask(() {
               if (Navigator.canPop(context)) Navigator.pop(context);
-              try {
-                ref.read(supportNotifierProvider.notifier).loadTickets();
-              } catch (_) {}
-            });
-          });
+
+              Future.microtask(() {
+                if (Navigator.canPop(context)) Navigator.pop(context);
+                try {
+                  ref.read(supportNotifierProvider.notifier).loadTickets();
+                } catch (_) {}
+              });
+            },
+          );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to delete ticket')),

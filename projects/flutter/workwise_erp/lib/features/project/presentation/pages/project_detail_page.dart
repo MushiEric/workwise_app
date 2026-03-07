@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
+import 'package:workwise_erp/core/widgets/app_tab_bar.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/project_providers.dart';
 import '../widgets/project_task_tile.dart';
@@ -15,7 +16,8 @@ class ProjectDetailPage extends ConsumerStatefulWidget {
   ConsumerState<ProjectDetailPage> createState() => _ProjectDetailPageState();
 }
 
-class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with SingleTickerProviderStateMixin {
+class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
   int? _projectId;
 
@@ -27,14 +29,19 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
       _projectId = arg.id;
       // set the notifier detail from the provided list object (no network call)
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) ref.read(projectNotifierProvider.notifier).setProjectDetailFromList(arg);
+        if (mounted)
+          ref
+              .read(projectNotifierProvider.notifier)
+              .setProjectDetailFromList(arg);
       });
     } else if (arg is int) {
       _projectId = arg;
       // defer loading to avoid modifying providers during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _projectId != null) {
-          ref.read(projectNotifierProvider.notifier).loadProjectDetail(_projectId!);
+          ref
+              .read(projectNotifierProvider.notifier)
+              .loadProjectDetail(_projectId!);
         }
       });
     }
@@ -58,7 +65,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: state.maybeWhen(
             detail: (p) => 'Project #${p.code ?? p.id ?? 'N/A'}',
@@ -67,20 +76,30 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
           elevation: 0,
           actions: [
             IconButton(
-              icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+              icon: Icon(
+                Icons.share_rounded,
+                color: isDark ? Colors.white70 : Colors.grey.shade600,
+              ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Share project — not implemented')),
+                  const SnackBar(
+                    content: Text('Share project — not implemented'),
+                  ),
                 );
               },
             ),
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+              icon: Icon(
+                Icons.more_vert_rounded,
+                color: isDark ? Colors.white70 : Colors.grey.shade600,
+              ),
               onSelected: (v) {
                 switch (v) {
                   case 'edit':
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Edit project — not implemented')),
+                      const SnackBar(
+                        content: Text('Edit project — not implemented'),
+                      ),
                     );
                     break;
                   case 'more':
@@ -108,45 +127,18 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
   }
 
   Widget _buildProjectDetailContent(BuildContext context, Project project) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
-
     return Column(
       children: [
-        // Enhanced Tab Bar
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Sprints'),
-              Tab(text: 'Tasks'),
-              Tab(text: 'Milestones'),
-              Tab(text: 'Members'),
-            ],
-            labelColor: primaryColor,
-            unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
-            indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: primaryColor.withOpacity(0.15),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          ),
+        // Tab Bar
+        AppTabBar(
+          controller: _tabController!,
+          tabs: const ['Overview', 'Sprints', 'Tasks', 'Milestones', 'Members'],
         ),
         const SizedBox(height: 12),
 
-        // Tab Bar Views
         Expanded(
           child: TabBarView(
-            controller: _tabController,
+            controller: _tabController!,
             physics: const BouncingScrollPhysics(),
             children: [
               _buildOverviewTab(context, project),
@@ -176,7 +168,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
+              color: isDark
+                  ? Colors.white.withOpacity(0.03)
+                  : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDark ? Colors.white10 : Colors.grey.shade200,
@@ -217,13 +211,18 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF1A2634),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
                             ),
                           ),
                           if (project.code != null) ...[
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: primaryColor.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(12),
@@ -266,7 +265,8 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
                       ),
                   ],
                 ),
-                if (project.description != null && project.description!.isNotEmpty) ...[
+                if (project.description != null &&
+                    project.description!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
                     project.description!,
@@ -302,14 +302,20 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.trending_up_rounded, size: 18, color: primaryColor),
+                        Icon(
+                          Icons.trending_up_rounded,
+                          size: 18,
+                          color: primaryColor,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Progress',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
                         ),
                       ],
@@ -330,7 +336,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
                   child: LinearProgressIndicator(
                     value: progress / 100.0,
                     minHeight: 10,
-                    backgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
+                    backgroundColor: isDark
+                        ? Colors.white10
+                        : Colors.grey.shade200,
                     valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                   ),
                 ),
@@ -395,23 +403,23 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
+          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         children: [
@@ -548,9 +556,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
   Widget _buildTasksTab(Project project) {
     final projectId = project.id;
     if (projectId == null) {
-      return const Center(
-        child: Text('Missing project id'),
-      );
+      return const Center(child: Text('Missing project id'));
     }
 
     return Consumer(
@@ -800,7 +806,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
               icon: Icons.refresh_rounded,
               onPressed: () {
                 if (_projectId != null) {
-                  ref.read(projectNotifierProvider.notifier).loadProjectDetail(_projectId!);
+                  ref
+                      .read(projectNotifierProvider.notifier)
+                      .loadProjectDetail(_projectId!);
                 }
               },
               variant: AppButtonVariant.primary,
@@ -878,7 +886,10 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> with Sing
                     color: Colors.green.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.person_add_rounded, color: Colors.green),
+                  child: const Icon(
+                    Icons.person_add_rounded,
+                    color: Colors.green,
+                  ),
                 ),
                 title: const Text('Add Member'),
                 onTap: () => Navigator.pop(sheetCtx),

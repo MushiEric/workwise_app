@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/sales_order.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_tab_bar.dart';
 
 class OrderDetailContent extends ConsumerStatefulWidget {
   final SalesOrder order;
@@ -94,43 +95,20 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
 
     return Column(
       children: [
         // Tab Bar
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.center,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Items'),
-              Tab(text: 'Status Log'),
-              Tab(text: 'Print Logs'),
-              Tab(text: 'Truck List'),
-              Tab(text: 'Loading'),
-            ],
-            labelColor: primaryColor,
-            unselectedLabelColor: isDark
-                ? Colors.white54
-                : Colors.grey.shade600,
-            indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: primaryColor.withOpacity(0.12),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            splashFactory: NoSplash.splashFactory,
-          ),
+        AppTabBar(
+          controller: _tabController,
+          tabs: const [
+            'Overview',
+            'Items',
+            'Status Log',
+            'Print Logs',
+            'Truck List',
+            'Loading',
+          ],
         ),
 
         const SizedBox(height: 12),
@@ -1038,37 +1016,39 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
               Row(
                 children: [
                   Container(
-  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-  decoration: BoxDecoration(
-    color: Colors.green.withOpacity(0.1),
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(
-      color: Colors.green.withOpacity(0.3),
-      width: 1,
-    ),
-  ),
-  child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: const [
-      Icon(
-        Icons.check_circle_rounded,
-        size: 14,
-        color: Colors.green,
-      ),
-      SizedBox(width: 4),
-      Text(
-        'Completed',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color:AppColors.muted,
-        ),
-      ),
-    ],
-  ),
-)
-   ,               const SizedBox(width: 8),
-               
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 14,
+                          color: Colors.green,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Completed',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                 ],
               ),
             ],
