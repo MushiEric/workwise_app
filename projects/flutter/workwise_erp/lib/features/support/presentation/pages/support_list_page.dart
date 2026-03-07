@@ -9,17 +9,21 @@ import '../providers/support_providers.dart';
 import '../state/support_state.dart';
 import '../../domain/entities/support_ticket.dart';
 import '../../domain/entities/status.dart';
+import '../../domain/entities/priority.dart';
+import '../../domain/entities/support_service.dart';
+import '../../domain/entities/support_location.dart';
+import '../../domain/entities/support_department.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
+import '../../../../core/widgets/app_smart_dropdown.dart';
 import 'package:intl/intl.dart';
 
 import '../widgets/ticket_detail_content.dart';
 import 'support_view_page.dart';
 import 'create_ticket_page.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class SupportListPage extends ConsumerStatefulWidget {
   const SupportListPage({super.key});
@@ -39,6 +43,19 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
   // Back-end statuses (used to render dynamic tabs)
   List<SupportStatus> availableStatuses = [];
 
+  // additional filter lists
+  List<Priority> _filterPriorities = [];
+  List<SupportService> _filterServices = [];
+  List<SupportLocation> _filterLocations = [];
+  List<SupportDepartment> _filterDepartments = [];
+
+  // currently selected filter values (null = all)
+  SupportStatus? _selectedFilterStatus;
+  Priority? _selectedFilterPriority;
+  SupportService? _selectedFilterService;
+  SupportLocation? _selectedFilterLocation;
+  SupportDepartment? _selectedFilterDepartment;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +64,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(supportNotifierProvider.notifier).loadTickets();
       _loadStatuses();
+      _loadFilterData();
     });
   }
 
@@ -63,6 +81,32 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
           old.dispose();
         });
       });
+    } catch (_) {}
+  }
+
+  /// load lists needed for dropdown filters
+  Future<void> _loadFilterData() async {
+    try {
+      final pRes = await ref.read(getSupportPrioritiesUseCaseProvider).call();
+      pRes.fold(
+        (_) => null,
+        (list) => setState(() => _filterPriorities = list),
+      );
+    } catch (_) {}
+    try {
+      final sRes = await ref.read(getSupportServicesUseCaseProvider).call();
+      sRes.fold((_) => null, (list) => setState(() => _filterServices = list));
+    } catch (_) {}
+    try {
+      final lRes = await ref.read(getSupportLocationsUseCaseProvider).call();
+      lRes.fold((_) => null, (list) => setState(() => _filterLocations = list));
+    } catch (_) {}
+    try {
+      final dRes = await ref.read(getSupportDepartmentsUseCaseProvider).call();
+      dRes.fold(
+        (_) => null,
+        (list) => setState(() => _filterDepartments = list),
+      );
     } catch (_) {}
   }
 
@@ -452,13 +496,51 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     if (availableStatuses.isNotEmpty) {
       final idx = _tabController.index;
       if (idx >= 0 && idx < availableStatuses.length) {
-        final selectedStatus =
+        final selectedStatusTab =
             availableStatuses[idx].status?.toLowerCase() ?? '';
         filteredTickets = filteredTickets.where((t) {
           final ticketStatus = t.status?.status?.toLowerCase() ?? '';
-          return ticketStatus == selectedStatus;
+          return ticketStatus == selectedStatusTab;
         }).toList();
       }
+    }
+
+    // apply sheet filters
+    if (_selectedFilterStatus != null &&
+        (_selectedFilterStatus!.status != null &&
+            _selectedFilterStatus!.status != 'All')) {
+      filteredTickets = filteredTickets.where((t) {
+        return t.status?.status == _selectedFilterStatus!.status;
+      }).toList();
+    }
+    if (_selectedFilterPriority != null &&
+        (_selectedFilterPriority!.priority != null &&
+            _selectedFilterPriority!.priority != 'All')) {
+      filteredTickets = filteredTickets.where((t) {
+        return t.priority?.priority == _selectedFilterPriority!.priority;
+      }).toList();
+    }
+    if (_selectedFilterService != null &&
+        (_selectedFilterService!.name != null &&
+            _selectedFilterService!.name != 'All')) {
+      filteredTickets = filteredTickets.where((t) {
+        return t.services != null &&
+            t.services!.contains(_selectedFilterService!.name);
+      }).toList();
+    }
+    if (_selectedFilterLocation != null &&
+        (_selectedFilterLocation!.name != null &&
+            _selectedFilterLocation!.name != 'All')) {
+      filteredTickets = filteredTickets.where((t) {
+        return t.location == _selectedFilterLocation!.name;
+      }).toList();
+    }
+    if (_selectedFilterDepartment != null &&
+        (_selectedFilterDepartment!.name != null &&
+            _selectedFilterDepartment!.name != 'All')) {
+      filteredTickets = filteredTickets.where((t) {
+        return t.department == _selectedFilterDepartment!.name;
+      }).toList();
     }
 
     if (filteredTickets.isEmpty) {
@@ -807,20 +889,69 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ],
             ),
             SizedBox(height: 20.h),
-            Text(
-              'Priority',
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600),
-            ),
-            SizedBox(height: 12.h),
-            Wrap(
-              spacing: 8.w,
-              runSpacing: 8.h,
-              children: [
-                _buildFilterChip('All', true),
-                _buildFilterChip('High', false),
-                _buildFilterChip('Medium', false),
-                _buildFilterChip('Low', false),
+            // status dropdown
+            AppSmartDropdown<SupportStatus>(
+              value: _selectedFilterStatus,
+              items: [
+                const SupportStatus(status: 'All'),
+                ...availableStatuses,
               ],
+              itemBuilder: (s) => s.status ?? 'Unknown',
+              label: 'Status',
+              hintText: 'All',
+              onChanged: (s) => setState(() => _selectedFilterStatus = s),
+            ),
+            SizedBox(height: 16.h),
+            // priority dropdown
+            AppSmartDropdown<Priority>(
+              value: _selectedFilterPriority,
+              items: [
+                const Priority(id: null, priority: 'All'),
+                ..._filterPriorities,
+              ],
+              itemBuilder: (p) => p.priority ?? 'Unknown',
+              label: 'Priority',
+              hintText: 'All',
+              onChanged: (p) => setState(() => _selectedFilterPriority = p),
+            ),
+            SizedBox(height: 16.h),
+            // service dropdown
+            AppSmartDropdown<SupportService>(
+              value: _selectedFilterService,
+              items: [
+                const SupportService(id: null, name: 'All'),
+                ..._filterServices,
+              ],
+              itemBuilder: (s) => s.name ?? 'Unknown',
+              label: 'Service',
+              hintText: 'All',
+              onChanged: (s) => setState(() => _selectedFilterService = s),
+            ),
+            SizedBox(height: 16.h),
+            // location dropdown
+            AppSmartDropdown<SupportLocation>(
+              value: _selectedFilterLocation,
+              items: [
+                const SupportLocation(id: null, name: 'All'),
+                ..._filterLocations,
+              ],
+              itemBuilder: (l) => l.name ?? 'Unknown',
+              label: 'Location',
+              hintText: 'All',
+              onChanged: (l) => setState(() => _selectedFilterLocation = l),
+            ),
+            SizedBox(height: 16.h),
+            // department dropdown
+            AppSmartDropdown<SupportDepartment>(
+              value: _selectedFilterDepartment,
+              items: [
+                const SupportDepartment(id: null, name: 'All'),
+                ..._filterDepartments,
+              ],
+              itemBuilder: (d) => d.name ?? 'Unknown',
+              label: 'Department',
+              hintText: 'All',
+              onChanged: (d) => setState(() => _selectedFilterDepartment = d),
             ),
             SizedBox(height: 20.h),
             Text(
@@ -837,7 +968,16 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               children: [
                 Expanded(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      setState(() {
+                        _selectedFilterStatus = null;
+                        _selectedFilterPriority = null;
+                        _selectedFilterService = null;
+                        _selectedFilterLocation = null;
+                        _selectedFilterDepartment = null;
+                      });
+                      Navigator.pop(context);
+                    },
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.grey,
                       padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -866,35 +1006,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, bool isSelected) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return FilterChip(
-      label: Text(label, style: TextStyle(fontSize: 13.sp)),
-      selected: isSelected,
-      onSelected: (selected) {},
-      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
-      selectedColor: const Color(0xFF4A6FA5).withOpacity(0.2),
-      checkmarkColor: const Color(0xFF4A6FA5),
-      labelStyle: TextStyle(
-        color: isSelected
-            ? const Color(0xFF4A6FA5)
-            : (isDark ? Colors.white70 : Colors.grey.shade700),
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 13.sp,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.r),
-        side: BorderSide(
-          color: isSelected
-              ? const Color(0xFF4A6FA5)
-              : (isDark ? Colors.white24 : Colors.grey.shade300),
-          width: 1,
         ),
       ),
     );
