@@ -20,12 +20,17 @@ class JobcardTile extends StatelessWidget {
     if (statusName == null || statusName.isEmpty) return AppColors.primary;
     final lower = statusName.toLowerCase();
     if (lower.contains('open')) return const Color(0xFF4A6FA5);
-    if (lower.contains('completed') || lower.contains('done') || lower.contains('closed')) {
+    if (lower.contains('completed') ||
+        lower.contains('done') ||
+        lower.contains('closed')) {
       return Colors.green;
     }
-    if (lower.contains('pending') || lower.contains('waiting')) return Colors.orange;
-    if (lower.contains('in progress') || lower.contains('processing')) return Colors.blue;
-    if (lower.contains('cancelled') || lower.contains('rejected')) return Colors.red;
+    if (lower.contains('pending') || lower.contains('waiting'))
+      return Colors.orange;
+    if (lower.contains('in progress') || lower.contains('processing'))
+      return Colors.blue;
+    if (lower.contains('cancelled') || lower.contains('rejected'))
+      return Colors.red;
     return AppColors.primary;
   }
 
@@ -33,7 +38,9 @@ class JobcardTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusName = jobcard.statusRow?['name']?.toString() ?? '';
-    Color statusColor = _getStatusColor(statusName.isNotEmpty ? statusName : jobcard.status);
+    Color statusColor = _getStatusColor(
+      statusName.isNotEmpty ? statusName : jobcard.status,
+    );
 
     // Prefer explicit color from backend status_row if provided
     final rowColorStr = jobcard.statusRow?['color']?.toString();
@@ -41,7 +48,9 @@ class JobcardTile extends StatelessWidget {
       statusColor = hexToColor(rowColorStr, fallback: statusColor);
     }
 
-    final displayStatus = statusName.isNotEmpty ? statusName : (jobcard.status ?? 'Unknown');
+    final displayStatus = statusName.isNotEmpty
+        ? statusName
+        : (jobcard.status ?? 'Unknown');
 
     return Card(
       margin: EdgeInsets.only(bottom: 12.h),
@@ -66,38 +75,41 @@ class JobcardTile extends StatelessWidget {
               Row(
                 children: [
                   // Type chip
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.grey.shade200,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8.r,
-                          height: 8.r,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          'JC',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Container(
+                  //   padding: EdgeInsets.symmetric(
+                  //     horizontal: 10.w,
+                  //     vertical: 6.h,
+                  //   ),
+                  //   decoration: BoxDecoration(
+                  //     color: isDark ? Colors.white10 : Colors.white,
+                  //     borderRadius: BorderRadius.circular(12.r),
+                  //     border: Border.all(
+                  //       color: isDark ? Colors.white10 : Colors.grey.shade200,
+                  //     ),
+                  //   ),
+                  //   child: Row(
+                  //     mainAxisSize: MainAxisSize.min,
+                  //     children: [
+                  //       // Container(
+                  //       //   width: 8.r,
+                  //       //   height: 8.r,
+                  //       //   decoration: BoxDecoration(
+                  //       //     color: AppColors.primary,
+                  //       //     shape: BoxShape.circle,
+                  //       //   ),
+                  //       // ),
+                  //       // SizedBox(width: 6.w),
+                  //       // Text(
+                  //       //   'JC',
+                  //       //   style: TextStyle(
+                  //       //     color: Theme.of(context).colorScheme.onSurface,
+                  //       //     fontWeight: FontWeight.w600,
+                  //       //     fontSize: 12.sp,
+                  //       //   ),
+                  //       // ),
+                  //     ],
+                  //   ),
+                  // ),
                   SizedBox(width: 8.w),
                   // Jobcard number
                   Expanded(
@@ -113,7 +125,10 @@ class JobcardTile extends StatelessWidget {
                   ),
                   // Status badge
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white10 : Colors.white,
                       borderRadius: BorderRadius.circular(20.r),
@@ -145,28 +160,30 @@ class JobcardTile extends StatelessWidget {
                     ),
                   ),
                   // Delete action
-                  if (onDelete != null) ...[
-                    SizedBox(width: 4.w),
-                    IconButton(
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 18.r,
-                        color: isDark ? Colors.white38 : AppColors.error,
-                      ),
-                      onPressed: onDelete,
-                      tooltip: 'Delete',
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
-                    ),
-                  ],
+                  // if (onDelete != null) ...[
+                  //   SizedBox(width: 4.w),
+                  //   IconButton(
+                  //     icon: Icon(
+                  //       Icons.delete_outline_rounded,
+                  //       size: 18.r,
+                  //       color: isDark ? Colors.white38 : AppColors.error,
+                  //     ),
+                  //     onPressed: onDelete,
+                  //     tooltip: 'Delete',
+                  //     padding: EdgeInsets.zero,
+                  //     constraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
+                  //   ),
+                  // ],
                 ],
               ),
 
               SizedBox(height: 12.h),
 
-              // ── Service title ──
+              // ── Subject (service) ──
               Text(
-                jobcard.service ?? 'No service',
+                jobcard.service != null && jobcard.service!.isNotEmpty
+                    ? jobcard.service!
+                    : 'No subject',
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
@@ -178,42 +195,7 @@ class JobcardTile extends StatelessWidget {
 
               SizedBox(height: 8.h),
 
-              // ── Items row ──
-              Row(
-                children: [
-                  Container(
-                    width: 28.r,
-                    height: 28.r,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_rounded,
-                      size: 14.r,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Text(
-                      jobcard.itemsCount != null && jobcard.itemsCount! > 0
-                          ? '${jobcard.itemsCount} item${jobcard.itemsCount! > 1 ? 's' : ''}'
-                          : 'No items',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white70 : Colors.grey.shade700,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: 12.h),
-
-              // ── Footer: date + grand total ──
+              // ── Creation date ──
               Row(
                 children: [
                   Icon(
@@ -223,31 +205,18 @@ class JobcardTile extends StatelessWidget {
                   ),
                   SizedBox(width: 4.w),
                   Text(
-                    jobcard.reportedDate ?? 'No date',
+                    jobcard.reportedDate ?? 'Unknown date',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: isDark ? Colors.white38 : Colors.grey.shade500,
                     ),
                   ),
-                  const Spacer(),
-                  if (jobcard.grandTotal != null && jobcard.grandTotal!.isNotEmpty) ...[
-                    Icon(
-                      Icons.attach_money_rounded,
-                      size: 16.r,
-                      color: isDark ? Colors.white38 : Colors.grey.shade400,
-                    ),
-                    SizedBox(width: 2.w),
-                    Text(
-                      jobcard.grandTotal!,
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : const Color(0xFF1A2634),
-                      ),
-                    ),
-                  ],
                 ],
               ),
+
+              SizedBox(height: 12.h),
+
+              // other details intentionally omitted; shown on tap via detail page
             ],
           ),
         ),
