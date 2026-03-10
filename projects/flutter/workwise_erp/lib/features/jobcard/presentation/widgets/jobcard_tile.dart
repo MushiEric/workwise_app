@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/entities/jobcard.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/color_utils.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class JobcardTile extends StatelessWidget {
   final Jobcard jobcard;
@@ -199,7 +200,7 @@ class JobcardTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.access_time_rounded,
+                    AppIcons.accessTimeRounded,
                     size: 14.r,
                     color: isDark ? Colors.white38 : Colors.grey.shade400,
                   ),

@@ -9,6 +9,10 @@ class AppSmartDropdown<T> extends StatefulWidget {
   final void Function(T?) onChanged;
   final String? hintText;
   final bool enabled;
+  // style
+  final Color? backgroundColor;
+  final double borderRadius;
+  final Color? borderColor;
 
   const AppSmartDropdown({
     super.key,
@@ -19,6 +23,9 @@ class AppSmartDropdown<T> extends StatefulWidget {
     required this.onChanged,
     this.hintText,
     this.enabled = true,
+    this.backgroundColor,
+    this.borderRadius = 16,
+    this.borderColor,
   });
 
   @override
@@ -45,24 +52,37 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final displayText = widget.value != null ? widget.itemBuilder(widget.value as T) : (widget.hintText ?? 'Select ${widget.label}');
-    
-    return InkWell(
-      onTap: widget.enabled ? () => _showSelectionDialog(context) : null,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: widget.label,
-          suffixIcon: const Icon(Icons.arrow_drop_down),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
+    final displayText = widget.value != null
+        ? widget.itemBuilder(widget.value as T)
+        : (widget.hintText ?? 'Select ${widget.label}');
+
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: widget.label,
+        suffixIcon: const Icon(Icons.arrow_drop_down),
+        filled: widget.backgroundColor != null,
+        fillColor: widget.backgroundColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: widget.borderColor ?? Theme.of(context).dividerColor,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        child: Text(
-          displayText,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: widget.value == null ? Theme.of(context).hintColor : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: widget.borderColor ?? Theme.of(context).dividerColor,
           ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+      ),
+      child: Text(
+        displayText,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: widget.value == null ? Theme.of(context).hintColor : null,
         ),
       ),
     );
@@ -100,7 +120,10 @@ class _SelectionDialogState<T> extends State<_SelectionDialog<T>> {
         _filteredItems = widget.items;
       } else {
         _filteredItems = widget.items.where((item) {
-          return widget.itemBuilder(item).toLowerCase().contains(query.toLowerCase());
+          return widget
+              .itemBuilder(item)
+              .toLowerCase()
+              .contains(query.toLowerCase());
         }).toList();
       }
     });

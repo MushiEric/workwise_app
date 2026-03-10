@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
 import '../../domain/entities/user.dart' as domain;
@@ -27,21 +27,22 @@ class ProfilePage extends ConsumerStatefulWidget {
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderStateMixin {
+class _ProfilePageState extends ConsumerState<ProfilePage>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _bioController;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   bool _isLoading = false;
   bool _isEditing = false;
   File? _pickedAvatarFile;
-  domain.User? _cachedUser;   // persists user across loading transitions
+  domain.User? _cachedUser; // persists user across loading transitions
   bool _hasPopulated = false; // ensure controllers are populated only once
 
   @override
@@ -51,21 +52,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
     _bioController = TextEditingController();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
-    
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
     _animationController.forward();
   }
 
@@ -96,9 +97,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
 
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     final Map<String, dynamic> payload = {
       'name': _nameController.text.trim(),
       'email': _emailController.text.trim(),
@@ -116,10 +117,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       await ref.read(authNotifierProvider.notifier).updateProfile(payload);
       // Only reached on success (notifier throws on failure after restoring state).
       // Re-populate controllers with the server-confirmed user data.
-      final updatedUser = ref.read(authNotifierProvider).maybeWhen(
-        authenticated: (u) => u,
-        orElse: () => null,
-      );
+      final updatedUser = ref
+          .read(authNotifierProvider)
+          .maybeWhen(authenticated: (u) => u, orElse: () => null);
       if (updatedUser != null) _populateFromUser(updatedUser);
       setState(() {
         _isLoading = false;
@@ -152,9 +152,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
         title: context.l10n.changePassword,
         form: Column(
           children: [
-            AppTextField(
-              obscureText: true,
-            ),
+            AppTextField(obscureText: true),
             const SizedBox(height: 16),
             AppTextField(
               obscureText: true,
@@ -199,8 +197,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     currentUserAsync.maybeWhen(
       data: (either) {
         either.fold((_) => null, (u) {
-          backendAvatar =
-              (u.avatar != null && u.avatar!.isNotEmpty) ? u.avatar : null;
+          backendAvatar = (u.avatar != null && u.avatar!.isNotEmpty)
+              ? u.avatar
+              : null;
         });
       },
       orElse: () {},
@@ -219,7 +218,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     // Populate form controllers exactly once (when user first becomes available).
     if (!_hasPopulated && displayUser != null) {
       _hasPopulated = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _populateFromUser(displayUser));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _populateFromUser(displayUser),
+      );
     }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -228,14 +229,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: context.l10n.profileTitle,
           actions: [
             if (!_isEditing)
               IconButton(
                 icon: Icon(
-                  LucideIcons.edit,
+                  AppIcons.edit,
                   size: 20,
                   color: isDark ? Colors.white70 : AppColors.white,
                 ),
@@ -243,7 +246,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
             IconButton(
               icon: Icon(
-                LucideIcons.settings,
+                AppIcons.settings,
                 size: 20,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),
@@ -260,27 +263,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               child: Column(
                 children: [
                   // Profile Header with Avatar
-                  _buildProfileHeader(context, displayUser, isDark, primaryColor, avatarUrl: resolvedAvatar),
-                  
+                  _buildProfileHeader(
+                    context,
+                    displayUser,
+                    isDark,
+                    primaryColor,
+                    avatarUrl: resolvedAvatar,
+                  ),
+
                   const SizedBox(height: 24),
-                  
+
                   // Stats Cards
                   _buildStatsCards(context, isDark, primaryColor),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Profile Form Card
                   _buildProfileForm(context, displayUser, isDark, primaryColor),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Additional Options
                   _buildAdditionalOptions(context, isDark, primaryColor),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Save Button (when editing)
-                  if (_isEditing) _buildSaveButton(context, isDark, primaryColor),
+                  if (_isEditing)
+                    _buildSaveButton(context, isDark, primaryColor),
                 ],
               ),
             ),
@@ -290,7 +300,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, domain.User? user, bool isDark, Color primaryColor, {String? avatarUrl}) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    domain.User? user,
+    bool isDark,
+    Color primaryColor, {
+    String? avatarUrl,
+  }) {
     final initials = _getInitials(user?.name);
     final avatarColor = primaryColor;
     final effectiveAvatar = avatarUrl ?? user?.avatar;
@@ -335,7 +351,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   backgroundImage: _pickedAvatarFile != null
                       ? FileImage(_pickedAvatarFile!) as ImageProvider
                       : imageProviderFromUrl(effectiveAvatar),
-                  child: (_pickedAvatarFile == null &&
+                  child:
+                      (_pickedAvatarFile == null &&
                           (effectiveAvatar == null || effectiveAvatar.isEmpty))
                       ? Text(
                           initials,
@@ -365,16 +382,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                       ],
                     ),
                     child: IconButton(
-                      icon: Icon(LucideIcons.camera, size: 20, color: primaryColor),
+                      icon: Icon(
+                        AppIcons.camera,
+                        size: 20,
+                        color: primaryColor,
+                      ),
                       onPressed: _showAvatarPicker,
                     ),
                   ),
                 ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // User name and role
           Text(
             user?.name ?? 'User Name',
@@ -384,9 +405,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               fontWeight: FontWeight.bold,
             ),
           ),
-          
+
           const SizedBox(height: 4),
-          
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
@@ -399,9 +420,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               // legacy `'company'` label.
               user?.isAdmin == true
                   ? 'Administrator'
-                  : (user?.roles != null && user!.roles!.isNotEmpty && (user.roles!.first.name?.isNotEmpty ?? false)
-                      ? user.roles!.first.name!
-                      : 'company'),
+                  : (user?.roles != null &&
+                            user!.roles!.isNotEmpty &&
+                            (user.roles!.first.name?.isNotEmpty ?? false)
+                        ? user.roles!.first.name!
+                        : 'company'),
               style: TextStyle(
                 color: isDark ? Colors.white : primaryColor,
                 fontSize: 13,
@@ -409,19 +432,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Member since
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(LucideIcons.calendar, size: 14, color: isDark ? Colors.white.withOpacity(0.8) : Colors.grey.shade600),
+              Icon(
+                AppIcons.calendar,
+                size: 14,
+                color: isDark
+                    ? Colors.white.withOpacity(0.8)
+                    : Colors.grey.shade600,
+              ),
               const SizedBox(width: 6),
               Text(
                 context.l10n.memberSince(_formatDate(user?.createdAt)),
                 style: TextStyle(
-                  color: isDark ? Colors.white.withOpacity(0.8) : Colors.grey.shade600,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.8)
+                      : Colors.grey.shade600,
                   fontSize: 13,
                 ),
               ),
@@ -432,7 +463,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildStatsCards(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildStatsCards(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Row(
       children: [
         // Stats cards commented out as in original
@@ -440,7 +475,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildProfileForm(BuildContext context, domain.User? user, bool isDark, Color primaryColor) {
+  Widget _buildProfileForm(
+    BuildContext context,
+    domain.User? user,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A2E) : Colors.white,
@@ -469,7 +509,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                       color: primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(LucideIcons.user, color: primaryColor, size: 20),
+                    child: Icon(AppIcons.user, color: primaryColor, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -482,37 +522,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Name Field
               _buildFormField(
                 label: context.l10n.fullName,
-                icon: LucideIcons.user,
+                icon: AppIcons.user,
                 controller: _nameController,
                 enabled: _isEditing,
-                validator: (v) => (v == null || v.trim().isEmpty) ? context.l10n.pleaseEnterName : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? context.l10n.pleaseEnterName
+                    : null,
                 isDark: isDark,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Email Field (read-only)
               _buildFormField(
                 label: context.l10n.emailAddress,
-                icon: LucideIcons.mail,
+                icon: AppIcons.mail,
                 controller: _emailController,
                 enabled: false,
                 isDark: isDark,
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Phone Field (show only when auth provides phone)
               if (user?.phone != null && user!.phone!.isNotEmpty) ...[
                 _buildFormField(
                   label: context.l10n.phoneNumber,
-                  icon: LucideIcons.phone,
+                  icon: AppIcons.phone,
                   controller: _phoneController,
                   enabled: _isEditing,
                   keyboardType: TextInputType.phone,
@@ -556,16 +598,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           maxLines: maxLines,
           validator: validator,
           style: TextStyle(
-            color: enabled 
+            color: enabled
                 ? (isDark ? Colors.white : const Color(0xFF1A2634))
                 : (isDark ? Colors.white38 : Colors.grey.shade500),
           ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20, color: isDark ? Colors.white54 : Colors.grey.shade500),
+            prefixIcon: Icon(
+              icon,
+              size: 20,
+              color: isDark ? Colors.white54 : Colors.grey.shade500,
+            ),
             filled: true,
             fillColor: enabled
-                ? (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50)
-                : (isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade100),
+                ? (isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade50)
+                : (isDark
+                      ? Colors.white.withOpacity(0.02)
+                      : Colors.grey.shade100),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -579,19 +629,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: AppColors.primary,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAdditionalOptions(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildAdditionalOptions(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A2E) : Colors.white,
@@ -607,7 +661,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       child: Column(
         children: [
           _buildOptionTile(
-            icon: LucideIcons.lock,
+            icon: AppIcons.lock,
             label: context.l10n.changePassword,
             subtitle: context.l10n.changePasswordSubtitle,
             color: Colors.blue,
@@ -616,7 +670,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           ),
           _buildDivider(isDark),
           _buildOptionTile(
-            icon: LucideIcons.bell,
+            icon: AppIcons.bell,
             label: context.l10n.notificationSettings,
             subtitle: context.l10n.manageNotifications,
             color: Colors.green,
@@ -677,7 +731,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
               ),
               Icon(
-                LucideIcons.chevronRight,
+                AppIcons.chevronRight,
                 size: 16,
                 color: isDark ? Colors.white38 : Colors.grey.shade400,
               ),
@@ -697,7 +751,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
     );
   }
 
-  Widget _buildSaveButton(BuildContext context, bool isDark, Color primaryColor) {
+  Widget _buildSaveButton(
+    BuildContext context,
+    bool isDark,
+    Color primaryColor,
+  ) {
     return Container(
       width: double.infinity,
       height: 56,
@@ -784,7 +842,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(LucideIcons.image, color: AppColors.primary, size: 20),
+                  child: Icon(
+                    AppIcons.image,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   context.l10n.chooseFromGallery,
@@ -815,11 +877,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(LucideIcons.trash2, color: Colors.red, size: 20),
+                    child: const Icon(
+                      AppIcons.trash2,
+                      color: Colors.red,
+                      size: 20,
+                    ),
                   ),
                   title: Text(
                     context.l10n.removeSelectedPhoto,
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -847,16 +916,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
       setState(() => _pickedAvatarFile = File(path));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
     }
   }
 
   void _showSettingsMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -880,7 +949,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               ),
               const SizedBox(height: 20),
               _buildMenuTile(
-                icon: LucideIcons.moon,
+                icon: AppIcons.moon,
                 label: context.l10n.darkMode,
                 trailing: Switch(
                   value: isDark,
@@ -894,12 +963,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
               Consumer(
                 builder: (context, ref, _) {
                   // prefer authenticated user's lang, otherwise app provider
-                  final code = ref.watch(authNotifierProvider).maybeWhen(
-                    authenticated: (u) => u.lang ?? ref.watch(appLocaleProvider),
-                    orElse: () => ref.watch(appLocaleProvider),
-                  );
+                  final code = ref
+                      .watch(authNotifierProvider)
+                      .maybeWhen(
+                        authenticated: (u) =>
+                            u.lang ?? ref.watch(appLocaleProvider),
+                        orElse: () => ref.watch(appLocaleProvider),
+                      );
                   return _buildMenuTile(
-                    icon: LucideIcons.globe,
+                    icon: AppIcons.globe,
                     label: context.l10n.language,
                     // subtitle: languageLabel(code),
                     onTap: _showLanguageSelection,
@@ -907,7 +979,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 },
               ),
               _buildMenuTile(
-                icon: LucideIcons.volume,
+                icon: AppIcons.volume,
                 label: context.l10n.sound,
                 trailing: Switch(
                   value: true,
@@ -916,7 +988,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 ),
               ),
               _buildMenuTile(
-                icon: LucideIcons.server,
+                icon: AppIcons.server,
                 label: context.l10n.switchWorkspace,
                 subtitle: context.l10n.changeWorkspaceSubtitle,
                 onTap: () {
@@ -925,7 +997,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
                 },
               ),
               _buildMenuTile(
-                icon: LucideIcons.logOut,
+                icon: AppIcons.logOut,
                 label: context.l10n.signOut,
                 color: Colors.red,
                 onTap: () {
@@ -955,7 +1027,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
             return ListTile(
               title: Text(label),
               trailing: selected == code
-                  ? Icon(LucideIcons.check, color: AppColors.primary)
+                  ? Icon(AppIcons.check, color: AppColors.primary)
                   : null,
               onTap: () async {
                 Navigator.pop(context); // close language selector
@@ -966,7 +1038,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
 
                 // Update provider
                 ref.read(appLocaleProvider.notifier).setLocale(code);
-                
+
                 // Show confirmation
                 if (mounted) {
                   context.showSuccessModal(
@@ -982,7 +1054,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           return Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF151A2E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: SafeArea(
               child: Column(
@@ -1035,7 +1109,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconColor = color ?? (isDark ? Colors.white70 : Colors.grey.shade700);
-    
+
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -1053,7 +1127,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
         ),
       ),
       subtitle: subtitle != null
-          ? Text(subtitle, style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade600))
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: isDark ? Colors.white54 : Colors.grey.shade600,
+              ),
+            )
           : null,
       trailing: trailing,
       onTap: onTap,
@@ -1071,7 +1150,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       },
-      icon: LucideIcons.logOut,
+      icon: AppIcons.logOut,
       confirmColor: Colors.red,
     );
   }
@@ -1088,10 +1167,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
         await ref.read(authNotifierProvider.notifier).logout();
 
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/workspace', (route) => false);
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/workspace', (route) => false);
         }
       },
-      icon: LucideIcons.server,
+      icon: AppIcons.server,
       confirmColor: Colors.orange,
     );
   }
@@ -1099,7 +1180,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with TickerProviderSt
   String _formatDate(dynamic dateTime) {
     if (dateTime == null) return 'Unknown';
     try {
-      final date = dateTime is DateTime ? dateTime : DateTime.parse(dateTime.toString());
+      final date = dateTime is DateTime
+          ? dateTime
+          : DateTime.parse(dateTime.toString());
       final formatter = DateFormat('MMMM yyyy');
       return formatter.format(date);
     } catch (e) {

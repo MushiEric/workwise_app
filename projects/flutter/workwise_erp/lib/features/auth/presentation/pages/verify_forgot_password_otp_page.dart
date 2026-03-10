@@ -8,6 +8,7 @@ import 'package:workwise_erp/features/auth/presentation/providers/auth_providers
 import 'package:workwise_erp/features/auth/domain/usecases/verify_forgot_password_otp.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
+import 'package:workwise_erp/core/themes/app_icons.dart';
 class VerifyForgotPasswordOtpPage extends ConsumerStatefulWidget {
   const VerifyForgotPasswordOtpPage({super.key});
 
@@ -114,7 +115,7 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                           AppTextField(
                             controller: _identifierCtrl,
                             labelText: 'Email or phone',
-                            prefixIcon: const Icon(Icons.mail_outline),
+                            prefixIcon: const Icon(AppIcons.mail),
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) => (v == null || v.trim().isEmpty) ? 'Identifier is required' : null,
                           ),
@@ -123,7 +124,7 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
                             controller: _otpCtrl,
                             labelText: 'OTP code',
                             hintText: 'Enter the code',
-                            prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                            prefixIcon: const Icon(AppIcons.lock),
                             keyboardType: TextInputType.number,
                             validator: _otpValidator,
                           ),

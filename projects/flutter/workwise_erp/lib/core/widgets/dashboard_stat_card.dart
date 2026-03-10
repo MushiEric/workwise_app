@@ -27,7 +27,7 @@ class DashboardStatCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 96.h,
+      height: 75.h,
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF0A0E21) : Colors.white,

@@ -13,4 +13,5 @@ class AppConstant {
       'https://getcore.workwise.africa/terms';
   static const String googlemapKey = 'AIzaSyARuZs3KqeodlNXnSeJUWcHW_zVQ3ZFc0w';
   // NOTE: keys should not be committed. Load this from environment or secure storage.
-  static const String openAiApiKey = '<REPLACE_WITH_ENVIRONMENT_VALUE>';}
+  static const String openAiApiKey = '<REPLACE_WITH_ENVIRONMENT_VALUE>';
+}

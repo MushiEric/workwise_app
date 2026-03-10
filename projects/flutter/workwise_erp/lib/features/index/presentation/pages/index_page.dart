@@ -49,7 +49,6 @@ class _IndexPageState extends ConsumerState<IndexPage>
       ref.read(notificationsNotifierProvider.notifier).loadNotifications();
     });
     // invite helper moved to class-level `_inviteFriends()`
-
   }
 
   @override
@@ -63,10 +62,15 @@ class _IndexPageState extends ConsumerState<IndexPage>
   // Opens native share sheet with a platform-aware invite message
   void _inviteFriends() async {
     final appName = 'Workwise';
-    final baseDescription = 'An AI-powered software built to help you and your team stay organized, automate work and streamline your operations.';
+    final baseDescription =
+        'An AI-powered software built to help you and your team stay organized, automate work and streamline your operations.';
 
-    final isMobile = !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
-    final mobileExtras = '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    final mobileExtras =
+        '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
 
     final shareText = isMobile
         ? '$appName — $baseDescription$mobileExtras\n\nLearn more: ${AppConstant.website}'
@@ -82,15 +86,21 @@ class _IndexPageState extends ConsumerState<IndexPage>
         await Clipboard.setData(ClipboardData(text: shareText));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Share dialog unavailable — invite text copied to clipboard')),
+            const SnackBar(
+              content: Text(
+                'Share dialog unavailable — invite text copied to clipboard',
+              ),
+            ),
           );
         }
       } catch (_) {
         if (mounted) {
-          final message = kDebugMode ? 'Could not share or copy invite text: ${e.toString()}' : 'Could not share invite. Please try again.';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
+          final message = kDebugMode
+              ? 'Could not share or copy invite text: ${e.toString()}'
+              : 'Could not share invite. Please try again.';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         }
       }
     }
@@ -292,7 +302,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Greeting banner (replaces stats cards)
             Padding(
@@ -314,7 +324,9 @@ class _IndexPageState extends ConsumerState<IndexPage>
                             ? 'Good Morning'
                             : (hour < 17
                                   ? 'Good Afternoon'
-                                  : (hour < 21 ? 'Good Evening' : 'Good Night')));
+                                  : (hour < 21
+                                        ? 'Good Evening'
+                                        : 'Good Night')));
 
                   return Container(
                     padding: const EdgeInsets.all(20),
@@ -394,7 +406,6 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       color: isDark ? Colors.white : const Color(0xFF1A2634),
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -489,7 +500,6 @@ class _IndexPageState extends ConsumerState<IndexPage>
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-
       ),
     );
   }

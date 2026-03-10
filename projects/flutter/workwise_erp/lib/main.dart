@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'l10n/app_localizations.dart';
 
 import 'core/themes/app_colors.dart';
-import 'core/theme/app_typography.dart';
+import 'core/themes/app_typography.dart';
 import 'core/provider/locale_provider.dart';
 import 'core/provider/navigator_key_provider.dart';
 import 'core/routes/app_router.dart';
@@ -29,7 +29,7 @@ void main() async {
 
   // You can also override using a build-time dart-define `RUNTIME_ENV` like:
   // flutter run --dart-define=RUNTIME_ENV=dev
-  const runtimeEnv = String.fromEnvironment('RUNTIME_ENV', defaultValue: '');
+  const runtimeEnv = String.fromEnvironment('RUNTIME_ENV', defaultValue: 'staging');
   if (runtimeEnv.isNotEmpty) {
     EnvConfig.init(EnvConfig.parseEnv(runtimeEnv));
   }
@@ -48,6 +48,15 @@ void main() async {
   if (tenantOverride != null) {
     // override the provider value (StateProvider<Tenant?> expects Tenant?)
     providerOverrides.add(tenantProvider.overrideWith((ref) => tenantOverride));
+  }
+
+  // If running in a development environment and no tenant has been stored,
+  // prepopulate the provider with the dev base URL. This allows developers to
+  // simply launch the app with `--dart-define=RUNTIME_ENV=dev` and skip the
+  // workspace entry screen entirely.
+  if (tenantOverride == null && EnvConfig.current.env == AppEnvironment.dev) {
+    providerOverrides.add(tenantProvider
+        .overrideWith((ref) => Tenant(EnvConfig.current.baseUrl)));
   }
 
   if (sentryDsn.isNotEmpty) {

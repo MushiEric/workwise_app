@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workwise_erp/main.dart';
+import 'package:workwise_erp/core/themes/app_icons.dart';
 
 void main() {
   testWidgets('Login page renders', (WidgetTester tester) async {
@@ -17,5 +18,8 @@ void main() {
 
     expect(find.text('Sign In'), findsOneWidget);
     expect(find.byType(Image), findsWidgets); // logo
+
+    // ensure centralized icon is used
+    expect(find.byIcon(AppIcons.mail), findsOneWidget);
   });
 }

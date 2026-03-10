@@ -66,4 +66,34 @@ void main() {
     expect(tenant, isA<Tenant>());
     expect(tenant!.baseUrl, expected);
   });
+
+  testWidgets('WorkspaceEntry accepts direct IP address', (tester) async {
+    final mockDio = _MockDio();
+    final storage = _FakeStorage();
+    final container = ProviderContainer();
+
+    await tester.pumpWidget(ProviderScope(
+      parent: container,
+      overrides: [
+        tenantLocalDataSourceProvider.overrideWithValue(storage),
+      ],
+      child: MaterialApp(
+        initialRoute: '/entry',
+        routes: {
+          '/': (c) => const SizedBox.shrink(),
+          '/entry': (c) => WorkspaceEntryScreen(dioFactory: (base) => mockDio),
+        },
+      ),
+    ));
+
+    // enter an IP address with port
+    await tester.enterText(find.byType(TextFormField), '10.26.154.239:8000');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    const expectedIp = 'http://10.26.154.239:8000/api';
+    expect(storage.saved, expectedIp);
+    final tenant = container.read(tenantProvider);
+    expect(tenant?.baseUrl, expectedIp);
+  });
 }

@@ -24,12 +24,16 @@ final getNotificationsUseCaseProvider = Provider((ref) {
   return GetNotifications(repo);
 });
 
-final notificationsNotifierProvider = StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
-  final usecase = ref.watch(getNotificationsUseCaseProvider);
-  return NotificationsNotifier(getNotifications: usecase);
-});
+final notificationsNotifierProvider =
+    StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
+      final usecase = ref.watch(getNotificationsUseCaseProvider);
+      return NotificationsNotifier(getNotifications: usecase);
+    });
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {
   final state = ref.watch(notificationsNotifierProvider);
   return state.notifications.where((n) => !n.isOpened).length;
 });
+
+// Simple filter state used by the notifications page dialog
+final notificationFilterProvider = StateProvider<String>((ref) => 'all');

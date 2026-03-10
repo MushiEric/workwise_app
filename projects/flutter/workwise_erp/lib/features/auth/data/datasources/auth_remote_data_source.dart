@@ -52,12 +52,15 @@ class AuthRemoteDataSource {
       // normalize older backend responses that use `type` (string/number)
       // as the user's role — convert `type` -> `roles` so `UserModel` can
       // deserialize into `roles: List<RoleModel>`.
-      if ((dataMap['roles'] == null || (dataMap['roles'] is List && (dataMap['roles'] as List).isEmpty)) && dataMap.containsKey('type')) {
+      if ((dataMap['roles'] == null ||
+              (dataMap['roles'] is List &&
+                  (dataMap['roles'] as List).isEmpty)) &&
+          dataMap.containsKey('type')) {
         final t = dataMap['type'];
         if (t != null) {
           dataMap = Map<String, dynamic>.from(dataMap)
             ..['roles'] = [
-              {'name': t.toString()}
+              {'name': t.toString()},
             ];
         }
       }
@@ -83,7 +86,10 @@ class AuthRemoteDataSource {
   }
 
   /// POST /login
-  Future<UserModel> login({required String email, required String password}) async {
+  Future<UserModel> login({
+    required String email,
+    required String password,
+  }) async {
     try {
       // login can be slow on some environments — increase receiveTimeout for this call
       final resp = await client.post(
@@ -98,7 +104,8 @@ class AuthRemoteDataSource {
         data = raw;
       } else if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
           if (decoded is Map<String, dynamic>) data = decoded;
@@ -119,28 +126,45 @@ class AuthRemoteDataSource {
 
       if (data.containsKey('status')) {
         final st = data['status'];
-        if (st is bool && st == false) throw ServerException(data['message']?.toString() ?? 'Login failed');
-        if (st is num && st == 0) throw ServerException(data['message']?.toString() ?? 'Login failed');
+        if (st is bool && st == false)
+          throw ServerException(data['message']?.toString() ?? 'Login failed');
+        if (st is num && st == 0)
+          throw ServerException(data['message']?.toString() ?? 'Login failed');
       }
-      if (data.containsKey('success') && (data['success'] is bool) && data['success'] == false) {
+      if (data.containsKey('success') &&
+          (data['success'] is bool) &&
+          data['success'] == false) {
         throw ServerException(data['message']?.toString() ?? 'Login failed');
       }
 
       if (data.containsKey('user') && data['user'] is Map) {
         userMap = Map<String, dynamic>.from(data['user'] as Map);
-        token = data['token'] as String? ?? data['access_token'] as String? ?? data['api_token'] as String?;
+        token =
+            data['token'] as String? ??
+            data['access_token'] as String? ??
+            data['api_token'] as String?;
       } else if (data.containsKey('users') && data['users'] is Map) {
         // some backends use a plural 'users' wrapper
         userMap = Map<String, dynamic>.from(data['users'] as Map);
-        token = data['token'] as String? ?? data['access_token'] as String? ?? data['api_token'] as String?;
+        token =
+            data['token'] as String? ??
+            data['access_token'] as String? ??
+            data['api_token'] as String?;
       } else if (data.containsKey('data') && data['data'] is Map) {
         // some APIs wrap under `data`
         userMap = Map<String, dynamic>.from(data['data'] as Map);
-        token = data['token'] as String? ?? data['api_token'] as String? ?? data['access_token'] as String?;
+        token =
+            data['token'] as String? ??
+            data['api_token'] as String? ??
+            data['access_token'] as String?;
       } else {
         // fallback: top-level fields may include token and user fields mixed
         userMap = Map<String, dynamic>.from(data);
-        token = data['api_token'] as String? ?? data['token'] as String? ?? data['access_token'] as String? ?? (userMap['api_token'] as String?);
+        token =
+            data['api_token'] as String? ??
+            data['token'] as String? ??
+            data['access_token'] as String? ??
+            (userMap['api_token'] as String?);
       }
 
       if (token != null && token.isNotEmpty) {
@@ -149,13 +173,14 @@ class AuthRemoteDataSource {
 
       // Normalize `type` -> `roles` when backend returns a single `type` field
       // instead of an array of roles.
-      if ((userMap['roles'] == null || (userMap['roles'] is List && (userMap['roles'] as List).isEmpty)) && userMap.containsKey('type')) {
+      if ((userMap['roles'] == null ||
+              (userMap['roles'] is List &&
+                  (userMap['roles'] as List).isEmpty)) &&
+          userMap.containsKey('type')) {
         final t = userMap['type'];
         if (t != null) {
           userMap['roles'] = [
-            {
-              'name': t.toString(),
-            }
+            {'name': t.toString()},
           ];
         }
       }
@@ -164,7 +189,10 @@ class AuthRemoteDataSource {
       // object (for example it contains only status/message/token), try to fetch
       // the full user using the token — improves robustness for backends that
       // return token-only on login.
-      final bool looksLikeUser = userMap.containsKey('id') || userMap.containsKey('email') || userMap.containsKey('name');
+      final bool looksLikeUser =
+          userMap.containsKey('id') ||
+          userMap.containsKey('email') ||
+          userMap.containsKey('name');
 
       // If the response contains neither a token nor user-like fields, treat as failure
       if (!looksLikeUser && (token == null || token.isEmpty)) {
@@ -214,10 +242,12 @@ class AuthRemoteDataSource {
           }
           if (respData is String) {
             final s = respData.trim();
-            if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+            if (s.startsWith('<'))
+              throw ServerException('Server returned HTML (check backend)');
             try {
               final decoded = json.decode(s);
-              if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
+              if (decoded is Map && decoded['message'] != null)
+                throw ServerException(decoded['message'].toString());
             } catch (_) {}
           }
           throw ServerException(e.message ?? 'Server error');
@@ -233,10 +263,14 @@ class AuthRemoteDataSource {
   }
 
   /// POST /forgotPassword
-  Future<void> forgotPassword({required String emailOrPhone, String? redirectUrl}) async {
+  Future<void> forgotPassword({
+    required String emailOrPhone,
+    String? redirectUrl,
+  }) async {
     try {
       final payload = <String, dynamic>{'email': emailOrPhone};
-      if (redirectUrl != null && redirectUrl.isNotEmpty) payload['redirect_url'] = redirectUrl;
+      if (redirectUrl != null && redirectUrl.isNotEmpty)
+        payload['redirect_url'] = redirectUrl;
       await client.post('/forgotPassword', data: payload);
       return;
     } on DioException catch (e) {
@@ -246,7 +280,9 @@ class AuthRemoteDataSource {
         case DioExceptionType.receiveTimeout:
           throw TimeoutException(e.message ?? 'Request timed out');
         case DioExceptionType.badResponse:
-          final message = e.response?.data is Map<String, dynamic> ? (e.response?.data['message'] as String?) : e.message;
+          final message = e.response?.data is Map<String, dynamic>
+              ? (e.response?.data['message'] as String?)
+              : e.message;
           throw ServerException(message ?? 'Server error');
         case DioExceptionType.connectionError:
         case DioExceptionType.unknown:
@@ -260,7 +296,10 @@ class AuthRemoteDataSource {
   }
 
   /// POST /verifyForgotPasswordOtp
-  Future<void> verifyForgotPasswordOtp({required String emailOrPhone, required String otp}) async {
+  Future<void> verifyForgotPasswordOtp({
+    required String emailOrPhone,
+    required String otp,
+  }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp};
       await client.post('/verifyForgotPasswordOtp', data: payload);
@@ -272,7 +311,9 @@ class AuthRemoteDataSource {
         case DioExceptionType.receiveTimeout:
           throw TimeoutException(e.message ?? 'Request timed out');
         case DioExceptionType.badResponse:
-          final message = e.response?.data is Map<String, dynamic> ? (e.response?.data['message'] as String?) : e.message;
+          final message = e.response?.data is Map<String, dynamic>
+              ? (e.response?.data['message'] as String?)
+              : e.message;
           throw ServerException(message ?? 'Server error');
         case DioExceptionType.connectionError:
         case DioExceptionType.unknown:
@@ -286,7 +327,11 @@ class AuthRemoteDataSource {
   }
 
   /// POST /changePasswordUsingOtp
-  Future<void> changePasswordUsingOtp({required String emailOrPhone, required String otp, required String password}) async {
+  Future<void> changePasswordUsingOtp({
+    required String emailOrPhone,
+    required String otp,
+    required String password,
+  }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp, 'password': password};
       await client.post('/changePasswordUsingOtp', data: payload);
@@ -298,7 +343,9 @@ class AuthRemoteDataSource {
         case DioExceptionType.receiveTimeout:
           throw TimeoutException(e.message ?? 'Request timed out');
         case DioExceptionType.badResponse:
-          final message = e.response?.data is Map<String, dynamic> ? (e.response?.data['message'] as String?) : e.message;
+          final message = e.response?.data is Map<String, dynamic>
+              ? (e.response?.data['message'] as String?)
+              : e.message;
           throw ServerException(message ?? 'Server error');
         case DioExceptionType.connectionError:
         case DioExceptionType.unknown:
@@ -327,7 +374,8 @@ class AuthRemoteDataSource {
         data = raw;
       } else if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
           if (decoded is Map<String, dynamic>) data = decoded;
@@ -336,10 +384,17 @@ class AuthRemoteDataSource {
         }
       }
 
-      if (data == null) throw ServerException('Invalid server response when updating profile');
+      if (data == null)
+        throw ServerException('Invalid server response when updating profile');
 
-      if (data.containsKey('user')) return UserModel.fromJson(Map<String, dynamic>.from(data['user'] as Map));
-      if (data.containsKey('data')) return UserModel.fromJson(Map<String, dynamic>.from(data['data'] as Map));
+      if (data.containsKey('user'))
+        return UserModel.fromJson(
+          Map<String, dynamic>.from(data['user'] as Map),
+        );
+      if (data.containsKey('data'))
+        return UserModel.fromJson(
+          Map<String, dynamic>.from(data['data'] as Map),
+        );
       return UserModel.fromJson(Map<String, dynamic>.from(data));
     } on DioException catch (e) {
       switch (e.type) {
@@ -360,4 +415,3 @@ class AuthRemoteDataSource {
     }
   }
 }
-

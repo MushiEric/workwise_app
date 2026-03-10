@@ -8,6 +8,7 @@ import 'package:workwise_erp/core/errors/failure.dart';
 import 'package:workwise_erp/features/auth/domain/usecases/forgot_password.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:workwise_erp/core/themes/app_icons.dart';
 
 class MockForgotPasswordUsecase extends Mock implements ForgotPassword {}
 
@@ -32,6 +33,9 @@ void main() {
   testWidgets('shows validation error for invalid input', (tester) async {
     await tester.pumpWidget(buildTestable());
 
+    // mail icon should be visible as prefix
+    expect(find.byIcon(AppIcons.mail), findsOneWidget);
+
     final submitBtn = find.text('Send Reset Code');
     expect(submitBtn, findsOneWidget);
 
@@ -48,11 +52,16 @@ void main() {
   });
 
   testWidgets('shows success dialog when usecase succeeds', (tester) async {
-    when(() => mockUsecase.call(any())).thenAnswer((_) async => const Either.right(null));
+    when(
+      () => mockUsecase.call(any()),
+    ).thenAnswer((_) async => const Either.right(null));
 
     await tester.pumpWidget(buildTestable());
 
-    await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'user@example.com',
+    );
     await tester.tap(find.text('Send Reset Code'));
     await tester.pump();
 
@@ -64,11 +73,16 @@ void main() {
   });
 
   testWidgets('shows error dialog when usecase fails', (tester) async {
-    when(() => mockUsecase.call(any())).thenAnswer((_) async => Either.left(ServerFailure('server error')));
+    when(
+      () => mockUsecase.call(any()),
+    ).thenAnswer((_) async => Either.left(ServerFailure('server error')));
 
     await tester.pumpWidget(buildTestable());
 
-    await tester.enterText(find.byType(TextFormField).first, 'user@example.com');
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'user@example.com',
+    );
     await tester.tap(find.text('Send Reset Code'));
     await tester.pumpAndSettle();
 

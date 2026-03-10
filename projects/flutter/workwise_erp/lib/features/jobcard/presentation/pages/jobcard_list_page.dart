@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../notifier/jobcard_notifier.dart';
@@ -83,7 +83,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
           actions: [
             IconButton(
               icon: Icon(
-                _isSearching ? LucideIcons.x : LucideIcons.search,
+                _isSearching ? AppIcons.x : AppIcons.search,
                 size: 20.r,
               ),
               color: AppColors.white,
@@ -96,24 +96,18 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             ),
             IconButton(
               icon: Icon(
-                _showStats ? LucideIcons.eye : LucideIcons.eyeOff,
+                _showStats ? AppIcons.eye : AppIcons.eyeOff,
                 size: 20.r,
               ),
               color: AppColors.white,
               onPressed: () => setState(() => _showStats = !_showStats),
               tooltip: _showStats ? 'Hide stats' : 'Show stats',
             ),
-            IconButton(
-              icon: Icon(LucideIcons.settings, size: 20.r),
-              color: AppColors.white,
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/jobcards/settings'),
-            ),
             Row(
               children: [
                 SizedBox(width: 4.w),
                 IconButton(
-                  icon: Icon(LucideIcons.slidersHorizontal, size: 20.r),
+                  icon: Icon(AppIcons.slidersHorizontal, size: 20.r),
                   color: AppColors.white,
                   onPressed: _showFilterOptions,
                 ),
@@ -157,13 +151,13 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                           fontSize: 14.sp,
                         ),
                         prefixIcon: Icon(
-                          LucideIcons.search,
+                          AppIcons.search,
                           color: isDark ? Colors.white54 : AppColors.primary,
                           size: 18.r,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            LucideIcons.x,
+                            AppIcons.x,
                             color: isDark ? Colors.white54 : AppColors.primary,
                             size: 18.r,
                           ),
@@ -203,12 +197,55 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => Navigator.of(context).pushNamed('/jobcards/create'),
-          icon: Icon(Icons.add_rounded, size: 20.r),
+          icon: Icon(AppIcons.addRounded, size: 20.r),
           label: Text('New Jobcard', style: TextStyle(fontSize: 14.sp)),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
+          ),
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: const Offset(0, -3),
+              ),
+            ],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              currentIndex: 0,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: isDark
+                  ? Colors.white60
+                  : Colors.grey.shade600,
+              showUnselectedLabels: false,
+              selectedFontSize: 12,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(AppIcons.file),
+                  label: 'List',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(AppIcons.settings),
+                  label: 'Settings',
+                ),
+              ],
+              onTap: (idx) {
+                if (idx == 1) {
+                  Navigator.pushReplacementNamed(context, '/jobcards/settings');
+                }
+              },
+            ),
           ),
         ),
       ),
@@ -227,14 +264,14 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
       DashboardStatCard(
         label: 'Total',
         count: _getJobcardCount(state),
-        icon: Icons.assignment_rounded,
+        icon: AppIcons.assignmentRounded,
         borderColor: AppColors.primary,
       ),
       for (final entry in counts.entries)
         DashboardStatCard(
           label: entry.key.isEmpty ? 'Unknown' : entry.key,
           count: entry.value,
-          icon: Icons.circle,
+          icon: AppIcons.circle,
           borderColor: _statusColorFromName(entry.key),
         ),
     ];
@@ -262,7 +299,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.error_outline_rounded,
+                  AppIcons.errorOutlineRounded,
                   size: 48.r,
                   color: Colors.red.shade300,
                 ),
@@ -288,7 +325,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
               SizedBox(height: 24.h),
               AppButton(
                 text: 'Retry',
-                icon: Icons.refresh_rounded,
+                icon: AppIcons.refreshRounded,
                 onPressed: () =>
                     ref.read(jobcardNotifierProvider.notifier).loadJobcards(),
                 variant: AppButtonVariant.primary,
@@ -315,8 +352,8 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
           children: [
             Icon(
               _searchController.text.isEmpty
-                  ? Icons.assignment_outlined
-                  : Icons.search_off_rounded,
+                  ? AppIcons.assignmentOutlined
+                  : AppIcons.searchOffRounded,
               size: 80.r,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
@@ -345,7 +382,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
               SizedBox(height: 16.h),
               AppButton(
                 text: 'Clear Search',
-                icon: Icons.clear_rounded,
+                icon: AppIcons.clearRounded,
                 onPressed: () {
                   setState(() {
                     _searchController.clear();
@@ -444,7 +481,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(AppIcons.closeRounded),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],

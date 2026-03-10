@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../../domain/entities/jobcard_status.dart';
@@ -12,7 +13,8 @@ class JobcardSettingsPage extends ConsumerStatefulWidget {
   const JobcardSettingsPage({super.key});
 
   @override
-  ConsumerState<JobcardSettingsPage> createState() => _JobcardSettingsPageState();
+  ConsumerState<JobcardSettingsPage> createState() =>
+      _JobcardSettingsPageState();
 }
 
 class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
@@ -27,28 +29,54 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
-        appBar: CustomAppBar(
-          title: 'Jobcard Settings',
-          actions: [
-            IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
+        appBar: CustomAppBar(title: 'Jobcard Settings', actions: [
+          ],
+        ),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 12,
+                offset: const Offset(0, -3),
               ),
-              onPressed: () {
-                // Navigate to create setting
+            ],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              currentIndex: 1,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: isDark
+                  ? Colors.white60
+                  : Colors.grey.shade600,
+              showUnselectedLabels: false,
+              selectedFontSize: 12,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(AppIcons.file),
+                  label: 'List',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(AppIcons.settings),
+                  label: 'Settings',
+                ),
+              ],
+              onTap: (idx) {
+                if (idx == 0) {
+                  Navigator.pushReplacementNamed(context, '/jobcards');
+                }
               },
             ),
-          ],
+          ),
         ),
         body: FutureBuilder(
           future: getSettings.call(),
@@ -71,7 +99,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          Icons.error_outline_rounded,
+                          AppIcons.errorOutlineRounded,
                           size: 48,
                           color: Colors.red.shade300,
                         ),
@@ -82,7 +110,9 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1A2634),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1A2634),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -96,7 +126,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                       const SizedBox(height: 24),
                       AppButton(
                         text: 'Retry',
-                        icon: Icons.refresh_rounded,
+                        icon: AppIcons.refreshRounded,
                         onPressed: () => setState(() {}),
                         variant: AppButtonVariant.primary,
                       ),
@@ -113,7 +143,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.settings_outlined,
+                      AppIcons.settingsOutlined,
                       size: 64,
                       color: isDark ? Colors.white24 : Colors.grey.shade300,
                     ),
@@ -147,7 +177,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.error_outline_rounded,
+                            AppIcons.errorOutlineRounded,
                             size: 48,
                             color: Colors.red.shade300,
                           ),
@@ -158,7 +188,9 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -166,13 +198,15 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                           failure.toString(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            color: isDark
+                                ? Colors.white54
+                                : Colors.grey.shade600,
                           ),
                         ),
                         const SizedBox(height: 24),
                         AppButton(
                           text: 'Retry',
-                          icon: Icons.refresh_rounded,
+                          icon: AppIcons.refreshRounded,
                           onPressed: () => setState(() {}),
                           variant: AppButtonVariant.primary,
                         ),
@@ -188,7 +222,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.settings_outlined,
+                          AppIcons.settingsOutlined,
                           size: 64,
                           color: isDark ? Colors.white24 : Colors.grey.shade300,
                         ),
@@ -198,14 +232,18 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white70 : Colors.grey.shade700,
+                            color: isDark
+                                ? Colors.white70
+                                : Colors.grey.shade700,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Create your first jobcard setting',
                           style: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            color: isDark
+                                ? Colors.white54
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ],
@@ -238,7 +276,7 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
           onPressed: () {
             // Navigate to create setting
           },
-          icon: const Icon(Icons.add_rounded),
+          icon: const Icon(AppIcons.addRounded),
           label: const Text('New Setting'),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -250,7 +288,12 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
     );
   }
 
-  Widget _buildSettingCard(BuildContext context, JobcardStatus status, Color color, bool isDark) {
+  Widget _buildSettingCard(
+    BuildContext context,
+    JobcardStatus status,
+    Color color,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -262,25 +305,21 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
         ),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                color.withOpacity(0.15),
-                color.withOpacity(0.08),
-              ],
+              colors: [color.withOpacity(0.15), color.withOpacity(0.08)],
             ),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            Icons.flag_rounded,
-            color: color,
-            size: 24,
-          ),
+          child: Icon(AppIcons.flagRounded, color: color, size: 24),
         ),
         title: Text(
           status.name ?? 'Unnamed',
@@ -297,7 +336,9 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -330,11 +371,13 @@ class _JobcardSettingsPageState extends ConsumerState<JobcardSettingsPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              Icons.edit_rounded,
+              AppIcons.editRounded,
               size: 18,
               color: isDark ? Colors.white70 : Colors.grey.shade700,
             ),

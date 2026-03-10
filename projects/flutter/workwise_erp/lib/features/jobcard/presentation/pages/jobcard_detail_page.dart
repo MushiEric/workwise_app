@@ -6,7 +6,8 @@ import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/jobcard_detail_providers.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_tab_bar.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/themes/app_icons.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class JobcardDetailPage extends ConsumerStatefulWidget {
   const JobcardDetailPage({super.key});
@@ -60,7 +61,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           elevation: 0,
           actions: [
             // IconButton(
-            //   icon: Icon(LucideIcons.share2, color: isDark ? Colors.white70 : AppColors.white),
+            //   icon: Icon(AppIcons.share2, color: isDark ? Colors.white70 : AppColors.white),
             //   onPressed: () {
             //     ScaffoldMessenger.of(context).showSnackBar(
             //       const SnackBar(content: Text('Share jobcard — not implemented')),
@@ -69,7 +70,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             // ),
             PopupMenuButton<String>(
               icon: Icon(
-                LucideIcons.moreVertical,
+                AppIcons.moreVertical,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),
               onSelected: (v) {
@@ -118,7 +119,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.error_outline_rounded,
+                AppIcons.errorOutlineRounded,
                 size: 48,
                 color: Colors.red.shade300,
               ),
@@ -143,7 +144,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             const SizedBox(height: 24),
             AppButton(
               text: 'Retry',
-              icon: Icons.refresh_rounded,
+              icon: AppIcons.refreshRounded,
               onPressed: () {
                 if (_id != null) {
                   ref.read(jobcardDetailNotifierProvider.notifier).load(_id!);
@@ -175,7 +176,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             'Inspection',
             'Picking Slip',
           ],
-          margin: const EdgeInsets.only(top: 20, left: 4, right: 16),
+          margin: EdgeInsets.only(top: 16.h, left: 4.w, right: 16.w),
         ),
         const SizedBox(height: 12),
 
@@ -237,7 +238,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    Icons.assignment_rounded,
+                    AppIcons.assignmentRounded,
                     color: primaryColor,
                     size: 32,
                   ),
@@ -300,7 +301,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           _buildInfoCard(
             context,
             title: 'Jobcard Information',
-            icon: Icons.info_rounded,
+            icon: AppIcons.infoRounded,
             children: [
               _infoRow(
                 'Related to',
@@ -355,7 +356,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                 Row(
                   children: [
                     Icon(
-                      Icons.summarize_rounded,
+                      AppIcons.summarizeRounded,
                       size: 18,
                       color: primaryColor,
                     ),
@@ -377,7 +378,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                       child: _buildSummaryItem(
                         'Items',
                         '${(jobcard.items ?? []).length}',
-                        Icons.inventory_2_rounded,
+                        AppIcons.inventory2Rounded,
                         isDark,
                       ),
                     ),
@@ -386,7 +387,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                       child: _buildSummaryItem(
                         'Grand Total',
                         jobcard.grandTotal ?? '-',
-                        Icons.attach_money_rounded,
+                        AppIcons.attachMoneyRounded,
                         isDark,
                       ),
                     ),
@@ -401,7 +402,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             _buildInfoCard(
               context,
               title: 'Recommendation',
-              icon: Icons.note_rounded,
+              icon: AppIcons.noteRounded,
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -548,7 +549,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.build_outlined,
+              AppIcons.buildOutlined,
               size: 64,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
@@ -723,7 +724,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.history_rounded,
+              AppIcons.historyRounded,
               size: 64,
               color: isDark ? Colors.white24 : Colors.grey.shade300,
             ),
@@ -829,7 +830,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.approval_rounded,
+            AppIcons.approvalRounded,
             size: 64,
             color: isDark ? Colors.white24 : Colors.grey.shade300,
           ),
@@ -864,7 +865,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.search_rounded,
+            AppIcons.searchRounded,
             size: 64,
             color: isDark ? Colors.white24 : Colors.grey.shade300,
           ),
@@ -899,7 +900,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.receipt_long_rounded,
+            AppIcons.receiptLongRounded,
             size: 64,
             color: isDark ? Colors.white24 : Colors.grey.shade300,
           ),

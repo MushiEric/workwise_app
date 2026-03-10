@@ -40,7 +40,9 @@ class _ItemsListState extends State<ItemsList> {
     int? selectedServiceId;
     int? selectedUnitId;
     // no more 'manual' mode — prefer product then service
-    String mode = widget.products.isNotEmpty ? 'product' : (widget.services.isNotEmpty ? 'service' : 'product');
+    String mode = widget.products.isNotEmpty
+        ? 'product'
+        : (widget.services.isNotEmpty ? 'service' : 'product');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     bool isServiceItem(Map<String, dynamic>? m) {
@@ -49,7 +51,9 @@ class _ItemsListState extends State<ItemsList> {
       return t.contains('service');
     }
 
-    final productCandidates = widget.products.where((m) => !isServiceItem(m)).toList();
+    final productCandidates = widget.products
+        .where((m) => !isServiceItem(m))
+        .toList();
     final serviceCandidates = [
       ...widget.services,
       ...widget.products.where((m) => isServiceItem(m)),
@@ -59,178 +63,364 @@ class _ItemsListState extends State<ItemsList> {
       context: context,
       builder: (ctx) => Dialog(
         insetPadding: const EdgeInsets.all(24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         child: Container(
           width: 420,
           padding: const EdgeInsets.all(20),
-          child: StatefulBuilder(builder: (ctx, setInner) {
-            void selectProduct(Map<String, dynamic>? p) {
-              if (p == null) return;
-              selectedProductId = (p['id'] is int) ? p['id'] as int : int.tryParse(p['id']?.toString() ?? '');
-              nameCtl.text = p['name']?.toString() ?? p['title']?.toString() ?? '';
-              // try common price fields
-              final price = p['sale_price'] ?? p['price'] ?? p['unit_price'] ?? 0;
-              priceCtl.text = price?.toString() ?? '0';
-              // unit if present
-              selectedUnitId = p['unit_id'] is int ? p['unit_id'] as int : int.tryParse(p['unit_id']?.toString() ?? '');
-            }
+          child: StatefulBuilder(
+            builder: (ctx, setInner) {
+              void selectProduct(Map<String, dynamic>? p) {
+                if (p == null) return;
+                selectedProductId = (p['id'] is int)
+                    ? p['id'] as int
+                    : int.tryParse(p['id']?.toString() ?? '');
+                nameCtl.text =
+                    p['name']?.toString() ?? p['title']?.toString() ?? '';
+                // try common price fields
+                final price =
+                    p['sale_price'] ?? p['price'] ?? p['unit_price'] ?? 0;
+                priceCtl.text = price?.toString() ?? '0';
+                // unit if present
+                selectedUnitId = p['unit_id'] is int
+                    ? p['unit_id'] as int
+                    : int.tryParse(p['unit_id']?.toString() ?? '');
+              }
 
-            void selectService(Map<String, dynamic>? s) {
-              if (s == null) return;
-              selectedServiceId = (s['id'] is int) ? s['id'] as int : int.tryParse(s['id']?.toString() ?? '');
-              nameCtl.text = s['name']?.toString() ?? '';
-              priceCtl.text = (s['price'] ?? 0).toString();
-            }
+              void selectService(Map<String, dynamic>? s) {
+                if (s == null) return;
+                selectedServiceId = (s['id'] is int)
+                    ? s['id'] as int
+                    : int.tryParse(s['id']?.toString() ?? '');
+                nameCtl.text = s['name']?.toString() ?? '';
+                priceCtl.text = (s['price'] ?? 0).toString();
+              }
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('Add Item', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    IconButton(icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.grey.shade600), onPressed: () => Navigator.pop(ctx)),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Mode selector
-                Row(children: [
-                  ChoiceChip(label: const Text('Product'), selected: mode == 'product', onSelected: (_) => setInner(() => mode = 'product')),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('Service'), selected: mode == 'service', onSelected: (_) => setInner(() => mode = 'service')),
-                ]),
-
-                const SizedBox(height: 12),
-
-                if (mode == 'product')
-                  Column(children: [
-                    // product selector (searchable)
-                    GestureDetector(
-                      onTap: () async {
-                        if (productCandidates.isEmpty) return;
-                        final picked = await showDialog<Map<String, dynamic>?>(
-                          context: context,
-                          builder: (_) => SearchableDialog<Map<String, dynamic>>(
-                            title: 'Select product',
-                            items: productCandidates,
-                            itemDisplay: (m) => (m['name'] ?? m['title'] ?? m['sku'] ?? 'Product').toString(),
-                            onSelected: (_) {},
-                          ),
-                        );
-                        if (picked != null) setInner(() => selectProduct(picked));
-                      },
-                      child: AbsorbPointer(
-                        child: AppTextField(
-                          controller: TextEditingController(text: nameCtl.text),
-                          labelText: 'Product (tap to choose)',
-                          prefixIcon: Icon(Icons.build_rounded, size: 18),
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.inventory_2_rounded,
+                          color: AppColors.primary,
+                          size: 20,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(
-                        child: AppTextField(controller: qtyCtl, labelText: 'Quantity', keyboardType: TextInputType.number, prefixIcon: Icon(Icons.numbers_rounded, size: 18)),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Add Item',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        ),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Mode selector
+                  Row(
+                    children: [
+                      ChoiceChip(
+                        label: const Text('Product'),
+                        selected: mode == 'product',
+                        onSelected: (_) => setInner(() {
+                          mode = 'product';
+                          nameCtl.clear();
+                          selectedProductId = null;
+                          selectedServiceId = null;
+                        }),
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: AppTextField(controller: priceCtl, labelText: 'Price', keyboardType: TextInputType.number, prefixIcon: Icon(Icons.attach_money_rounded, size: 18)),
+                      ChoiceChip(
+                        label: const Text('Service'),
+                        selected: mode == 'service',
+                        onSelected: (_) => setInner(() {
+                          mode = 'service';
+                          nameCtl.clear();
+                          selectedProductId = null;
+                          selectedServiceId = null;
+                        }),
                       ),
-                    ]),
-                    const SizedBox(height: 8),
-                    // unit selector
-                    if (widget.productUnits.isNotEmpty)
-                      AppSmartDropdown<int>(
-                        value: selectedUnitId,
-                        items: widget.productUnits.map((u) => int.tryParse(u['id']?.toString() ?? '') ?? 0).where((id) => id > 0).toList(),
-                        itemBuilder: (id) {
-                          final u = widget.productUnits.firstWhere((e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id, orElse: () => {});
-                          return u.isNotEmpty ? (u['name'] ?? u['short_name'] ?? 'Unit $id') : 'Unit $id';
-                        },
-                        label: 'Unit (optional)',
-                        onChanged: (v) => setInner(() => selectedUnitId = v),
-                      ),
-                  ])
+                    ],
+                  ),
 
-                else if (mode == 'service')
-                  Column(children: [
-                    GestureDetector(
-                      onTap: () async {
-                        if (serviceCandidates.isEmpty) return;
-                        // dedupe by id (preserve first occurrence)
-                        final seen = <String>{};
-                        final dedup = <Map<String, dynamic>>[];
-                        for (final m in serviceCandidates) {
-                          final key = (m['id'] ?? m['name'] ?? m['title'])?.toString() ?? '';
-                          if (key.isEmpty || seen.contains(key)) continue;
-                          seen.add(key);
-                          dedup.add(m);
-                        }
+                  const SizedBox(height: 12),
 
-                        final picked = await showDialog<Map<String, dynamic>?>(
-                          context: context,
-                          builder: (_) => SearchableDialog<Map<String, dynamic>>(
-                            title: 'Select service',
-                            items: dedup,
-                            itemDisplay: (m) => (m['name'] ?? m['title'] ?? 'Service').toString(),
-                            onSelected: (_) {},
+                  if (mode == 'product')
+                    Column(
+                      children: [
+                        // product selector (searchable)
+                        AppTextField(
+                          controller: nameCtl,
+                          labelText: 'Product (tap to choose)',
+                          prefixIcon: Icon(Icons.build_rounded, size: 18),
+                          backgroundColor: isDark
+                              ? const Color(0xFF151A2E)
+                              : Colors.white,
+                          borderRadius: 16,
+                          readOnly: true,
+                          onTap: productCandidates.isEmpty
+                              ? null
+                              : () {
+                                  showDialog<void>(
+                                    context: context,
+                                    builder: (_) =>
+                                        SearchableDialog<Map<String, dynamic>>(
+                                          title: 'Select product',
+                                          items: productCandidates,
+                                          itemDisplay: (m) =>
+                                              (m['name'] ??
+                                                      m['title'] ??
+                                                      m['sku'] ??
+                                                      'Product')
+                                                  .toString(),
+                                          onSelected: (item) {
+                                            if (item != null)
+                                              setInner(
+                                                () => selectProduct(item),
+                                              );
+                                          },
+                                        ),
+                                  );
+                                },
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppTextField(
+                                controller: qtyCtl,
+                                labelText: 'Quantity',
+                                keyboardType: TextInputType.number,
+                                prefixIcon: Icon(
+                                  Icons.numbers_rounded,
+                                  size: 18,
+                                ),
+                                backgroundColor: isDark
+                                    ? const Color(0xFF151A2E)
+                                    : Colors.white,
+                                borderRadius: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: AppTextField(
+                                controller: priceCtl,
+                                labelText: 'Price',
+                                keyboardType: TextInputType.number,
+                                prefixIcon: Icon(
+                                  Icons.attach_money_rounded,
+                                  size: 18,
+                                ),
+                                backgroundColor: isDark
+                                    ? const Color(0xFF151A2E)
+                                    : Colors.white,
+                                borderRadius: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // unit selector
+                        if (widget.productUnits.isNotEmpty)
+                          AppSmartDropdown<int>(
+                            value: selectedUnitId,
+                            items: widget.productUnits
+                                .map(
+                                  (u) =>
+                                      int.tryParse(u['id']?.toString() ?? '') ??
+                                      0,
+                                )
+                                .where((id) => id > 0)
+                                .toList(),
+                            itemBuilder: (id) {
+                              final u = widget.productUnits.firstWhere(
+                                (e) =>
+                                    (int.tryParse(e['id']?.toString() ?? '') ??
+                                        0) ==
+                                    id,
+                                orElse: () => {},
+                              );
+                              return u.isNotEmpty
+                                  ? (u['name'] ?? u['short_name'] ?? 'Unit $id')
+                                  : 'Unit $id';
+                            },
+                            label: 'Unit (optional)',
+                            onChanged: (v) =>
+                                setInner(() => selectedUnitId = v),
                           ),
-                        );
-                        if (picked != null) setInner(() => selectService(picked));
-                      },
-                      child: AbsorbPointer(
-                        child: AppTextField(controller: TextEditingController(text: nameCtl.text), labelText: 'Service (tap to choose)', prefixIcon: Icon(Icons.build_circle_rounded, size: 18)),
+                      ],
+                    )
+                  else if (mode == 'service')
+                    Column(
+                      children: [
+                        AppTextField(
+                          controller: nameCtl,
+                          labelText: 'Service (tap to choose)',
+                          prefixIcon: Icon(
+                            Icons.build_circle_rounded,
+                            size: 18,
+                          ),
+                          backgroundColor: isDark
+                              ? const Color(0xFF151A2E)
+                              : Colors.white,
+                          borderRadius: 16,
+                          readOnly: true,
+                          onTap: serviceCandidates.isEmpty
+                              ? null
+                              : () {
+                                  // dedupe by id (preserve first occurrence)
+                                  final seen = <String>{};
+                                  final dedup = <Map<String, dynamic>>[];
+                                  for (final m in serviceCandidates) {
+                                    final key =
+                                        (m['id'] ?? m['name'] ?? m['title'])
+                                            ?.toString() ??
+                                        '';
+                                    if (key.isEmpty || seen.contains(key))
+                                      continue;
+                                    seen.add(key);
+                                    dedup.add(m);
+                                  }
+                                  showDialog<void>(
+                                    context: context,
+                                    builder: (_) =>
+                                        SearchableDialog<Map<String, dynamic>>(
+                                          title: 'Select service',
+                                          items: dedup,
+                                          itemDisplay: (m) =>
+                                              (m['name'] ??
+                                                      m['title'] ??
+                                                      'Service')
+                                                  .toString(),
+                                          onSelected: (item) {
+                                            if (item != null)
+                                              setInner(
+                                                () => selectService(item),
+                                              );
+                                          },
+                                        ),
+                                  );
+                                },
+                        ),
+                        const SizedBox(height: 8),
+                        AppTextField(
+                          controller: qtyCtl,
+                          labelText: 'Quantity',
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icon(Icons.numbers_rounded, size: 18),
+                          backgroundColor: isDark
+                              ? const Color(0xFF151A2E)
+                              : Colors.white,
+                          borderRadius: 16,
+                        ),
+                        const SizedBox(height: 8),
+                        AppTextField(
+                          controller: priceCtl,
+                          labelText: 'Price',
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icon(
+                            Icons.attach_money_rounded,
+                            size: 18,
+                          ),
+                          backgroundColor: isDark
+                              ? const Color(0xFF151A2E)
+                              : Colors.white,
+                          borderRadius: 16,
+                        ),
+                      ],
+                    )
+                  else
+                    const SizedBox.shrink(),
+
+                  const SizedBox(height: 14),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Cancel'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    AppTextField(controller: qtyCtl, labelText: 'Quantity', keyboardType: TextInputType.number, prefixIcon: Icon(Icons.numbers_rounded, size: 18)),
-                    const SizedBox(height: 8),
-                    AppTextField(controller: priceCtl, labelText: 'Price', keyboardType: TextInputType.number, prefixIcon: Icon(Icons.attach_money_rounded, size: 18)),
-                  ])
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final name = nameCtl.text.trim();
+                            final qty = int.tryParse(qtyCtl.text) ?? 1;
+                            final price = num.tryParse(priceCtl.text) ?? 0;
 
-                else
-                  const SizedBox.shrink(),
+                            if (mode == 'product' &&
+                                selectedProductId != null &&
+                                name.isNotEmpty) {
+                              widget.onItemsChanged([
+                                ...widget.items,
+                                {
+                                  'item_id': selectedProductId,
+                                  'item_name': name,
+                                  'qty': qty,
+                                  'price': price,
+                                  if (selectedUnitId != null)
+                                    'unit_id': selectedUnitId,
+                                },
+                              ]);
+                            } else if (mode == 'service' &&
+                                selectedServiceId != null &&
+                                name.isNotEmpty) {
+                              widget.onItemsChanged([
+                                ...widget.items,
+                                {
+                                  'service_id': selectedServiceId,
+                                  'item_name': name,
+                                  'qty': qty,
+                                  'price': price,
+                                },
+                              ]);
+                            }
 
-                const SizedBox(height: 14),
-
-                Row(children: [
-                  Expanded(child: TextButton(onPressed: () => Navigator.pop(ctx), style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Cancel'))),
-                  const SizedBox(width: 12),
-                  Expanded(child: ElevatedButton(onPressed: () {
-                    final name = nameCtl.text.trim();
-                    final qty = int.tryParse(qtyCtl.text) ?? 1;
-                    final price = num.tryParse(priceCtl.text) ?? 0;
-
-                    if (mode == 'product' && selectedProductId != null && name.isNotEmpty) {
-                      widget.onItemsChanged([...widget.items, {'item_id': selectedProductId, 'item_name': name, 'qty': qty, 'price': price, if (selectedUnitId != null) 'unit_id': selectedUnitId}]);
-                    } else if (mode == 'service' && selectedServiceId != null && name.isNotEmpty) {
-                      widget.onItemsChanged([...widget.items, {'service_id': selectedServiceId, 'item_name': name, 'qty': qty, 'price': price}]);
-                    }
-
-                    Navigator.pop(ctx);
-                  }, style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Add'))),
-                ]),
-              ],
-            );
-          }),
+                            Navigator.pop(ctx);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Add'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -288,7 +478,10 @@ class _ItemsListState extends State<ItemsList> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -334,13 +527,17 @@ class _ItemsListState extends State<ItemsList> {
               physics: const NeverScrollableScrollPhysics(),
               padding: const EdgeInsets.all(12),
               itemCount: widget.items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, indent: 16, endIndent: 16),
               itemBuilder: (context, index) {
                 final item = widget.items[index];
                 final total = (item['qty'] as int) * (item['price'] as num);
-                
+
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -368,7 +565,9 @@ class _ItemsListState extends State<ItemsList> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
-                                color: isDark ? Colors.white : const Color(0xFF1A2634),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1A2634),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -376,7 +575,9 @@ class _ItemsListState extends State<ItemsList> {
                               'Qty: ${item['qty']}${item['unit'] != null ? ' ${item['unit']}' : ''} × ${item['price']} = ${total.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.grey.shade600,
                               ),
                             ),
                           ],
@@ -389,8 +590,9 @@ class _ItemsListState extends State<ItemsList> {
                           color: Colors.red.shade300,
                         ),
                         onPressed: () {
-                          final newList = List<Map<String, dynamic>>.from(widget.items)
-                            ..removeAt(index);
+                          final newList = List<Map<String, dynamic>>.from(
+                            widget.items,
+                          )..removeAt(index);
                           widget.onItemsChanged(newList);
                         },
                         splashRadius: 20,

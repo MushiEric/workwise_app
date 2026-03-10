@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:workwise_erp/features/jobcard/presentation/pages/jobcard_detail_page.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:workwise_erp/features/jobcard/presentation/notifier/jobcard_detail_notifier.dart';
 import 'package:workwise_erp/features/jobcard/presentation/providers/jobcard_detail_providers.dart';
 import 'package:workwise_erp/features/jobcard/domain/entities/jobcard_detail.dart';
@@ -49,9 +50,11 @@ void main() {
         JobcardDetailState.loaded(jobcard);
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(home: JobcardDetailPage()),
+      ScreenUtilInit(
+        builder: () => UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: JobcardDetailPage()),
+        ),
       ),
     );
 

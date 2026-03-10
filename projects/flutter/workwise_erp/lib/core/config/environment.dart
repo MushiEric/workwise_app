@@ -9,6 +9,7 @@ class EnvConfig {
   final int maxRetries;
   final Duration retryBaseDelay;
   final int cacheTtlSeconds;
+  final bool enableLogging;
 
   const EnvConfig._({
     required this.env,
@@ -19,6 +20,7 @@ class EnvConfig {
     required this.maxRetries,
     required this.retryBaseDelay,
     required this.cacheTtlSeconds,
+    required this.enableLogging,
   });
 
   static AppEnvironment _envFromString(String s) {
@@ -34,8 +36,16 @@ class EnvConfig {
     }
   }
 
-  /// Read at compile-time using `--dart-define=APP_ENV=prod` (default: staging)
-  static final AppEnvironment currentEnv = _envFromString(const String.fromEnvironment('APP_ENV', defaultValue: 'staging'));
+  /// Read at compile-time using `--dart-define=APP_ENV=prod` or
+  /// `--dart-define=RUNTIME_ENV=dev` (default: staging).
+  ///
+  /// `RUNTIME_ENV` takes precedence when both are defined. This makes it easy
+  /// for developers to point the app at a different endpoint without modifying
+  /// the production configuration or adding extra files.
+  static final AppEnvironment currentEnv = _envFromString(
+      const String.fromEnvironment('RUNTIME_ENV',
+          defaultValue: const String.fromEnvironment('APP_ENV',
+              defaultValue: 'staging')));
 
   /// Optional Sentry DSN passed at build-time: --dart-define=SENTRY_DSN=\"...\"
   static final String sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
@@ -64,13 +74,14 @@ class EnvConfig {
       case AppEnvironment.dev:
         return const EnvConfig._(
           env: AppEnvironment.dev,
-          baseUrl: 'http://192.168.1.116:8000/api',
+          baseUrl: 'http://10.26.154.239:8000/api',
           connectTimeout: Duration(seconds: 15),
           receiveTimeout: Duration(seconds: 15),
           sendTimeout: Duration(seconds: 15),
           maxRetries: 1,
           retryBaseDelay: Duration(milliseconds: 300),
           cacheTtlSeconds: 60,
+          enableLogging: true,
         );
       case AppEnvironment.prod:
         return const EnvConfig._(
@@ -82,6 +93,7 @@ class EnvConfig {
           maxRetries: 3,
           retryBaseDelay: Duration(milliseconds: 500),
           cacheTtlSeconds: 3600,
+          enableLogging: false,
         );
       case AppEnvironment.staging:
         return const EnvConfig._(
@@ -93,12 +105,14 @@ class EnvConfig {
           maxRetries: 2,
           retryBaseDelay: Duration(milliseconds: 400),
           cacheTtlSeconds: 300,
+          enableLogging: true,
         );
     }
 
     // The switch above is exhaustive, but Dart requires a return after it
     // because the analyzer can't guarantee `activeEnv` corresponds to a
     // known enum value. Throwing here prevents null from being returned.
+    // ignore: dead_code
     throw StateError('Unsupported environment: $activeEnv');
   }
 }

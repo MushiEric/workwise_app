@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/themes/app_icons.dart';
 
 import 'package:workwise_erp/core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
@@ -150,17 +150,18 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                       child: Flexible(
                         child: Column(
                           children: [
-                         
-                                
                             // Main Card
                             Center(
                               child: Padding(
                                 padding: const EdgeInsets.all(22.0),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [                              
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
                                     TweenAnimationBuilder<double>(
-                                      duration: const Duration(milliseconds: 500),
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
                                       tween: Tween(begin: 0.0, end: 1.0),
                                       curve: Curves.easeOut,
                                       builder: (context, value, child) {
@@ -172,10 +173,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                           ),
                                         );
                                       },
-                              
                                     ),
-                              
-                              
+
                                     // Form
                                     Form(
                                       key: _formKey,
@@ -187,33 +186,44 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                               TweenAnimationBuilder<double>(
-                                                      duration: const Duration(milliseconds: 600),
-                                                      tween: Tween(begin: 0.0, end: 1.0),
-                                                      curve: Curves.easeOutBack,
-                                                      builder: (context, value, child) {
-                              return Transform.scale(
-                                scale: value,
-                                child: Center(
-                                  child: Container(
-                                    width: 150,
-                                    height: 150,
-                                    
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(24),
-                                      child: Image.asset(
-                                        'assets/images/logo2.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                                                      },
+                                              TweenAnimationBuilder<double>(
+                                                duration: const Duration(
+                                                  milliseconds: 600,
+                                                ),
+                                                tween: Tween(
+                                                  begin: 0.0,
+                                                  end: 1.0,
+                                                ),
+                                                curve: Curves.easeOutBack,
+                                                builder: (context, value, child) {
+                                                  return Transform.scale(
+                                                    scale: value,
+                                                    child: Center(
+                                                      child: Container(
+                                                        width: 150,
+                                                        height: 150,
+
+                                                        decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                24,
+                                                              ),
+                                                        ),
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                24,
+                                                              ),
+                                                          child: Image.asset(
+                                                            'assets/images/logo2.png',
+                                                            fit: BoxFit.contain,
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ),
+                                                  );
+                                                },
+                                              ),
                                               AnimatedContainer(
                                                 duration: const Duration(
                                                   milliseconds: 200,
@@ -223,12 +233,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                                   bottom: 0,
                                                 ),
                                                 child: Text(
-                                                  
                                                   'Email or Phone',
                                                   style: TextStyle(
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w600,
-                                                    color: _identifierFocus.hasFocus
+                                                    color:
+                                                        _identifierFocus
+                                                            .hasFocus
                                                         ? primaryColor
                                                         : (isDark
                                                               ? Colors.white70
@@ -242,12 +253,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                               AppTextField(
                                                 controller: _identifierCtrl,
                                                 focusNode: _identifierFocus,
-                                                hintText: 'Email or phone number',
+                                                hintText:
+                                                    'Email or phone number',
                                                 prefixIcon: Icon(
                                                   _identifierFocus.hasFocus
-                                                      ? LucideIcons.mail
-                                                      : LucideIcons.mail,
-                                                  color: _identifierFocus.hasFocus
+                                                      ? AppIcons.mail
+                                                      : AppIcons.mail,
+                                                  color:
+                                                      _identifierFocus.hasFocus
                                                       ? primaryColor
                                                       : (isDark
                                                             ? Colors.white54
@@ -259,13 +272,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                                 keyboardType:
                                                     TextInputType.emailAddress,
                                                 validator: _validator,
-                                                
                                               ),
                                             ],
                                           ),
-                              
+
                                           const SizedBox(height: 32),
-                              
+
                                           // Submit button with animation
                                           TweenAnimationBuilder<double>(
                                             duration: const Duration(
@@ -292,10 +304,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       AppColors.primary,
-                                                  foregroundColor: AppColors.white,
+                                                  foregroundColor:
+                                                      AppColors.white,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
-                                                        BorderRadius.circular(12),
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
                                                   ),
                                                 ),
                                                 child: const Text(
@@ -308,7 +323,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                               ),
                                             ),
                                           ),
-                              
+
                                           // Back to login with enhanced styling
                                           Row(
                                             mainAxisAlignment:
@@ -328,7 +343,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                                     Navigator.pop(context),
                                                 style: TextButton.styleFrom(
                                                   padding: EdgeInsets.zero,
-                                                  minimumSize: const Size(50, 30),
+                                                  minimumSize: const Size(
+                                                    50,
+                                                    30,
+                                                  ),
                                                   tapTargetSize:
                                                       MaterialTapTargetSize
                                                           .shrinkWrap,
@@ -352,7 +370,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                                 ),
                               ),
                             ),
-                                
+
                             const SizedBox(height: 94),
                           ],
                         ),
