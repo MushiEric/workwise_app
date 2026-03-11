@@ -358,14 +358,13 @@ class AuthRemoteDataSource {
     }
   }
 
-  /// POST /user/updateProfile/
-  /// Automatically uses multipart/form-data when [payload] contains a [MultipartFile].
   Future<UserModel> updateProfile(Map<String, dynamic> payload) async {
     try {
-      final dynamic requestData = payload.values.any((v) => v is MultipartFile)
-          ? FormData.fromMap(payload)
-          : payload;
-      final resp = await client.post('/user/updateProfile/', data: requestData);
+      final isMultipart = payload.values.any((v) => v is MultipartFile);
+      final resp = await client.post(
+        '/user/updateProfile/',
+        data: isMultipart ? FormData.fromMap(payload) : payload,
+      );
       // backend may return user or {data: user}
       final raw = resp.data;
       Map<String, dynamic>? data;
@@ -387,15 +386,30 @@ class AuthRemoteDataSource {
       if (data == null)
         throw ServerException('Invalid server response when updating profile');
 
-      if (data.containsKey('user'))
-        return UserModel.fromJson(
-          Map<String, dynamic>.from(data['user'] as Map),
-        );
-      if (data.containsKey('data'))
-        return UserModel.fromJson(
-          Map<String, dynamic>.from(data['data'] as Map),
-        );
-      return UserModel.fromJson(Map<String, dynamic>.from(data));
+      Map<String, dynamic> userMap;
+      if (data.containsKey('user') && data['user'] is Map) {
+        userMap = Map<String, dynamic>.from(data['user'] as Map);
+      } else if (data.containsKey('data') && data['data'] is Map) {
+        userMap = Map<String, dynamic>.from(data['data'] as Map);
+      } else {
+        userMap = Map<String, dynamic>.from(data);
+      }
+
+      // Normalize `type` -> `roles` when backend returns a single `type` field
+      // instead of an array of roles.
+      if ((userMap['roles'] == null ||
+              (userMap['roles'] is List &&
+                  (userMap['roles'] as List).isEmpty)) &&
+          userMap.containsKey('type')) {
+        final t = userMap['type'];
+        if (t != null) {
+          userMap['roles'] = [
+            {'name': t.toString()},
+          ];
+        }
+      }
+
+      return UserModel.fromJson(userMap);
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -411,7 +425,7 @@ class AuthRemoteDataSource {
           throw NetworkException(e.message ?? 'Network error');
       }
     } catch (e) {
-      throw ServerException('Unknown error');
+      throw ServerException('Unknown error: ${e.toString()}');
     }
   }
 }

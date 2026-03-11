@@ -2,6 +2,8 @@ import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
 
+import '../../../auth/domain/entities/user.dart';
+import '../../../auth/data/models/user_model.dart';
 import '../../domain/entities/support_ticket.dart' as domain;
 import '../../domain/entities/status.dart';
 import '../../domain/entities/priority.dart';
@@ -247,6 +249,19 @@ class SupportRepositoryImpl implements SupportRepository {
   }
 
   @override
+  Future<Either<Failure, List<User>>> getUsers() async {
+    try {
+      final raw = await remote.getUsers();
+      final list = raw.map((m) => UserModel.fromJson(m).toDomain()).toList();
+      return Either.right(list);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> changeTicketStatus({required int ticketId, required int statusId}) async {
     try {
       await remote.changeTicketStatus(ticketId: ticketId, statusId: statusId);
@@ -298,6 +313,10 @@ class SupportRepositoryImpl implements SupportRepository {
         if (params.categoryId != null) 'category_id': params.categoryId,
         if (params.locationId != null) 'location_id': params.locationId,
         if (params.supervisorId != null) 'supervisor': params.supervisorId,
+        if (params.departmentId != null) 'department_id': params.departmentId,
+        if (params.statusId != null) 'status_id': params.statusId,
+        if (params.customerId != null) 'customer_id': params.customerId,
+        if (params.contactIds != null && params.contactIds!.isNotEmpty) 'contacts[]': params.contactIds,
       };
 
       await remote.saveSupportTicket(

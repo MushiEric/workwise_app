@@ -8,6 +8,7 @@ class SupportService extends Equatable {
   final String? createdAt;
   final String? updatedAt;
   final int? archive;
+  
 
   const SupportService({
     this.id,

@@ -115,6 +115,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     try {
       await ref.read(authNotifierProvider.notifier).updateProfile(payload);
+      
+      // Invalidate the profile provider so it re-fetches from server
+      ref.invalidate(currentUserProvider);
+      
+      // Force Flutter to re-fetch the updated avatar image by clearing the memory cache
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      
       // Only reached on success (notifier throws on failure after restoring state).
       // Re-populate controllers with the server-confirmed user data.
       final updatedUser = ref
@@ -210,10 +218,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     if (user != null) _cachedUser = user;
     final displayUser = _cachedUser;
 
-    // Resolved avatar: prefer backend profile endpoint over auth-token user.
+    // Resolved avatar: prefer AuthNotifier's confirmed user (which merges local 
+    // changes immediately) over the background profile provider if it's stale.
     final resolvedAvatar =
-        backendAvatar ??
-        (displayUser?.avatar?.isNotEmpty == true ? displayUser!.avatar : null);
+        (displayUser?.avatar?.isNotEmpty == true ? displayUser!.avatar : null) ??
+        backendAvatar;
 
     // Populate form controllers exactly once (when user first becomes available).
     if (!_hasPopulated && displayUser != null) {

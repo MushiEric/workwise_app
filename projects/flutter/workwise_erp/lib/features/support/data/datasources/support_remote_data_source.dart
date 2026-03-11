@@ -41,7 +41,16 @@ class SupportRemoteDataSource {
   /// GET /support/getSupportTicket
   Future<List<SupportTicketModel>> getSupportTickets() async {
     try {
-      final resp = await client.get('/support/getSupportTicket');
+      final resp = await client.get('/support/getSupportTicket', queryParameters: {
+        'per_page': 1000,
+        'limit': 1000,
+        'page_length': 1000,
+        'limit_page_length': 1000,
+        'page': 1,
+        'limit_start': 0,
+        'length': 1000,
+        'start': 0,
+      });
       final list = _extractListFromRaw(resp.data);
 
       // Normalize each ticket JSON to be defensive against backend shape changes
@@ -145,10 +154,23 @@ class SupportRemoteDataSource {
     }
   }
 
-  /// GET /support/getSupport/Service
+  /// GET /support/getSupportService
   Future<List<Map<String, dynamic>>> getSupportServices() async {
     try {
-      final resp = await client.get('/support/getSupport/Service');
+      final resp = await client.get('/support/getSupportService');
+      final list = _extractListFromRaw(resp.data);
+      return list.map((e) => Map<String, dynamic>.from(e)).toList();
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// GET /user/getUsers
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    try {
+      final resp = await client.get('/user/getUsers');
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {

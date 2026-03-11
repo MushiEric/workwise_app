@@ -53,11 +53,15 @@ class JobcardRemoteDataSource {
   }
 
   /// GET /jobcard/getJobCard
-  Future<List<JobcardModel>> getJobcards({int page = 1, int perPage = 20, String? status}) async {
+  Future<List<JobcardModel>> getJobcards({int page = 1, int perPage = 1000, String? status}) async {
     try {
       final resp = await client.get('/jobcard/getJobCard', queryParameters: {
-        'page': page,
-        'per_page': perPage,
+        'page': 1,
+        'per_page': 1000,
+        'length': 1000,
+        'start': 0,
+        'limit': 1000,
+        'page_length': 1000,
         if (status != null) 'status': status,
       });
 

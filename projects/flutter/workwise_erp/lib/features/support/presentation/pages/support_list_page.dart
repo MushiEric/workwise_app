@@ -621,9 +621,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       margin: EdgeInsets.only(bottom: 12.h),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(16.r),
         side: BorderSide(
-          color: isDark ? Colors.white10 : Colors.grey.shade200,
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
           width: 1,
         ),
       ),
@@ -654,94 +654,54 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             height: MediaQuery.of(context).size.height * 0.85,
           );
         },
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(16.r),
         child: Padding(
-          padding: EdgeInsets.all(16.r),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Row: Priority chip + ticket code + status badge
+              // Header Row: ticket code + status badge
               Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.grey.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8.r,
-                          height: 8.r,
-                          decoration: BoxDecoration(
-                            color: priorityColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          ticket.priority?.priority ?? 'Normal',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
                   Expanded(
                     child: Text(
                       ticket.ticketCode ?? 'N/A',
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : Colors.grey.shade700,
-                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                        fontSize: 12.sp,
+                        letterSpacing: 0.5,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 4.h,
+                      horizontal: 8.w,
+                      vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.grey.shade200,
-                        width: 1,
-                      ),
+                      color: _getStatusColor(ticket.status?.status ?? '').withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 8.r,
-                          height: 8.r,
+                          width: 6.r,
+                          height: 6.r,
                           decoration: BoxDecoration(
                             color: _getStatusColor(ticket.status?.status ?? ''),
                             shape: BoxShape.circle,
                           ),
                         ),
-                        SizedBox(width: 6.w),
+                        SizedBox(width: 4.w),
                         Text(
                           ticket.status?.status ?? 'Unknown',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12.sp,
+                            color: _getStatusColor(ticket.status?.status ?? ''),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10.sp,
                           ),
                         ),
                       ],
@@ -750,13 +710,13 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ],
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: 8.h),
 
               // Subject
               Text(
                 ticket.subject ?? 'No subject',
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
@@ -764,32 +724,32 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 overflow: TextOverflow.ellipsis,
               ),
 
-              SizedBox(height: 8.h),
+              SizedBox(height: 6.h),
 
               // Customer row
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 14.r,
+                    radius: 11.r,
                     backgroundColor: const Color(0xFF4A6FA5).withOpacity(0.1),
                     child: Text(
                       ticket.customer?.name?.substring(0, 1).toUpperCase() ??
                           '?',
                       style: TextStyle(
                         color: const Color(0xFF4A6FA5),
-                        fontSize: 12.sp,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  SizedBox(width: 8.w),
+                  SizedBox(width: 6.w),
                   Expanded(
                     child: Text(
                       ticket.customer?.name ?? '-',
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white70 : Colors.grey.shade700,
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -797,40 +757,62 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ],
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
 
               // Footer
               Row(
                 children: [
                   Icon(
                     Icons.access_time_rounded,
-                    size: 14.r,
-                    color: isDark ? Colors.white38 : Colors.grey.shade400,
+                    size: 12.r,
+                    color: isDark ? Colors.white24 : Colors.grey.shade400,
                   ),
                   SizedBox(width: 4.w),
                   Text(
                     formattedDate,
                     style: TextStyle(
-                      fontSize: 12.sp,
-                      color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      fontSize: 11.sp,
+                      color: isDark ? Colors.white24 : Colors.grey.shade400,
                     ),
                   ),
                   const Spacer(),
-                  if (ticket.replies != null && ticket.replies!.isNotEmpty) ...[
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: 16.r,
-                      color: isDark ? Colors.white38 : Colors.grey.shade400,
+                  // Priority indicator moved here
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 3.h,
                     ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      ticket.priority?.priority ?? 'Unknown',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.grey.shade200,
+                        width: 0.5,
                       ),
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6.r,
+                          height: 6.r,
+                          decoration: BoxDecoration(
+                            color: priorityColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          ticket.priority?.priority ?? 'Normal',
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
