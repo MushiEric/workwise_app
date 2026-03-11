@@ -305,19 +305,57 @@ class SupportRepositoryImpl implements SupportRepository {
     try {
       final fields = <String, dynamic>{
         'subject': params.subject,
-        if (params.priorityId != null) 'priority': params.priorityId,
+        if (params.priorityId != null) ...{
+          'priority': params.priorityId,
+          'priority_id': params.priorityId,
+        },
         if (params.endDate != null) 'end_date': params.endDate,
         if (params.description != null) 'description': params.description,
-        if (params.assignees != null && params.assignees!.isNotEmpty) 'assignees[]': params.assignees,
         if (params.serviceId != null) 'service_id': params.serviceId,
         if (params.categoryId != null) 'category_id': params.categoryId,
         if (params.locationId != null) 'location_id': params.locationId,
-        if (params.supervisorId != null) 'supervisor': params.supervisorId,
+        if (params.supervisorId != null) ...{
+          'supervisor': params.supervisorId,
+          'supervisor_id': params.supervisorId,
+        },
         if (params.departmentId != null) 'department_id': params.departmentId,
-        if (params.statusId != null) 'status_id': params.statusId,
-        if (params.customerId != null) 'customer_id': params.customerId,
-        if (params.contactIds != null && params.contactIds!.isNotEmpty) 'contacts[]': params.contactIds,
+        if (params.statusId != null) ...{
+          'status_id': params.statusId,
+          'status': params.statusId,
+        },
+
+        // Use consistent names for customer
+        if (params.customerId != null) ...{
+          'customer_id': params.customerId,
+          'customer': params.customerId,
+          'client_id': params.customerId,
+        },
+
+        // Send assignees list
+        if (params.assignees != null && params.assignees!.isNotEmpty)
+          'assignees[]': params.assignees,
+
+        // Logged-in user should be the creator
+        if (params.userId != null) ...{
+          'user_id': params.userId,
+          'user': params.userId,
+          'staff_id': params.userId,
+          'ticket_created': params.userId,
+          'author_id': params.userId,
+          'author': params.userId,
+          'created_by': params.userId,
+        },
+
+        // Contacts list
+        if (params.contactIds != null && params.contactIds!.isNotEmpty)
+          'contacts[]': params.contactIds,
       };
+
+      // ignore: avoid_print
+      print('--- [REPO] createTicket Fields ---');
+      fields.forEach((k, v) => print('  $k: $v'));
+      // ignore: avoid_print
+      print('--- [REPO] End createTicket Fields ---');
 
       await remote.saveSupportTicket(
         fields: fields,

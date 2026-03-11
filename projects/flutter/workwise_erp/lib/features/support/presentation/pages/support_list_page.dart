@@ -185,12 +185,12 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         appBar: CustomAppBar(
           title: 'Support Tickets',
           actions: [
-            IconButton(
-              icon: const Icon(Icons.smart_toy_rounded, size: 22),
-              color: AppColors.white,
-              tooltip: 'AI Assistant',
-              onPressed: () => Navigator.of(context).pushNamed('/support/ai'),
-            ),
+            // IconButton(
+            //   icon: const Icon(Icons.smart_toy_rounded, size: 22),
+            //   color: AppColors.white,
+            //   tooltip: 'AI Assistant',
+            //   onPressed: () => Navigator.of(context).pushNamed('/support/ai'),
+            // ),
             IconButton(
               icon: Icon(
                 _isSearching ? LucideIcons.x : LucideIcons.search,
@@ -217,7 +217,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               children: [
                 SizedBox(width: 4.w),
                 IconButton(
-                  icon: Icon(LucideIcons.slidersHorizontal, size: 20.r),
+                  icon: Icon(LucideIcons.filter, size: 20.r),
                   onPressed: () => _showFilterSheet(context),
                   color: AppColors.white,
                 ),

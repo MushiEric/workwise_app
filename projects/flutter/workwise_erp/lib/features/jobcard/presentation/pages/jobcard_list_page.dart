@@ -439,6 +439,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     res.fold(
       (l) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          behavior: SnackBarBehavior.floating,
           content: Text(
             'Failed to delete jobcard: ${l is Exception ? l.toString() : '$l'}',
           ),
@@ -447,7 +448,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
       (_) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Jobcard deleted')));
+        ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Jobcard deleted')));
         ref.read(jobcardNotifierProvider.notifier).loadJobcards();
       },
     );

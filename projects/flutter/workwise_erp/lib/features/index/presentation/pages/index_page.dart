@@ -87,6 +87,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
+              behavior: SnackBarBehavior.floating,
               content: Text(
                 'Share dialog unavailable — invite text copied to clipboard',
               ),
@@ -100,7 +101,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
               : 'Could not share invite. Please try again.';
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(message)));
+          ).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)));
         }
       }
     }

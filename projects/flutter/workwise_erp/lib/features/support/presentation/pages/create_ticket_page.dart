@@ -21,6 +21,7 @@ import '../../../../../core/themes/app_colors.dart';
 import '../../../../../core/widgets/app_bar.dart';
 import '../../../jobcard/presentation/widgets/searchable_dialog.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 class CreateTicketPage extends ConsumerStatefulWidget {
   const CreateTicketPage({super.key});
@@ -64,7 +65,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   final List<int> _selectedContactIds = [];
 
   bool _isSubmitting = false;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -182,12 +182,13 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       statusId: _selectedStatusId,
       customerId: _selectedCustomerId,
       contactIds: _selectedContactIds.isNotEmpty ? _selectedContactIds : null,
-      attachmentPaths: _localFiles.isNotEmpty
-          ? _localFiles.map((e) => e['path'] as String).toList()
-          : null,
       files: _localFiles.isNotEmpty
           ? _localFiles.map((e) => e['path'] as String).toList()
           : null,
+      userId: ref.read(authNotifierProvider).maybeWhen(
+        authenticated: (u) => u.id,
+        orElse: () => null,
+      ),
     );
 
     final createUc = ref.read(createSupportTicketUseCaseProvider);
@@ -454,7 +455,10 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       onTap: () async {
         if (_selectedCustomerId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select a customer first')),
+            const SnackBar(
+              content: Text('Please select a customer first'),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
           return;
         }

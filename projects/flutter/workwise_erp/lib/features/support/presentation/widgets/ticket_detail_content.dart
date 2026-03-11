@@ -240,10 +240,11 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
     );
 
     if (statusObj.id == null || widget.ticket.id == null) {
-      // No id to send — show info and keep UI selection but do not call server
+      // No id — show info and revert to old selected value locally if id is vital
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Status set locally to $newStatus')),
+        SnackBar(behavior: SnackBarBehavior.floating, content: Text('Cannot update status on server (missing ID)')),
       );
+      setState(() => selectedStatus = previous);
       return;
     }
 
@@ -270,6 +271,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            behavior: SnackBarBehavior.floating,
             content: Text('Failed to update status: ${failure.message}'),
           ),
         );
@@ -292,7 +294,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
 
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Status updated to $newStatus')));
+        ).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text('Status updated to $newStatus')));
       },
     );
   }
@@ -309,8 +311,9 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
 
     if (pObj.id == null || widget.ticket.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Priority set locally to $newPriority')),
+        SnackBar(behavior: SnackBarBehavior.floating, content: Text('Cannot update priority on server (missing ID)')),
       );
+      setState(() => selectedPriority = previous);
       return;
     }
 
@@ -329,6 +332,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            behavior: SnackBarBehavior.floating,
             content: Text('Failed to update priority: ${failure.message}'),
           ),
         );
@@ -350,7 +354,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
         } catch (_) {}
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Priority updated to $newPriority')),
+          SnackBar(behavior: SnackBarBehavior.floating, content: Text('Priority updated to $newPriority')),
         );
       },
     );
@@ -723,25 +727,20 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              icon:
-                  ((label == 'Status' && _isChangingStatus) ||
-                      (label == 'Priority' && _isChangingPriority))
+              icon: (label == 'Status' && _isChangingStatus) ||
+                      (label == 'Priority' && _isChangingPriority)
                   ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Padding(
-                        padding: EdgeInsets.all(2),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isDark ? Colors.white54 : Colors.grey.shade600,
-                          ),
-                        ),
+                      width: 20.r,
+                      height: 20.r,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
                       ),
                     )
                   : Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: isDark ? Colors.white54 : Colors.grey.shade600,
+                      size: 20.r,
                     ),
               dropdownColor: isDark ? const Color(0xFF151A2E) : Colors.white,
               style: TextStyle(
@@ -2405,14 +2404,14 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
   void _onCreatePfi() {
     // TODO: integrate with PFI create flow / route
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Create PFI — not implemented')),
+      const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Create PFI — not implemented')),
     );
   }
 
   void _onCreateJobCard() {
     // TODO: navigate to jobcard create screen or open modal
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Create JobCard — not implemented')),
+      const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Create JobCard — not implemented')),
     );
   }
 
@@ -2433,12 +2432,12 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${result.count} file(s) selected')),
+        SnackBar(behavior: SnackBarBehavior.floating, content: Text('${result.count} file(s) selected')),
       );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to pick files')));
+      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to pick files')));
     }
   }
 
@@ -2500,6 +2499,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  behavior: SnackBarBehavior.floating,
                   content: Text('Failed to delete ticket: ${failure.message}'),
                 ),
               );
@@ -2532,7 +2532,7 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
         } catch (e) {
           if (mounted)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to delete ticket')),
+              const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to delete ticket')),
             );
         }
       },

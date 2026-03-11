@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../models/support_ticket_model.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
+import 'package:workwise_erp/core/config/environment.dart';
 
 class SupportRemoteDataSource {
   final Dio client;
@@ -297,34 +298,62 @@ class SupportRemoteDataSource {
     try {
       final form = FormData();
 
-      // simple fields and lists (e.g. assignees[])
+      // ignore: avoid_print
+      print('--- [DEBUG] saveSupportTicket Request ---');
+      // ignore: avoid_print
+      print('URI: ${EnvConfig.current.baseUrl}/support/saveSupportTicket');
+      try {
+        // ignore: avoid_print
+        print('FIELDS_JSON: ${json.encode(fields)}');
+      } catch (_) {}
+      
+      // simple fields and lists
       fields.forEach((k, v) {
         if (v == null) return;
         if (v is List) {
           for (final item in v) {
             form.fields.add(MapEntry(k, item.toString()));
+            // ignore: avoid_print
+            print('  Field [$k]: ${item.toString()}');
           }
         } else {
           form.fields.add(MapEntry(k, v.toString()));
+          // ignore: avoid_print
+          print('  Field [$k]: ${v.toString()}');
         }
       });
 
       // single attachment (API accepts 'attachment')
       if (attachmentPaths != null && attachmentPaths.isNotEmpty) {
         final path = attachmentPaths.first;
+        final fileName = path.split('/').last;
         try {
-          form.files.add(MapEntry('attachment', MultipartFile.fromFileSync(path, filename: path.split('/').last)));
-        } catch (_) {}
+          form.files.add(MapEntry('attachment', MultipartFile.fromFileSync(path, filename: fileName)));
+          // ignore: avoid_print
+          print('  File [attachment]: $fileName');
+        } catch (e) {
+          // ignore: avoid_print
+          print('  Error adding attachment: $e');
+        }
       }
 
       // multiple files[]
       if (filePaths != null && filePaths.isNotEmpty) {
         for (final p in filePaths) {
+          final fileName = p.split('/').last;
           try {
-            form.files.add(MapEntry('files[]', MultipartFile.fromFileSync(p, filename: p.split('/').last)));
-          } catch (_) {}
+            form.files.add(MapEntry('files[]', MultipartFile.fromFileSync(p, filename: fileName)));
+            // ignore: avoid_print
+            print('  File [files[]]: $fileName');
+          } catch (e) {
+            // ignore: avoid_print
+            print('  Error adding file to files[]: $e');
+          }
         }
       }
+      
+      // ignore: avoid_print
+      print('--- [DEBUG] End saveSupportTicket Request ---');
 
       final resp = await client.post('/support/saveSupportTicket', data: form);
       final code = resp.statusCode ?? 500;

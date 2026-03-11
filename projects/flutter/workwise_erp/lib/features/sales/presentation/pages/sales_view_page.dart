@@ -19,7 +19,7 @@ class SalesViewPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share order — not implemented'))),
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Share order — not implemented'))),
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
@@ -27,11 +27,11 @@ class SalesViewPage extends ConsumerWidget {
               // placeholder actions
               switch (v) {
                 case 'print':
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Print order — not implemented')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Print order — not implemented')));
                   break;
                 case 'more':
                 default:
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('More options')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('More options')));
               }
             },
             itemBuilder: (ctx) => const [

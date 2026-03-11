@@ -927,7 +927,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+        ).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to pick image: $e')));
       }
     }
   }
