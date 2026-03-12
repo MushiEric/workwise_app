@@ -30,20 +30,9 @@ class SupportRepositoryImpl implements SupportRepository {
   SupportRepositoryImpl(this.remote);
 
   @override
-  Future<Either<Failure, List<domain.SupportTicket>>> getTickets() async {
+  Future<Either<Failure, List<domain.SupportTicket>>> getTickets({int page = 1, int limit = 20}) async {
     try {
-      final now = DateTime.now();
-      if (_cache != null && _lastFetch != null && now.difference(_lastFetch!) < _cacheTtl) {
-        // return cached copy
-        final list = _cache!.map((m) => m.toDomain()).toList();
-        return Either.right(list);
-      }
-
-      final List<SupportTicketModel> models = await remote.getSupportTickets();
-      // update cache
-      _cache = models;
-      _lastFetch = DateTime.now();
-
+      final List<SupportTicketModel> models = await remote.getSupportTickets(page: page, limit: limit);
       final list = models.map((m) => m.toDomain()).toList();
       return Either.right(list);
     } on ServerException catch (e) {

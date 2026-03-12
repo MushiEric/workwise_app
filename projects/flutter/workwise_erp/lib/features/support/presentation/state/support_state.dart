@@ -7,6 +7,11 @@ part 'support_state.freezed.dart';
 class SupportState with _$SupportState {
   const factory SupportState.initial() = _Initial;
   const factory SupportState.loading() = _Loading;
-  const factory SupportState.loaded(List<SupportTicket> tickets) = _Loaded;
+  const factory SupportState.loaded({
+    required List<SupportTicket> tickets,
+    required int page,
+    required bool hasMore,
+    @Default(false) bool isLoadingMore,
+  }) = _Loaded;
   const factory SupportState.error(String message) = _Error;
 }

@@ -12,7 +12,7 @@ import '../entities/support_service.dart';
 import '../entities/support_create_params.dart';
 
 abstract class SupportRepository {
-  Future<Either<Failure, List<SupportTicket>>> getTickets();
+  Future<Either<Failure, List<SupportTicket>>> getTickets({int page = 1, int limit = 20});
 
   Future<Either<Failure, List<SupportStatus>>> getStatuses();
   Future<Either<Failure, List<Priority>>> getPriorities();

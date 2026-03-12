@@ -40,17 +40,15 @@ class SupportRemoteDataSource {
   }
 
   /// GET /support/getSupportTicket
-  Future<List<SupportTicketModel>> getSupportTickets() async {
+  Future<List<SupportTicketModel>> getSupportTickets({int page = 1, int limit = 20}) async {
     try {
       final resp = await client.get('/support/getSupportTicket', queryParameters: {
-        'per_page': 1000,
-        'limit': 1000,
-        'page_length': 1000,
-        'limit_page_length': 1000,
-        'page': 1,
-        'limit_start': 0,
-        'length': 1000,
-        'start': 0,
+        'page': page,
+        'page_length': limit,
+        'limit_page_length': limit,
+        'limit_start': (page - 1) * limit,
+        'start': (page - 1) * limit,
+        'length': limit,
       });
       final list = _extractListFromRaw(resp.data);
 

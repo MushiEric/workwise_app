@@ -19,7 +19,7 @@ import '../../../auth/domain/entities/user.dart';
 import '../providers/support_providers.dart';
 import '../../../../../core/themes/app_colors.dart';
 import '../../../../../core/widgets/app_bar.dart';
-import '../../../jobcard/presentation/widgets/searchable_dialog.dart';
+import 'package:workwise_erp/features/jobcard/presentation/widgets/searchable_dialog.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 
@@ -248,11 +248,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
           ),
         );
         
-        try {
-          ref.read(supportNotifierProvider.notifier).loadTickets();
-        } catch (_) {}
-        
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       },
     );
   }

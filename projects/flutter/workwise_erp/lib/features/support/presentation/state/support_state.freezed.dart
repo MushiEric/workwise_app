@@ -21,21 +21,39 @@ mixin _$SupportState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SupportTicket> tickets) loaded,
+    required TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SupportTicket> tickets)? loaded,
+    TResult? Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SupportTicket> tickets)? loaded,
+    TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
@@ -130,7 +148,13 @@ class _$InitialImpl implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SupportTicket> tickets) loaded,
+    required TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -141,7 +165,13 @@ class _$InitialImpl implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SupportTicket> tickets)? loaded,
+    TResult? Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return initial?.call();
@@ -152,7 +182,13 @@ class _$InitialImpl implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SupportTicket> tickets)? loaded,
+    TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -249,7 +285,13 @@ class _$LoadingImpl implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SupportTicket> tickets) loaded,
+    required TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -260,7 +302,13 @@ class _$LoadingImpl implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SupportTicket> tickets)? loaded,
+    TResult? Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return loading?.call();
@@ -271,7 +319,13 @@ class _$LoadingImpl implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SupportTicket> tickets)? loaded,
+    TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -330,7 +384,12 @@ abstract class _$$LoadedImplCopyWith<$Res> {
     $Res Function(_$LoadedImpl) then,
   ) = __$$LoadedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<SupportTicket> tickets});
+  $Res call({
+    List<SupportTicket> tickets,
+    int page,
+    bool hasMore,
+    bool isLoadingMore,
+  });
 }
 
 /// @nodoc
@@ -346,13 +405,30 @@ class __$$LoadedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? tickets = null}) {
+  $Res call({
+    Object? tickets = null,
+    Object? page = null,
+    Object? hasMore = null,
+    Object? isLoadingMore = null,
+  }) {
     return _then(
       _$LoadedImpl(
-        null == tickets
+        tickets: null == tickets
             ? _value._tickets
             : tickets // ignore: cast_nullable_to_non_nullable
                   as List<SupportTicket>,
+        page: null == page
+            ? _value.page
+            : page // ignore: cast_nullable_to_non_nullable
+                  as int,
+        hasMore: null == hasMore
+            ? _value.hasMore
+            : hasMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isLoadingMore: null == isLoadingMore
+            ? _value.isLoadingMore
+            : isLoadingMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -361,7 +437,12 @@ class __$$LoadedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadedImpl implements _Loaded {
-  const _$LoadedImpl(final List<SupportTicket> tickets) : _tickets = tickets;
+  const _$LoadedImpl({
+    required final List<SupportTicket> tickets,
+    required this.page,
+    required this.hasMore,
+    this.isLoadingMore = false,
+  }) : _tickets = tickets;
 
   final List<SupportTicket> _tickets;
   @override
@@ -372,8 +453,16 @@ class _$LoadedImpl implements _Loaded {
   }
 
   @override
+  final int page;
+  @override
+  final bool hasMore;
+  @override
+  @JsonKey()
+  final bool isLoadingMore;
+
+  @override
   String toString() {
-    return 'SupportState.loaded(tickets: $tickets)';
+    return 'SupportState.loaded(tickets: $tickets, page: $page, hasMore: $hasMore, isLoadingMore: $isLoadingMore)';
   }
 
   @override
@@ -381,12 +470,21 @@ class _$LoadedImpl implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LoadedImpl &&
-            const DeepCollectionEquality().equals(other._tickets, _tickets));
+            const DeepCollectionEquality().equals(other._tickets, _tickets) &&
+            (identical(other.page, page) || other.page == page) &&
+            (identical(other.hasMore, hasMore) || other.hasMore == hasMore) &&
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_tickets));
+  int get hashCode => Object.hash(
+    runtimeType,
+    const DeepCollectionEquality().hash(_tickets),
+    page,
+    hasMore,
+    isLoadingMore,
+  );
 
   /// Create a copy of SupportState
   /// with the given fields replaced by the non-null parameter values.
@@ -401,10 +499,16 @@ class _$LoadedImpl implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SupportTicket> tickets) loaded,
+    required TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(tickets);
+    return loaded(tickets, page, hasMore, isLoadingMore);
   }
 
   @override
@@ -412,10 +516,16 @@ class _$LoadedImpl implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SupportTicket> tickets)? loaded,
+    TResult? Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(tickets);
+    return loaded?.call(tickets, page, hasMore, isLoadingMore);
   }
 
   @override
@@ -423,12 +533,18 @@ class _$LoadedImpl implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SupportTicket> tickets)? loaded,
+    TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(tickets);
+      return loaded(tickets, page, hasMore, isLoadingMore);
     }
     return orElse();
   }
@@ -472,9 +588,17 @@ class _$LoadedImpl implements _Loaded {
 }
 
 abstract class _Loaded implements SupportState {
-  const factory _Loaded(final List<SupportTicket> tickets) = _$LoadedImpl;
+  const factory _Loaded({
+    required final List<SupportTicket> tickets,
+    required final int page,
+    required final bool hasMore,
+    final bool isLoadingMore,
+  }) = _$LoadedImpl;
 
   List<SupportTicket> get tickets;
+  int get page;
+  bool get hasMore;
+  bool get isLoadingMore;
 
   /// Create a copy of SupportState
   /// with the given fields replaced by the non-null parameter values.
@@ -555,7 +679,13 @@ class _$ErrorImpl implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SupportTicket> tickets) loaded,
+    required TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -566,7 +696,13 @@ class _$ErrorImpl implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SupportTicket> tickets)? loaded,
+    TResult? Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return error?.call(message);
@@ -577,7 +713,13 @@ class _$ErrorImpl implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SupportTicket> tickets)? loaded,
+    TResult Function(
+      List<SupportTicket> tickets,
+      int page,
+      bool hasMore,
+      bool isLoadingMore,
+    )?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
