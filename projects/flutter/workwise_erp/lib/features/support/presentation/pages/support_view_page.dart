@@ -30,7 +30,7 @@ class SupportViewPage extends ConsumerWidget {
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share ticket — not implemented')),
+                const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Share ticket — not implemented')),
               );
             },
           ),
@@ -45,6 +45,7 @@ class SupportViewPage extends ConsumerWidget {
                 case 'create_pfi':
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
+                      behavior: SnackBarBehavior.floating,
                       content: Text('Create PFI — not implemented'),
                     ),
                   );
@@ -52,6 +53,7 @@ class SupportViewPage extends ConsumerWidget {
                 case 'create_jobcard':
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
+                      behavior: SnackBarBehavior.floating,
                       content: Text('Create JobCard — not implemented'),
                     ),
                   );
@@ -202,6 +204,7 @@ class SupportViewPage extends ConsumerWidget {
             (failure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  behavior: SnackBarBehavior.floating,
                   content: Text('Failed to delete ticket: ${failure.message}'),
                 ),
               );
@@ -230,7 +233,7 @@ class SupportViewPage extends ConsumerWidget {
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to delete ticket')),
+            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to delete ticket')),
           );
         }
       },

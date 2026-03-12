@@ -63,5 +63,47 @@ class User extends Equatable {
         updatedAt,
         apiToken,
         roles,
-      ];
+    ];
+
+  User copyWith({
+    int? id,
+    String? name,
+    String? email,
+    DateTime? emailVerifiedAt,
+    String? avatar,
+    String? lang,
+    String? mode,
+    bool? isAdmin,
+    bool? isActive,
+    String? messengerColor,
+    bool? darkMode,
+    bool? isEmailVerified,
+    String? phone,
+    DateTime? lastLoginAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? apiToken,
+    List<Role>? roles,
+  }) {
+    return User(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,
+      avatar: avatar ?? this.avatar,
+      lang: lang ?? this.lang,
+      mode: mode ?? this.mode,
+      isAdmin: isAdmin ?? this.isAdmin,
+      isActive: isActive ?? this.isActive,
+      messengerColor: messengerColor ?? this.messengerColor,
+      darkMode: darkMode ?? this.darkMode,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      phone: phone ?? this.phone,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      apiToken: apiToken ?? this.apiToken,
+      roles: roles ?? this.roles,
+    );
+  }
 }

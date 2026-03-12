@@ -15,6 +15,7 @@ import '../../domain/usecases/create_support_ticket.dart';
 import '../../domain/usecases/change_ticket_status.dart';
 import '../../domain/usecases/change_ticket_priority.dart';
 import '../../domain/usecases/delete_support_ticket.dart';
+import '../../domain/usecases/get_users.dart';
 import '../notifier/support_notifier.dart';
 import '../state/support_state.dart';
 
@@ -22,6 +23,7 @@ final supportRemoteDataSourceProvider = Provider((ref) {
   final dio = ref.watch(dioProvider);
   return SupportRemoteDataSource(dio);
 });
+
 
 final supportRepositoryProvider = Provider((ref) {
   final remote = ref.watch(supportRemoteDataSourceProvider);
@@ -86,6 +88,11 @@ final deleteSupportTicketUseCaseProvider = Provider((ref) {
 final createSupportTicketUseCaseProvider = Provider((ref) {
   final repo = ref.watch(supportRepositoryProvider);
   return CreateSupportTicket(repo);
+});
+
+final getUsersUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(supportRepositoryProvider);
+  return GetUsers(repo);
 });
 
 final supportNotifierProvider = StateNotifierProvider<SupportNotifier, SupportState>((ref) {

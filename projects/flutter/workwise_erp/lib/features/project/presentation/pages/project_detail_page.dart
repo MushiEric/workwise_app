@@ -83,6 +83,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
+                    behavior: SnackBarBehavior.floating,
                     content: Text('Share project — not implemented'),
                   ),
                 );
@@ -98,6 +99,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
                   case 'edit':
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
+                        behavior: SnackBarBehavior.floating,
                         content: Text('Edit project — not implemented'),
                       ),
                     );

@@ -218,7 +218,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to load receivers')),
+            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to load receivers')),
           );
         }
       },
@@ -264,7 +264,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         (l) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to generate jobcard number')),
+            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to generate jobcard number')),
           );
         },
         (r) {
@@ -274,7 +274,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error generating jobcard number')),
+          const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Error generating jobcard number')),
         );
     } finally {
       // Stop animation
@@ -313,7 +313,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         // enforce 5MB per-file limit
         if (f.size > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${f.name} exceeds 5MB limit')),
+            SnackBar(behavior: SnackBarBehavior.floating, content: Text('${f.name} exceeds 5MB limit')),
           );
           continue;
         }
@@ -329,7 +329,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       for (final f in result.files) {
         if (f.size > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${f.name} exceeds 5MB limit')),
+            SnackBar(behavior: SnackBarBehavior.floating, content: Text('${f.name} exceeds 5MB limit')),
           );
           continue;
         }
@@ -365,7 +365,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Draft saved')));
+    ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft saved')));
   }
 
   Future<bool> _loadDraft() async {
@@ -433,7 +433,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Draft loaded')));
+      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft loaded')));
       return true;
     } catch (_) {
       return false;
@@ -449,25 +449,25 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     // basic validation for required fields
     if (_jobcardNumberCtl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Jobcard number is required')),
+        const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Jobcard number is required')),
       );
       return;
     }
     if (_subjectCtl.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Subject is required')));
+      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Subject is required')));
       return;
     }
     if (_reportedDateCtl.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Starting On is required')));
+      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Starting On is required')));
       return;
     }
     if (_technicianIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('At least one staff member is required')),
+        const SnackBar(behavior: SnackBarBehavior.floating, content: Text('At least one staff member is required')),
       );
       return;
     }
@@ -476,7 +476,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     if (_statusId == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Status is required')));
+      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Status is required')));
       return;
     }
 
@@ -484,7 +484,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     if (_relatedTo == 'Other') {
       if ((_receiverName ?? _relatedOtherCtl.text).trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a value for "Other"')),
+          const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Please enter a value for "Other"')),
         );
         return;
       }
@@ -496,14 +496,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       if (_receiverId == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Receiver is required')));
+        ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Receiver is required')));
         return;
       }
     } else if (_relatedTo == 'Vehicle') {
       if (_vehicleId == null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Vehicle is required')));
+        ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Vehicle is required')));
         return;
       }
     }
@@ -584,7 +584,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     res.fold(
       (l) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Create failed: ${l.toString()}')),
+          SnackBar(behavior: SnackBarBehavior.floating, content: Text('Create failed: ${l.toString()}')),
         );
       },
       (id) async {
@@ -1071,7 +1071,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                           await _clearDraft();
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Draft cleared')),
+                              const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft cleared')),
                             );
                           }
                         },
@@ -1314,7 +1314,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                             await _clearDraft();
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Draft cleared')),
+                                const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft cleared')),
                               );
                             }
                             Navigator.pop(ctx);

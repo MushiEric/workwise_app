@@ -8,7 +8,7 @@ class GetSupportTickets {
   final SupportRepository repository;
   GetSupportTickets(this.repository);
 
-  Future<Either<Failure, List<SupportTicket>>> call() async {
-    return repository.getTickets();
+  Future<Either<Failure, List<SupportTicket>>> call({int page = 1, int limit = 20}) async {
+    return repository.getTickets(page: page, limit: limit);
   }
 }

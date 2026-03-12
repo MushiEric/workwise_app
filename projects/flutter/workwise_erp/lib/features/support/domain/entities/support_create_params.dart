@@ -8,11 +8,17 @@ class SupportCreateParams {
   final int? categoryId;
   final int? locationId;
   final int? supervisorId;
+  final int? departmentId;
+  final int? statusId;
+  final int? customerId;
+  final List<int>? contactIds; // contacts[]
   final List<String>? attachmentPaths; // single attachment expected by API but accept list
+  final int? userId;
   final List<String>? files; // files[]
 
   SupportCreateParams({
     required this.subject,
+    this.userId,
     this.priorityId,
     this.endDate,
     this.description,
@@ -21,6 +27,10 @@ class SupportCreateParams {
     this.categoryId,
     this.locationId,
     this.supervisorId,
+    this.departmentId,
+    this.statusId,
+    this.customerId,
+    this.contactIds,
     this.attachmentPaths,
     this.files,
   });

@@ -1,5 +1,6 @@
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
+import '../../../auth/domain/entities/user.dart';
 import '../entities/support_ticket.dart';
 import '../entities/status.dart';
 import '../entities/priority.dart';
@@ -11,7 +12,7 @@ import '../entities/support_service.dart';
 import '../entities/support_create_params.dart';
 
 abstract class SupportRepository {
-  Future<Either<Failure, List<SupportTicket>>> getTickets();
+  Future<Either<Failure, List<SupportTicket>>> getTickets({int page = 1, int limit = 20});
 
   Future<Either<Failure, List<SupportStatus>>> getStatuses();
   Future<Either<Failure, List<Priority>>> getPriorities();
@@ -24,8 +25,11 @@ abstract class SupportRepository {
   Future<Either<Failure, List<SupportLocation>>> getLocations();
   Future<Either<Failure, List<SupportSupervisor>>> getSupervisors();
 
-  // Services available for support tickets (GET /support/getSupport/Service)
+  // Services available for support tickets (GET /support/getSupportService)
   Future<Either<Failure, List<SupportService>>> getServices();
+
+  // New: fetch users for assignees
+  Future<Either<Failure, List<User>>> getUsers();
 
   Future<Either<Failure, void>> changeTicketStatus({required int ticketId, required int statusId});
   Future<Either<Failure, void>> changeTicketPriority({required int ticketId, required int priorityId});

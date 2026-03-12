@@ -222,6 +222,8 @@ class _SearchableDialogState<T> extends State<SearchableDialog<T>> {
                                 });
                               } else {
                                 setState(() => _selectedItem = item);
+                                widget.onSelected?.call(item);
+                                Navigator.pop(context, item);
                               }
                             },
                           ),
@@ -256,25 +258,22 @@ class _SearchableDialogState<T> extends State<SearchableDialog<T>> {
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (widget.multiSelect) {
+                  if (widget.multiSelect)
+                    ElevatedButton(
+                      onPressed: () {
                         widget.onMultiSelected?.call(_selectedItems.toList());
-                      } else {
-                        widget.onSelected?.call(_selectedItem);
-                      }
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        Navigator.pop(context, _selectedItems.toList());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
+                      child: const Text('Confirm'),
                     ),
-                    child: const Text('Confirm'),
-                  ),
                 ],
               ),
             ),

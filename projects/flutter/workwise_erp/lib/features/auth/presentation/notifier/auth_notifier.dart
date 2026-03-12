@@ -5,6 +5,7 @@ import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/update_profile.dart';
 import '../../domain/usecases/logout.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
+import '../../domain/entities/role.dart';
 import '../state/auth_state.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -70,9 +71,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
           orElse: () => AuthState.error(_friendlyMessageForFailure(f)),
         );
         // Throw so the calling page's try/catch can surface the error to the UI.
-        throw Exception(_friendlyMessageForFailure(f));
+        // Surround technical details to distinguish them from standard messages
+        throw Exception('${_friendlyMessageForFailure(f)} ($tech)');
       },
-      (u) => state = AuthState.authenticated(u),
+      (u) {
+        // If the server response is missing roles or isAdmin status, merge them
+        // from the previous authenticated state to avoid breaking app features.
+        final previousUser = previousState.maybeWhen(
+          authenticated: (prev) => prev,
+          orElse: () => null,
+        );
+
+        var mergedUser = u;
+        if (previousUser != null) {
+          final oldRoles = previousUser.roles ?? [];
+          final newRoles = u.roles ?? [];
+
+          // If newRoles is empty but oldRoles was not, keep oldRoles.
+          // If newRoles is NOT empty, but elements are missing permissions, 
+          // merge permissions from matching oldRoles.
+          final List<Role> effectiveRoles = [];
+          if (newRoles.isEmpty && oldRoles.isNotEmpty) {
+            effectiveRoles.addAll(oldRoles);
+          } else {
+            for (var nr in newRoles) {
+              final hasPerms = nr.permissions != null && nr.permissions!.isNotEmpty;
+              if (!hasPerms) {
+                final matches = oldRoles.where((or) => or.id == nr.id || or.name == nr.name);
+                final match = matches.isEmpty ? null : matches.first;
+                effectiveRoles.add(match != null && match.permissions != null
+                    ? nr.copyWith(permissions: match.permissions)
+                    : nr);
+              } else {
+                effectiveRoles.add(nr);
+              }
+            }
+          }
+
+          mergedUser = u.copyWith(
+            roles: effectiveRoles,
+            isAdmin: u.isAdmin ?? previousUser.isAdmin,
+          );
+        }
+
+        state = AuthState.authenticated(mergedUser);
+      },
     );
   }
 

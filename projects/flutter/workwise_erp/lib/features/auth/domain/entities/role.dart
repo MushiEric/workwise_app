@@ -11,4 +11,16 @@ class Role extends Equatable {
 
   @override
   List<Object?> get props => [id, name, permissions];
+
+  Role copyWith({
+    int? id,
+    String? name,
+    List<Permission>? permissions,
+  }) {
+    return Role(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      permissions: permissions ?? this.permissions,
+    );
+  }
 }

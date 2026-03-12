@@ -63,7 +63,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             // IconButton(
             //   icon: Icon(AppIcons.share2, color: isDark ? Colors.white70 : AppColors.white),
             //   onPressed: () {
-            //     ScaffoldMessenger.of(context).showSnackBar(
+            //     ScaffoldMessenger.of(context).showSnackBar(behavior: SnackBarBehavior.floating, 
             //       const SnackBar(content: Text('Share jobcard — not implemented')),
             //     );
             //   },
@@ -78,6 +78,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                   case 'print':
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
+                        behavior: SnackBarBehavior.floating,
                         content: Text('Print jobcard — not implemented'),
                       ),
                     );
@@ -85,7 +86,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                   case 'more':
                   default:
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('More options')),
+                      const SnackBar(behavior: SnackBarBehavior.floating, content: Text('More options')),
                     );
                 }
               },

@@ -38,6 +38,7 @@ class UnauthorizedInterceptor extends Interceptor {
 
     if (status == 401 && !isAuthOptOut) {
       await _tokenStorage.deleteToken();
+      await _tokenStorage.deleteToken();
       _showSnackBar('Your session has expired. Please log in again.');
       _navigatorKey.currentState?.pushNamedAndRemoveUntil('/', (_) => false);
     } else if (status == 403) {
