@@ -1,4 +1,5 @@
 class JobcardCreateParams {
+  final int? id; // null = create, non-null = update
   final String jobcardNumber;
   final String subject;
   final String? reportedDate;
@@ -24,6 +25,7 @@ class JobcardCreateParams {
   final List<String>? serviceAttachmentPaths;
 
   JobcardCreateParams({
+    this.id,
     required this.jobcardNumber,
     required this.subject,
     this.reportedDate,
@@ -50,31 +52,33 @@ class JobcardCreateParams {
   });
 
   Map<String, dynamic> toMap() => {
-        'jobcard_number': jobcardNumber,
-        'subject': subject,
-        if (reportedDate != null) 'reported_date': reportedDate,
-        if (dispatchedDate != null) 'dispatched_date': dispatchedDate,
-        if (vehicleId != null) 'vehicle_id': vehicleId,
-        if (technicianIds != null) 'technician_id': technicianIds, // numeric array
-        if (departmentIds != null) 'departments': departmentIds,
-        if (service != null) 'service': service,
-        if (description != null) 'description': description,
-        if (notes != null) 'notes': notes,
-        if (relatedTo != null) 'related_to': relatedTo,
-        if (receiverId != null) 'receiver': receiverId,
-        if (receiverName != null) 'receiver_name': receiverName,
-        if (supportId != null) 'support_id': supportId,
-        if (status != null) 'status': status,
-        if (supervisorId != null) 'supervisor_id': supervisorId,
-        if (locationId != null) 'location': locationId,
-        if (proposalId != null) 'proposal_id': proposalId,
-        if (separationItem != null) 'separation_item': separationItem,
-        if (grandTotal != null) 'grand_total': grandTotal,
-        if (items != null) 'items': items,
-        // Attachments (local file paths) - server expects these form fields: `item_attachemt`, `service_attachemt`
-        if (itemAttachmentPaths != null) 'item_attachemt': itemAttachmentPaths,
-        if (serviceAttachmentPaths != null) 'service_attachemt': serviceAttachmentPaths,
-      };
+    if (id != null) 'id': id,
+    'jobcard_number': jobcardNumber,
+    'subject': subject,
+    if (reportedDate != null) 'reported_date': reportedDate,
+    if (dispatchedDate != null) 'dispatched_date': dispatchedDate,
+    if (vehicleId != null) 'vehicle_id': vehicleId,
+    if (technicianIds != null) 'technician_id': technicianIds, // numeric array
+    if (departmentIds != null) 'departments': departmentIds,
+    if (service != null) 'service': service,
+    if (description != null) 'description': description,
+    if (notes != null) 'notes': notes,
+    if (relatedTo != null) 'related_to': relatedTo,
+    if (receiverId != null) 'receiver': receiverId,
+    if (receiverName != null) 'receiver_name': receiverName,
+    if (supportId != null) 'support_id': supportId,
+    if (status != null) 'status': status,
+    if (supervisorId != null) 'supervisor_id': supervisorId,
+    if (locationId != null) 'location': locationId,
+    if (proposalId != null) 'proposal_id': proposalId,
+    if (separationItem != null) 'separation_item': separationItem,
+    if (grandTotal != null) 'grand_total': grandTotal,
+    if (items != null) 'items': items,
+    // Attachments (local file paths) - server expects these form fields: `item_attachemt`, `service_attachemt`
+    if (itemAttachmentPaths != null) 'item_attachemt': itemAttachmentPaths,
+    if (serviceAttachmentPaths != null)
+      'service_attachemt': serviceAttachmentPaths,
+  };
 
   Map<String, dynamic> toJson() => toMap();
 }

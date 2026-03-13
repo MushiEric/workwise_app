@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../themes/app_colors.dart';
@@ -279,25 +280,28 @@ Future<void> showAppLoadingDialog(
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(width: 16),
-            Flexible(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
+    barrierColor: Colors.transparent,
+    builder: (_) => const Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      child: Center(
+        child: CupertinoActivityIndicator(radius: 18),
       ),
+      // --- Old card layout (preserved for later use) ---
+      // backgroundColor: Colors.white,
+      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      // child: Padding(
+      //   padding: EdgeInsets.all(16.0),
+      //   child: Row(
+      //     mainAxisSize: MainAxisSize.min,
+      //     children: [
+      //       CircularProgressIndicator(),
+      //       SizedBox(width: 16),
+      //       Flexible(child: Text(message)),
+      //     ],
+      //   ),
+      // ),
     ),
   );
 }

@@ -10,10 +10,11 @@ import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/constants/app_constant.dart';
+import '../../../../core/extensions/l10n_extension.dart';
 import '../../../../core/widgets/app_bar.dart';
-import '../../../../core/utils/scroll_aware_fab.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../notification/presentation/providers/notification_providers.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class IndexPage extends ConsumerStatefulWidget {
   const IndexPage({super.key});
@@ -61,7 +62,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
 
   // Opens native share sheet with a platform-aware invite message
   void _inviteFriends() async {
-    final appName = 'Workwise';
+    final appName = context.l10n.appName;
     final baseDescription =
         'An AI-powered software built to help you and your team stay organized, automate work and streamline your operations.';
 
@@ -99,9 +100,12 @@ class _IndexPageState extends ConsumerState<IndexPage>
           final message = kDebugMode
               ? 'Could not share or copy invite text: ${e.toString()}'
               : 'Could not share invite. Please try again.';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text(message)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(message),
+            ),
+          );
         }
       }
     }
@@ -319,15 +323,16 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       ? username.split(' ').first
                       : username;
                   final hour = DateTime.now().toLocal().hour;
+                  final l10n = context.l10n;
                   final greeting = hour < 5
-                      ? 'Good Night'
+                      ? l10n.goodNight
                       : (hour < 12
-                            ? 'Good Morning'
+                            ? l10n.goodMorning
                             : (hour < 17
-                                  ? 'Good Afternoon'
+                                  ? l10n.goodAfternoon
                                   : (hour < 21
-                                        ? 'Good Evening'
-                                        : 'Good Night')));
+                                        ? l10n.goodEvening
+                                        : l10n.goodNight)));
 
                   return Container(
                     padding: const EdgeInsets.all(20),
@@ -362,7 +367,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Welcome to ${AppConstant.appName}',
+                                context.l10n.welcomeToApp(context.l10n.appName),
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: 14,
@@ -490,17 +495,17 @@ class _IndexPageState extends ConsumerState<IndexPage>
           ],
         ),
         // Quick Action FAB
-        floatingActionButton: ScrollAwareFab(
-          controller: _scrollController,
-          onPressed: _inviteFriends,
-          icon: const Icon(LucideIcons.plus),
-          label: 'Invite Friends',
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+        // floatingActionButton: ScrollAwareFab(
+        //   controller: _scrollController,
+        //   onPressed: _inviteFriends,
+        //   icon: const Icon(LucideIcons.plus),
+        //   label: 'Invite Friends',
+        //   backgroundColor: primaryColor,
+        //   foregroundColor: Colors.white,
+        //   shape: RoundedRectangleBorder(
+        //     borderRadius: BorderRadius.circular(16),
+        //   ),
+        // ),
       ),
     );
   }

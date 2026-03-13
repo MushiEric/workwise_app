@@ -18,6 +18,13 @@ class JobcardDetail extends Equatable {
   final String? receiverName;
   final String? technicianId; // raw technician_id field (may be stringified list)
   final String? notes; // recommendation / notes
+  final String? description; // summary of tasks / description
+  final String? contact; // contact number / info
+  final String? departments; // raw departments field (stringified JSON array)
+  final String? location; // location id or name
+  final String? supervisor; // supervisor id
+  final List<Map<String, dynamic>>? approvals;
+  final Map<String, dynamic>? userCreator; // full user object of creator
 
   const JobcardDetail({
     this.id,
@@ -35,6 +42,13 @@ class JobcardDetail extends Equatable {
     this.receiverName,
     this.technicianId,
     this.notes,
+    this.description,
+    this.contact,
+    this.departments,
+    this.location,
+    this.supervisor,
+    this.approvals,
+    this.userCreator,
   });
 
   @override
@@ -54,5 +68,12 @@ class JobcardDetail extends Equatable {
         receiverName,
         technicianId,
         notes,
+        description,
+        contact,
+        departments,
+        location,
+        supervisor,
+        approvals,
+        userCreator,
       ];
 }

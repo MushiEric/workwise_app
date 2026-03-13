@@ -8,8 +8,11 @@ part 'support_reply_model.g.dart';
 class SupportReplyModel with _$SupportReplyModel {
   const factory SupportReplyModel({
     int? id,
-    String? message,
+    @JsonKey(name: 'description') String? message,
+    int? user,
     @JsonKey(name: 'created_by') int? createdBy,
+    @JsonKey(name: 'is_read') int? isRead,
+    String? name,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _SupportReplyModel;
 
@@ -17,5 +20,13 @@ class SupportReplyModel with _$SupportReplyModel {
 }
 
 extension SupportReplyModelX on SupportReplyModel {
-  SupportReply toDomain() => SupportReply(id: id, message: message, createdBy: createdBy, createdAt: createdAt);
+  SupportReply toDomain() => SupportReply(
+    id: id,
+    message: message,
+    user: user,
+    createdBy: createdBy,
+    isRead: isRead,
+    name: name,
+    createdAt: createdAt,
+  );
 }

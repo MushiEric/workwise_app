@@ -12,6 +12,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appName => 'Workwise';
 
   @override
+  String get goodMorning => 'Bonjour';
+
+  @override
+  String get goodAfternoon => 'Bon après-midi';
+
+  @override
+  String get goodEvening => 'Bonsoir';
+
+  @override
+  String get goodNight => 'Bonne nuit';
+
+  @override
+  String get mainMenu => 'Menu principal';
+
+  @override
+  String welcomeToApp(String appName) {
+    return 'Bienvenue sur $appName';
+  }
+
+  @override
   String get selectLanguage => 'Choisir la langue';
 
   @override

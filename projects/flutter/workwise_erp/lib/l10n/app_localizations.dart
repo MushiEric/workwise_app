@@ -106,6 +106,42 @@ abstract class AppLocalizations {
   /// **'Workwise'**
   String get appName;
 
+  /// No description provided for @goodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Morning'**
+  String get goodMorning;
+
+  /// No description provided for @goodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Afternoon'**
+  String get goodAfternoon;
+
+  /// No description provided for @goodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Evening'**
+  String get goodEvening;
+
+  /// No description provided for @goodNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Good Night'**
+  String get goodNight;
+
+  /// No description provided for @mainMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Menu'**
+  String get mainMenu;
+
+  /// No description provided for @welcomeToApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to {appName}'**
+  String welcomeToApp(String appName);
+
   /// No description provided for @selectLanguage.
   ///
   /// In en, this message translates to:

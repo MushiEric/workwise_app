@@ -8,6 +8,7 @@ import '../providers/project_providers.dart';
 import '../widgets/project_task_tile.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../domain/entities/project.dart';
+import '../../../../../core/themes/app_icons.dart';
 
 class ProjectDetailPage extends ConsumerStatefulWidget {
   const ProjectDetailPage({super.key});
@@ -687,9 +688,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
                   const SizedBox(height: 24),
                   AppButton(
                     text: 'Retry',
-                    icon: Icons.refresh_rounded,
+                    icon: Icon(AppIcons.refreshCcwRounded),
                     onPressed: () => notifier.loadTasks(projectId),
-                    variant: AppButtonVariant.primary,
+              
                   ),
                 ],
               ),
@@ -805,7 +806,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
             const SizedBox(height: 24),
             AppButton(
               text: 'Retry',
-              icon: Icons.refresh_rounded,
+              icon: Icon(AppIcons.refreshCcwRounded),
               onPressed: () {
                 if (_projectId != null) {
                   ref
@@ -813,7 +814,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
                       .loadProjectDetail(_projectId!);
                 }
               },
-              variant: AppButtonVariant.primary,
+              
             ),
           ],
         ),

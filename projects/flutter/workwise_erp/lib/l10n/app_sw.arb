@@ -1,7 +1,18 @@
 {
   "@@locale": "sw",
 
-  "appName": "Workwise",
+  "appName": "Moduli",
+  "goodMorning": "Habari za asubuhi",
+  "goodAfternoon": "Habari za mchana",
+  "goodEvening": "Habari za jioni",
+  "goodNight": "Usiku mwema",
+  "mainMenu": "Menyu Kuu",
+  "welcomeToApp": "Karibu {appName}",
+  "@welcomeToApp": {
+    "placeholders": {
+      "appName": { "type": "String" }
+    }
+  },
   "selectLanguage": "Chagua Lugha",
   "languageUpdatedSuccess": "Lugha imebadilishwa.",
   "success": "Imefanikiwa!",

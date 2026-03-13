@@ -20,7 +20,7 @@ class SupportTicketModel with _$SupportTicketModel {
     StatusModel? statuses,
     @JsonKey(name: 'end_date') String? endDate,
     String? description,
-    @JsonKey(name: 'customer_name') CustomerModel? customerName,
+    @JsonKey(name: 'customer_row') CustomerModel? customerName,
     List<SupportReplyModel>? replies,
     List<Map<String, dynamic>>? attachments,
     @JsonKey(name: 'created_at') String? createdAt,

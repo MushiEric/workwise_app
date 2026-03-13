@@ -29,7 +29,9 @@ void main() {
     registerFallbackValue(RequestOptions(path: '/'));
   });
 
-  testWidgets('WorkspaceEntry accepts subdomain and persists normalized API base', (tester) async {
+  testWidgets('WorkspaceEntry accepts subdomain and persists normalized API base', (
+    tester,
+  ) async {
     final mockDio = _MockDio();
     // Skipping /health validation because there is no health endpoint available in the current environment.
     // Re-enable the following mock when a /health endpoint is provided.
@@ -38,19 +40,20 @@ void main() {
     final storage = _FakeStorage();
     final container = ProviderContainer();
 
-    await tester.pumpWidget(ProviderScope(
-      parent: container,
-      overrides: [
-        tenantLocalDataSourceProvider.overrideWithValue(storage),
-      ],
-      child: MaterialApp(
-        initialRoute: '/entry',
-        routes: {
-          '/': (c) => const SizedBox.shrink(),
-          '/entry': (c) => WorkspaceEntryScreen(dioFactory: (base) => mockDio),
-        },
+    await tester.pumpWidget(
+      ProviderScope(
+        parent: container,
+        overrides: [tenantLocalDataSourceProvider.overrideWithValue(storage)],
+        child: MaterialApp(
+          initialRoute: '/entry',
+          routes: {
+            '/': (c) => const SizedBox.shrink(),
+            '/entry': (c) =>
+                WorkspaceEntryScreen(dioFactory: (base) => mockDio),
+          },
+        ),
       ),
-    ));
+    );
 
     // enter only the subdomain
     await tester.enterText(find.byType(TextFormField), 'staging');
@@ -72,19 +75,20 @@ void main() {
     final storage = _FakeStorage();
     final container = ProviderContainer();
 
-    await tester.pumpWidget(ProviderScope(
-      parent: container,
-      overrides: [
-        tenantLocalDataSourceProvider.overrideWithValue(storage),
-      ],
-      child: MaterialApp(
-        initialRoute: '/entry',
-        routes: {
-          '/': (c) => const SizedBox.shrink(),
-          '/entry': (c) => WorkspaceEntryScreen(dioFactory: (base) => mockDio),
-        },
+    await tester.pumpWidget(
+      ProviderScope(
+        parent: container,
+        overrides: [tenantLocalDataSourceProvider.overrideWithValue(storage)],
+        child: MaterialApp(
+          initialRoute: '/entry',
+          routes: {
+            '/': (c) => const SizedBox.shrink(),
+            '/entry': (c) =>
+                WorkspaceEntryScreen(dioFactory: (base) => mockDio),
+          },
+        ),
       ),
-    ));
+    );
 
     // enter an IP address with port
     await tester.enterText(find.byType(TextFormField), '10.26.154.239:8000');

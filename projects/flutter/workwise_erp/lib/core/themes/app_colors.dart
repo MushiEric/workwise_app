@@ -9,6 +9,10 @@ class AppColors {
   static const Color secondary = Color(0xFFFFC107); // Amber
   static const Color muted = Color(0xFF6C757D);     // Gray
   static const Color  purple = Color(0xFF8900FF);
+  static const Color greyFill = Color(0xFFF9FAFB); // Light grey background
+  static const Color greyBorder = Color(0xFFE5E7EB); 
+   static const Color greyText = Color(0xFF757575);
+
 
   // Status colors
   static const Color success = Color(0xFF4CAF50); // Green

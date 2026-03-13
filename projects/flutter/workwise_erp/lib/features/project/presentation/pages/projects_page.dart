@@ -9,7 +9,7 @@ import '../state/project_state.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../domain/entities/project.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/themes/app_icons.dart';
   
 class ProjectsPage extends ConsumerStatefulWidget {
   const ProjectsPage({super.key});
@@ -62,7 +62,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
             if (!_isSearching)
               IconButton(
                 icon: Icon(
-                  LucideIcons.search,
+                  AppIcons.search,
                   size: 20,
                   color: isDark ? Colors.white70 : AppColors.white
                 ),
@@ -72,7 +72,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
               ),
             IconButton(
               icon: Icon(
-                LucideIcons.slidersHorizontal,
+                AppIcons.slidersHorizontal,
                 size: 20,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),
@@ -120,7 +120,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            Icons.close_rounded,
+                            AppIcons.x,
                             color: isDark
                                 ? Colors.white54
                                 : Colors.grey.shade600,
@@ -267,10 +267,10 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                 const SizedBox(height: 24),
                 AppButton(
                   text: 'Retry',
-                  icon: Icons.refresh_rounded,
+                  icon: Icon(AppIcons.refreshCcwRounded),
                   onPressed: () =>
                       ref.read(projectNotifierProvider.notifier).loadProjects(),
-                  variant: AppButtonVariant.primary,
+             
                 ),
               ],
             ),
@@ -332,15 +332,14 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                   const SizedBox(height: 16),
                   AppButton(
                     text: 'Clear Search',
-                    icon: Icons.clear_rounded,
+                    icon: Icon(AppIcons.x),
                     onPressed: () {
                       setState(() {
                         _searchController.clear();
                         _isSearching = false;
                       });
                     },
-                    variant: AppButtonVariant.outline,
-                    size: AppButtonSize.small,
+                
                   ),
                 ],
               ],
@@ -796,8 +795,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                       child: AppButton(
                         text: 'Reset',
                         onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.outline,
-                        size: AppButtonSize.medium,
+                   
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -805,8 +803,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                       child: AppButton(
                         text: 'Apply',
                         onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.primary,
-                        size: AppButtonSize.medium,
+                    
                       ),
                     ),
                   ],

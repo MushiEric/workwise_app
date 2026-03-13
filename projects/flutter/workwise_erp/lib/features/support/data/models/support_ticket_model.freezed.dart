@@ -30,7 +30,7 @@ mixin _$SupportTicketModel {
   @JsonKey(name: 'end_date')
   String? get endDate => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  @JsonKey(name: 'customer_name')
+  @JsonKey(name: 'customer_row')
   CustomerModel? get customerName => throw _privateConstructorUsedError;
   List<SupportReplyModel>? get replies => throw _privateConstructorUsedError;
   List<Map<String, dynamic>>? get attachments =>
@@ -72,7 +72,7 @@ abstract class $SupportTicketModelCopyWith<$Res> {
     StatusModel? statuses,
     @JsonKey(name: 'end_date') String? endDate,
     String? description,
-    @JsonKey(name: 'customer_name') CustomerModel? customerName,
+    @JsonKey(name: 'customer_row') CustomerModel? customerName,
     List<SupportReplyModel>? replies,
     List<Map<String, dynamic>>? attachments,
     @JsonKey(name: 'created_at') String? createdAt,
@@ -263,7 +263,7 @@ abstract class _$$SupportTicketModelImplCopyWith<$Res>
     StatusModel? statuses,
     @JsonKey(name: 'end_date') String? endDate,
     String? description,
-    @JsonKey(name: 'customer_name') CustomerModel? customerName,
+    @JsonKey(name: 'customer_row') CustomerModel? customerName,
     List<SupportReplyModel>? replies,
     List<Map<String, dynamic>>? attachments,
     @JsonKey(name: 'created_at') String? createdAt,
@@ -407,7 +407,7 @@ class _$SupportTicketModelImpl implements _SupportTicketModel {
     this.statuses,
     @JsonKey(name: 'end_date') this.endDate,
     this.description,
-    @JsonKey(name: 'customer_name') this.customerName,
+    @JsonKey(name: 'customer_row') this.customerName,
     final List<SupportReplyModel>? replies,
     final List<Map<String, dynamic>>? attachments,
     @JsonKey(name: 'created_at') this.createdAt,
@@ -443,7 +443,7 @@ class _$SupportTicketModelImpl implements _SupportTicketModel {
   @override
   final String? description;
   @override
-  @JsonKey(name: 'customer_name')
+  @JsonKey(name: 'customer_row')
   final CustomerModel? customerName;
   final List<SupportReplyModel>? _replies;
   @override
@@ -597,7 +597,7 @@ abstract class _SupportTicketModel implements SupportTicketModel {
     final StatusModel? statuses,
     @JsonKey(name: 'end_date') final String? endDate,
     final String? description,
-    @JsonKey(name: 'customer_name') final CustomerModel? customerName,
+    @JsonKey(name: 'customer_row') final CustomerModel? customerName,
     final List<SupportReplyModel>? replies,
     final List<Map<String, dynamic>>? attachments,
     @JsonKey(name: 'created_at') final String? createdAt,
@@ -630,7 +630,7 @@ abstract class _SupportTicketModel implements SupportTicketModel {
   @override
   String? get description;
   @override
-  @JsonKey(name: 'customer_name')
+  @JsonKey(name: 'customer_row')
   CustomerModel? get customerName;
   @override
   List<SupportReplyModel>? get replies;

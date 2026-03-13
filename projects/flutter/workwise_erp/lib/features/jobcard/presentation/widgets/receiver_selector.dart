@@ -4,6 +4,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_smart_dropdown.dart';
 import '../../../../core/themes/app_colors.dart';
 import 'searchable_dialog.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class ReceiverSelector extends ConsumerStatefulWidget {
   final String? receiverType;
@@ -90,7 +91,7 @@ class _ReceiverSelectorState extends ConsumerState<ReceiverSelector> {
               text: widget.receiverId == null
                   ? 'Select Receiver'
                   : 'Change Receiver',
-              icon: Icons.person_search_rounded,
+              icon: Icon(AppIcons.moreHorizontal),
               onPressed: () async {
                 final selected = await showDialog<int?>(
                   context: context,
@@ -109,9 +110,7 @@ class _ReceiverSelectorState extends ConsumerState<ReceiverSelector> {
                   ),
                 );
               },
-              variant: widget.receiverId == null ? AppButtonVariant.primary : AppButtonVariant.outline,
-              size: AppButtonSize.small,
-              fullWidth: true,
+       
             ),
             
             if (widget.receiverId != null) ...[

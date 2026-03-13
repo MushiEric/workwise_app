@@ -9,7 +9,27 @@ class AppLocalizationsSw extends AppLocalizations {
   AppLocalizationsSw([String locale = 'sw']) : super(locale);
 
   @override
-  String get appName => 'Workwise';
+  String get appName => 'Moduli';
+
+  @override
+  String get goodMorning => 'Habari za asubuhi';
+
+  @override
+  String get goodAfternoon => 'Habari za mchana';
+
+  @override
+  String get goodEvening => 'Habari za jioni';
+
+  @override
+  String get goodNight => 'Usiku mwema';
+
+  @override
+  String get mainMenu => 'Menyu Kuu';
+
+  @override
+  String welcomeToApp(String appName) {
+    return 'Karibu $appName';
+  }
 
   @override
   String get selectLanguage => 'Chagua Lugha';

@@ -15,6 +15,7 @@ import '../providers/sales_providers.dart';
 import '../state/sales_state.dart';
 import '../widgets/order_tile.dart';
 import 'sales_view_page.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class SalesPage extends ConsumerStatefulWidget {
   const SalesPage({super.key});
@@ -289,9 +290,9 @@ class _SalesPageState extends ConsumerState<SalesPage> {
               const SizedBox(height: 24),
               AppButton(
                 text: 'Retry',
-                icon: Icons.refresh_rounded,
+                icon: Icon(AppIcons.refreshCcwRounded),
                 onPressed: () => ref.read(salesNotifierProvider.notifier).loadOrders(),
-                variant: AppButtonVariant.primary,
+              
               ),
             ],
           ),
@@ -343,15 +344,14 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                   const SizedBox(height: 16),
                   AppButton(
                     text: 'Clear Search',
-                    icon: Icons.clear_rounded,
+                    icon: Icon(AppIcons.x),
                     onPressed: () {
                       setState(() {
                         _searchController.clear();
                         _isSearching = false;
                       });
                     },
-                    variant: AppButtonVariant.outline,
-                    size: AppButtonSize.small,
+                   
                   ),
                 ],
               ],
@@ -503,8 +503,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                       child: AppButton(
                         text: 'Reset',
                         onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.outline,
-                        size: AppButtonSize.medium,
+                      
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -512,8 +511,7 @@ class _SalesPageState extends ConsumerState<SalesPage> {
                       child: AppButton(
                         text: 'Apply',
                         onPressed: () => Navigator.pop(context),
-                        variant: AppButtonVariant.primary,
-                        size: AppButtonSize.medium,
+                       
                       ),
                     ),
                   ],

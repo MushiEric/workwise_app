@@ -12,27 +12,24 @@ import '../../domain/entities/status.dart';
 import '../../domain/entities/priority.dart';
 import '../../domain/entities/support_service.dart';
 import '../../domain/entities/support_location.dart';
-import '../../data/repositories/support_repository_impl.dart';
 import '../../domain/entities/support_department.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
-import '../../../../core/widgets/app_smart_dropdown.dart';
+import '../../../../core/widgets/app_textfield.dart';
 import '../../domain/entities/support_category.dart';
 import '../../domain/entities/support_supervisor.dart';
-import '../../domain/entities/assigned_user.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
-import 'package:workwise_erp/features/jobcard/presentation/widgets/searchable_dialog.dart';
 import 'package:intl/intl.dart';
 
 import '../widgets/ticket_detail_content.dart';
 import 'support_view_page.dart';
 import 'create_ticket_page.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class SupportListPage extends ConsumerStatefulWidget {
   const SupportListPage({super.key});
@@ -48,8 +45,14 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
   final _scrollController = ScrollController();
   bool _isSearching = false;
   bool _showStats = true;
-  String _selectedDateRange = 'All Time';
-  DateTimeRange? _customDateRange;
+
+  // drawer filter date range (chip-style, mirrors DrawerFilter)
+  String?
+  _filterDateRangeType; // 'daily' | 'weekly' | 'monthly' | 'annually' | 'custom'
+  DateTime? _filterDateFrom;
+  DateTime? _filterDateTo;
+  final _filterDateFromCtrl = TextEditingController();
+  final _filterDateToCtrl = TextEditingController();
 
   // Back-end statuses (used to render dynamic tabs)
   List<SupportStatus> availableStatuses = [];
@@ -117,10 +120,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
   Future<void> _loadFilterData() async {
     try {
       final stRes = await ref.read(getSupportStatusesUseCaseProvider).call();
-      stRes.fold(
-        (_) => null,
-        (list) => setState(() => _filterStatuses = list),
-      );
+      stRes.fold((_) => null, (list) => setState(() => _filterStatuses = list));
     } catch (_) {}
     try {
       final pRes = await ref.read(getSupportPrioritiesUseCaseProvider).call();
@@ -152,7 +152,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       );
     } catch (_) {}
     try {
-      final supRes = await ref.read(getSupportSupervisorsUseCaseProvider).call();
+      final supRes = await ref
+          .read(getSupportSupervisorsUseCaseProvider)
+          .call();
       supRes.fold(
         (_) => null,
         (list) => setState(() => _filterSupervisors = list),
@@ -167,123 +169,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     } catch (_) {}
     try {
       final uRes = await ref.read(getUsersUseCaseProvider).call();
-      uRes.fold(
-        (_) => null,
-        (list) => setState(() => _filterUsers = list),
-      );
+      uRes.fold((_) => null, (list) => setState(() => _filterUsers = list));
     } catch (_) {}
-  }
-
-  /// Shared card decoration
-  BoxDecoration _cardDecoration(bool isDark) => BoxDecoration(
-        color: isDark ? const Color(0xFF151A2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      );
-
-  /// Shared selector decoration
-  InputDecoration _selectorDecoration({
-    required String label,
-    required IconData icon,
-    required Color primary,
-    required bool isDark,
-  }) =>
-      InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark ? Colors.white70 : Colors.grey.shade600,
-          fontSize: 14.sp,
-        ),
-        prefixIcon: Icon(icon, size: 20.r, color: primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      );
-
-  Widget _selectorArrow(bool isDark) => Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: isDark ? Colors.white54 : Colors.grey.shade600,
-        size: 20.r,
-      );
-
-  /// Reusable dropdown selector
-  Widget _buildDropdownCard<T>({
-    required BuildContext context,
-    required bool isDark,
-    required Color primary,
-    required String label,
-    required IconData icon,
-    required T? value,
-    required List<T> items,
-    required String Function(T) itemDisplay,
-    required void Function(T?) onChanged,
-    bool Function(T, T)? itemEquals,
-  }) {
-    // Find the actual instance in `items` that matches `value`
-    T? matchedValue;
-    if (value != null) {
-      try {
-        matchedValue = items.firstWhere(
-          (item) => itemEquals != null ? itemEquals(item, value) : item == value,
-        );
-      } catch (_) {
-        matchedValue = null;
-      }
-    }
-
-    return Container(
-      decoration: _cardDecoration(isDark),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButtonFormField<T?>(
-          value: matchedValue,
-          isExpanded: true,
-          decoration: _selectorDecoration(
-            label: label,
-            icon: icon,
-            primary: primary,
-            isDark: isDark,
-          ),
-          dropdownColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          icon: _selectorArrow(isDark),
-          items: [
-            DropdownMenuItem<T?>(
-              value: null,
-              child: Text(
-                'All',
-                style: TextStyle(
-                  color: isDark ? Colors.white38 : Colors.grey.shade600,
-                  fontSize: 13.sp,
-                ),
-              ),
-            ),
-            ...items.map((item) {
-              return DropdownMenuItem<T?>(
-                value: item,
-                child: Text(
-                  itemDisplay(item),
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                    fontSize: 13.sp,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }),
-          ],
-          onChanged: onChanged,
-        ),
-      ),
-    );
   }
 
   @override
@@ -291,6 +178,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     _tabController.dispose();
     _searchController.dispose();
     _scrollController.dispose();
+    _filterDateFromCtrl.dispose();
+    _filterDateToCtrl.dispose();
     super.dispose();
   }
 
@@ -303,8 +192,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       return raw;
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -500,18 +387,18 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 ),
 
                 DashboardStatCard(
-                  label: 'Awaiting Spares', 
-                  count: _getAwaitingSparesCount(state), 
-                  icon: Icons.build_circle_rounded, 
-                  borderColor: Colors.purple
-                  ),
+                  label: 'Awaiting Spares',
+                  count: _getAwaitingSparesCount(state),
+                  icon: Icons.build_circle_rounded,
+                  borderColor: Colors.purple,
+                ),
 
-                  DashboardStatCard(
-                    label: 'Awaiting PO',
-                    count: _getAwaitingPOCount(state),
-                    icon: Icons.shopping_cart_rounded,
-                    borderColor: Colors.pink,
-                  ),
+                DashboardStatCard(
+                  label: 'Awaiting PO',
+                  count: _getAwaitingPOCount(state),
+                  icon: Icons.shopping_cart_rounded,
+                  borderColor: Colors.pink,
+                ),
               ],
             ),
 
@@ -600,34 +487,32 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         SizedBox(height: 24.h),
                         AppButton(
                           text: 'Retry',
-                          icon: Icons.refresh_rounded,
+                          icon: Icon(AppIcons.refreshCcwRounded),
                           onPressed: () => ref
                               .read(supportNotifierProvider.notifier)
                               .loadTickets(),
-                          variant: AppButtonVariant.primary,
+                    
                         ),
                       ],
                     ),
                   ),
                 ),
-                loaded: (tickets, _, __, ___) => _buildTicketList(context, tickets),
+                loaded: (tickets, _, __, ___) =>
+                    _buildTicketList(context, tickets),
               ),
             ),
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const CreateTicketPage()),
-            );
+            final result = await Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const CreateTicketPage()));
 
             // If a ticket was created, the result might be the ticket code or true
             if (result != null) {
               // Invalidate cache and reload tickets after creating
-              final repo = ref.read(supportRepositoryProvider);
-              if (repo is SupportRepositoryImpl) {
-                repo.invalidateCache();
-              }
+              ref.read(supportRepositoryProvider).invalidateCache();
               await ref.read(supportNotifierProvider.notifier).loadTickets();
 
               // Clear search and drawer filters to make sure the ticket is visible
@@ -644,7 +529,11 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                   _selectedFilterSupervisor = null;
                   _selectedFilterCustomer = null;
                   _selectedFilterUser = null;
-                  _selectedDateRange = 'All Time';
+                  _filterDateRangeType = null;
+                  _filterDateFrom = null;
+                  _filterDateTo = null;
+                  _filterDateFromCtrl.clear();
+                  _filterDateToCtrl.clear();
                 });
               }
 
@@ -748,8 +637,12 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
 
     // Sort by createdAt descending (newest first)
     filteredTickets.sort((a, b) {
-      final aDate = a.createdAt != null ? DateTime.tryParse(a.createdAt!) : null;
-      final bDate = b.createdAt != null ? DateTime.tryParse(b.createdAt!) : null;
+      final aDate = a.createdAt != null
+          ? DateTime.tryParse(a.createdAt!)
+          : null;
+      final bDate = b.createdAt != null
+          ? DateTime.tryParse(b.createdAt!)
+          : null;
       if (aDate == null && bDate == null) return 0;
       if (aDate == null) return 1;
       if (bDate == null) return -1;
@@ -819,38 +712,65 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     }
 
     // --- 3. Date Range Filter (AND Logic) ---
-    if (_selectedDateRange != 'All Time') {
+    if (_filterDateRangeType != null ||
+        (_filterDateFrom != null || _filterDateTo != null)) {
       final now = DateTime.now();
-      DateTime startDate;
-      DateTime endDate = now;
+      DateTime? startDate;
+      DateTime? endDate;
 
-      if (_selectedDateRange == 'Today') {
+      if (_filterDateRangeType == 'daily') {
         startDate = DateTime(now.year, now.month, now.day);
-      } else if (_selectedDateRange == 'This Week') {
-        startDate = now.subtract(Duration(days: now.weekday - 1));
-        startDate = DateTime(startDate.year, startDate.month, startDate.day);
-      } else if (_selectedDateRange == 'This Month') {
+        endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      } else if (_filterDateRangeType == 'weekly') {
+        final offset = now.weekday - 1;
+        startDate = DateTime(now.year, now.month, now.day - offset);
+        endDate = DateTime(
+          startDate.year,
+          startDate.month,
+          startDate.day + 6,
+          23,
+          59,
+          59,
+        );
+      } else if (_filterDateRangeType == 'monthly') {
         startDate = DateTime(now.year, now.month, 1);
-      } else if (_selectedDateRange == 'This Year') {
+        endDate = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+      } else if (_filterDateRangeType == 'annually') {
         startDate = DateTime(now.year, 1, 1);
-      } else if (_selectedDateRange == 'Custom Range' && _customDateRange != null) {
-        startDate = _customDateRange!.start;
-        endDate = _customDateRange!.end;
-      } else {
-        startDate = DateTime(1970);
+        endDate = DateTime(now.year, 12, 31, 23, 59, 59);
+      } else if (_filterDateRangeType == 'custom') {
+        startDate = _filterDateFrom != null
+            ? DateTime(
+                _filterDateFrom!.year,
+                _filterDateFrom!.month,
+                _filterDateFrom!.day,
+              )
+            : null;
+        endDate = _filterDateTo != null
+            ? DateTime(
+                _filterDateTo!.year,
+                _filterDateTo!.month,
+                _filterDateTo!.day,
+                23,
+                59,
+                59,
+              )
+            : null;
       }
 
-      filteredTickets = filteredTickets.where((t) {
-        if (t.createdAt == null) return false;
-        try {
-          final dt = DateTime.parse(t.createdAt!).toLocal();
-          final endOfDay = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-          return dt.isAfter(startDate.subtract(const Duration(milliseconds: 1))) && 
-                 dt.isBefore(endOfDay.add(const Duration(milliseconds: 1)));
-        } catch (_) {
-          return false;
-        }
-      }).toList();
+      if (startDate != null || endDate != null) {
+        filteredTickets = filteredTickets.where((t) {
+          if (t.createdAt == null) return false;
+          try {
+            final dt = DateTime.parse(t.createdAt!).toLocal();
+            if (startDate != null && dt.isBefore(startDate)) return false;
+            if (endDate != null && dt.isAfter(endDate)) return false;
+            return true;
+          } catch (_) {
+            return false;
+          }
+        }).toList();
+      }
     }
 
     if (filteredTickets.isEmpty) {
@@ -886,15 +806,14 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               SizedBox(height: 16.h),
               AppButton(
                 text: 'Clear Search',
-                icon: Icons.clear_rounded,
+                icon: Icon(AppIcons.x),
                 onPressed: () {
                   setState(() {
                     _searchController.clear();
                     _isSearching = false;
                   });
                 },
-                variant: AppButtonVariant.outline,
-                size: AppButtonSize.small,
+               
               ),
             ],
           ],
@@ -905,10 +824,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     return RefreshIndicator(
       onRefresh: () async {
         // Invalidate the repository cache so we fetch fresh data
-        final repo = ref.read(supportRepositoryProvider);
-        if (repo is SupportRepositoryImpl) {
-          repo.invalidateCache();
-        }
+        ref.read(supportRepositoryProvider).invalidateCache();
         await ref.read(supportNotifierProvider.notifier).loadTickets();
       },
       color: const Color(0xFF4A6FA5),
@@ -996,7 +912,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(ticket.status?.status ?? '').withOpacity(0.12),
+                      color: _getStatusColor(
+                        ticket.status?.status ?? '',
+                      ).withOpacity(0.12),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Row(
@@ -1098,7 +1016,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.03)
+                          : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(8.r),
                       border: Border.all(
                         color: isDark ? Colors.white10 : Colors.grey.shade200,
@@ -1120,7 +1040,9 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         Text(
                           ticket.priority?.priority ?? 'Normal',
                           style: TextStyle(
-                            color: isDark ? Colors.white54 : Colors.grey.shade700,
+                            color: isDark
+                                ? Colors.white54
+                                : Colors.grey.shade700,
                             fontWeight: FontWeight.w600,
                             fontSize: 10.sp,
                           ),
@@ -1154,32 +1076,158 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
 
   Widget _buildFilterDrawer(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white70 : Colors.grey.shade700;
+
+    Widget sectionLabel(String label) => Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 13.sp,
+          fontWeight: FontWeight.w600,
+          color: labelColor,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+
+    Widget pickerField({
+      required String hint,
+      required String? value,
+      required VoidCallback onTap,
+      required VoidCallback onClear,
+      required IconData icon,
+    }) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(
+              color: value != null
+                  ? AppColors.primary.withOpacity(0.5)
+                  : (isDark ? Colors.white12 : Colors.grey.shade200),
+              width: value != null ? 1.2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 16.r,
+                color: value != null
+                    ? AppColors.primary
+                    : (isDark ? Colors.white38 : Colors.grey.shade500),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  value ?? hint,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: value != null
+                        ? (isDark ? Colors.white : const Color(0xFF1A2634))
+                        : (isDark ? Colors.white38 : Colors.grey.shade500),
+                    fontWeight: value != null
+                        ? FontWeight.w500
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (value != null)
+                GestureDetector(
+                  onTap: onClear,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16.r,
+                    color: isDark ? Colors.white38 : Colors.grey.shade400,
+                  ),
+                )
+              else
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 18.r,
+                  color: isDark ? Colors.white38 : Colors.grey.shade400,
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget dateChip(String label, String key) {
+      final active = _filterDateRangeType == key;
+      return GestureDetector(
+        onTap: () => key == 'custom'
+            ? setState(() {
+                _filterDateRangeType = 'custom';
+                _filterDateFrom = null;
+                _filterDateTo = null;
+                _filterDateFromCtrl.clear();
+                _filterDateToCtrl.clear();
+              })
+            : _selectFilterPreset(key),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.primary.withOpacity(0.12)
+                : (isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade100),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: active
+                  ? AppColors.primary
+                  : (isDark ? Colors.white24 : Colors.grey.shade300),
+              width: active ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+              color: active
+                  ? AppColors.primary
+                  : (isDark ? Colors.white70 : Colors.grey.shade700),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Drawer(
-      width: MediaQuery.of(context).size.width * 0.85,
+      width: 0.85.sw,
       backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
       child: Column(
         children: [
-          // Header with Primary Color
+          // ── Header ────────────────────────────────────────────────────
           Container(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 20.h,
-              bottom: 20.h,
+              top: MediaQuery.of(context).padding.top + 16.h,
+              bottom: 16.h,
               left: 20.w,
-              right: 16.w,
+              right: 12.w,
             ),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0A0E21) : AppColors.primary,
-            ),
+            color: isDark ? const Color(0xFF0A0E21) : AppColors.primary,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Filter Tickets',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                Icon(LucideIcons.filter, size: 18.r, color: Colors.white70),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Text(
+                    'Filter Tickets',
+                    style: TextStyle(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -1191,291 +1239,571 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ],
             ),
           ),
-          
+
+          // ── Scrollable Body ───────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(24.r),
+              padding: EdgeInsets.all(16.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                      // status filter
-                      _buildDropdownCard<SupportStatus>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Status',
-                        icon: Icons.flag_rounded,
-                        value: _selectedFilterStatus,
-                        items: _filterStatuses,
-                        itemDisplay: (s) => s.status ?? 'Unknown',
-                        itemEquals: (a, b) => a.id == b.id,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterStatus = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // priority filter
-                      _buildDropdownCard<Priority>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Priority',
-                        icon: Icons.low_priority_rounded,
-                        value: _selectedFilterPriority,
-                        items: _filterPriorities,
-                        itemDisplay: (p) => p.priority ?? 'Unknown',
-                        itemEquals: (a, b) => a.id == b.id,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterPriority = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // service filter
-                      _buildDropdownCard<SupportService>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Service',
-                        icon: Icons.room_service_rounded,
-                        value: _selectedFilterService,
-                        items: _filterServices,
-                        itemDisplay: (s) => s.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.name == b.name,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterService = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // location filter
-                      _buildDropdownCard<SupportLocation>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Location',
-                        icon: Icons.location_on_rounded,
-                        value: _selectedFilterLocation,
-                        items: _filterLocations,
-                        itemDisplay: (l) => l.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.name == b.name,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterLocation = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // department filter
-                      _buildDropdownCard<SupportDepartment>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Department',
-                        icon: Icons.business_rounded,
-                        value: _selectedFilterDepartment,
-                        items: _filterDepartments,
-                        itemDisplay: (d) => d.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.name == b.name,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterDepartment = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // category filter
-                      _buildDropdownCard<SupportCategory>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Category',
-                        icon: Icons.category_rounded,
-                        value: _selectedFilterCategory,
-                        items: _filterCategories,
-                        itemDisplay: (c) => c.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.name == b.name,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterCategory = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // customer filter
-                      _buildDropdownCard<Customer>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Customer',
-                        icon: Icons.person_rounded,
-                        value: _selectedFilterCustomer,
-                        items: _filterCustomers,
-                        itemDisplay: (c) => c.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.id == b.id,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterCustomer = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // supervisor filter
-                      _buildDropdownCard<SupportSupervisor>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Supervisor',
-                        icon: Icons.supervisor_account_rounded,
-                        value: _selectedFilterSupervisor,
-                        items: _filterSupervisors,
-                        itemDisplay: (s) => s.user?.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.user?.id == b.user?.id,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterSupervisor = val);
-                        },
-                      ),
-                      SizedBox(height: 16.h),
-                      // assignee filter
-                      _buildDropdownCard<User>(
-                        context: context,
-                        isDark: isDark,
-                        primary: AppColors.primary,
-                        label: 'Assignee',
-                        icon: Icons.people_rounded,
-                        value: _selectedFilterUser,
-                        items: _filterUsers,
-                        itemDisplay: (u) => u.name ?? 'Unknown',
-                        itemEquals: (a, b) => a.id == b.id,
-                        onChanged: (val) {
-                          setState(() => _selectedFilterUser = val);
-                        },
-                      ),
-                      SizedBox(height: 20.h),
-                      Text(
-                        'Date Range',
-                        style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1A2634)),
-                      ),
-                      SizedBox(height: 12.h),
-                      _buildDateRangeOption('All Time'),
-                      _buildDateRangeOption('Today'),
-                      _buildDateRangeOption('This Week'),
-                      _buildDateRangeOption('This Month'),
-                      _buildDateRangeOption('This Year'),
-                      _buildDateRangeOption('Custom Range'),
-                      SizedBox(height: 24.h),
+                  // ─ Date Range Chips ─────────────────────────────────
+                  sectionLabel('Date Range'),
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
+                    children: [
+                      dateChip('Daily', 'daily'),
+                      dateChip('Weekly', 'weekly'),
+                      dateChip('Monthly', 'monthly'),
+                      dateChip('Annually', 'annually'),
+                      dateChip('Custom Range', 'custom'),
                     ],
                   ),
-                ),
-              ),
-              // Bottom Action Buttons
-              Container(
-                padding: EdgeInsets.all(24.r),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF151A2E) : Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -4),
+
+                  // ─ Custom date inputs ────────────────────────────────
+                  if (_filterDateRangeType == 'custom') ...[
+                    SizedBox(height: 14.h),
+                    sectionLabel('Date From'),
+                    AppTextField(
+                      controller: _filterDateFromCtrl,
+                      hintText: 'Select start date',
+                      readOnly: true,
+                      onTap: () => _pickFilterDate(true),
+                      prefixIcon: Icon(
+                        LucideIcons.calendar,
+                        size: 16.r,
+                        color: AppColors.primary.withOpacity(0.7),
+                      ),
+                      suffixIcon: _filterDateFrom != null
+                          ? IconButton(
+                              icon: Icon(
+                                LucideIcons.x,
+                                size: 14.r,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(() {
+                                _filterDateFrom = null;
+                                _filterDateFromCtrl.clear();
+                              }),
+                            )
+                          : Icon(
+                              LucideIcons.chevronDown,
+                              size: 16.r,
+                              color: Colors.grey,
+                            ),
+                    ),
+                    SizedBox(height: 14.h),
+                    sectionLabel('Date To'),
+                    AppTextField(
+                      controller: _filterDateToCtrl,
+                      hintText: 'Select end date',
+                      readOnly: true,
+                      onTap: () => _pickFilterDate(false),
+                      prefixIcon: Icon(
+                        LucideIcons.calendar,
+                        size: 16.r,
+                        color: AppColors.primary.withOpacity(0.7),
+                      ),
+                      suffixIcon: _filterDateTo != null
+                          ? IconButton(
+                              icon: Icon(
+                                LucideIcons.x,
+                                size: 14.r,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(() {
+                                _filterDateTo = null;
+                                _filterDateToCtrl.clear();
+                              }),
+                            )
+                          : Icon(
+                              LucideIcons.chevronDown,
+                              size: 16.r,
+                              color: Colors.grey,
+                            ),
                     ),
                   ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilterStatus = null;
-                            _selectedFilterPriority = null;
-                            _selectedFilterService = null;
-                            _selectedFilterLocation = null;
-                            _selectedFilterDepartment = null;
-                            _selectedFilterCategory = null;
-                            _selectedFilterSupervisor = null;
-                            _selectedFilterCustomer = null;
-                            _selectedFilterUser = null;
-                            _selectedDateRange = 'All Time';
-                            _customDateRange = null;
-                          });
-                          Navigator.pop(context);
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey,
-                          padding: EdgeInsets.symmetric(vertical: 16.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                        ),
-                        child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 16.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                        ),
-                        child: Text('Apply', style: TextStyle(fontSize: 14.sp)),
-                      ),
-                    ),
-                  ],
-                ),
+
+                  SizedBox(height: 20.h),
+
+                  // ─ Status ────────────────────────────────────────────
+                  sectionLabel('Status'),
+                  pickerField(
+                    hint: 'All statuses',
+                    value: _selectedFilterStatus?.status,
+                    icon: Icons.flag_rounded,
+                    onClear: () => setState(() => _selectedFilterStatus = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportStatus>(
+                        title: 'Select Status',
+                        items: _filterStatuses,
+                        display: (s) => s.status ?? 'Unknown',
+                        current: _selectedFilterStatus,
+                        equals: (a, b) => a.id == b.id,
+                      );
+                      setState(() => _selectedFilterStatus = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Priority ──────────────────────────────────────────
+                  sectionLabel('Priority'),
+                  pickerField(
+                    hint: 'All priorities',
+                    value: _selectedFilterPriority?.priority,
+                    icon: Icons.low_priority_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterPriority = null),
+                    onTap: () async {
+                      final r = await _pickFromList<Priority>(
+                        title: 'Select Priority',
+                        items: _filterPriorities,
+                        display: (p) => p.priority ?? 'Unknown',
+                        current: _selectedFilterPriority,
+                        equals: (a, b) => a.id == b.id,
+                      );
+                      setState(() => _selectedFilterPriority = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Service ───────────────────────────────────────────
+                  sectionLabel('Service'),
+                  pickerField(
+                    hint: 'All services',
+                    value: _selectedFilterService?.name,
+                    icon: Icons.room_service_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterService = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportService>(
+                        title: 'Select Service',
+                        items: _filterServices,
+                        display: (s) => s.name ?? 'Unknown',
+                        current: _selectedFilterService,
+                        equals: (a, b) => a.name == b.name,
+                      );
+                      setState(() => _selectedFilterService = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Location ──────────────────────────────────────────
+                  sectionLabel('Location'),
+                  pickerField(
+                    hint: 'All locations',
+                    value: _selectedFilterLocation?.name,
+                    icon: Icons.location_on_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterLocation = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportLocation>(
+                        title: 'Select Location',
+                        items: _filterLocations,
+                        display: (l) => l.name ?? 'Unknown',
+                        current: _selectedFilterLocation,
+                        equals: (a, b) => a.name == b.name,
+                      );
+                      setState(() => _selectedFilterLocation = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Department ────────────────────────────────────────
+                  sectionLabel('Department'),
+                  pickerField(
+                    hint: 'All departments',
+                    value: _selectedFilterDepartment?.name,
+                    icon: Icons.business_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterDepartment = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportDepartment>(
+                        title: 'Select Department',
+                        items: _filterDepartments,
+                        display: (d) => d.name ?? 'Unknown',
+                        current: _selectedFilterDepartment,
+                        equals: (a, b) => a.name == b.name,
+                      );
+                      setState(() => _selectedFilterDepartment = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Category ──────────────────────────────────────────
+                  sectionLabel('Category'),
+                  pickerField(
+                    hint: 'All categories',
+                    value: _selectedFilterCategory?.name,
+                    icon: Icons.category_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterCategory = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportCategory>(
+                        title: 'Select Category',
+                        items: _filterCategories,
+                        display: (c) => c.name ?? 'Unknown',
+                        current: _selectedFilterCategory,
+                        equals: (a, b) => a.name == b.name,
+                      );
+                      setState(() => _selectedFilterCategory = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Customer ──────────────────────────────────────────
+                  sectionLabel('Customer'),
+                  pickerField(
+                    hint: 'All customers',
+                    value: _selectedFilterCustomer?.name,
+                    icon: Icons.person_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterCustomer = null),
+                    onTap: () async {
+                      final r = await _pickFromList<Customer>(
+                        title: 'Select Customer',
+                        items: _filterCustomers,
+                        display: (c) => c.name ?? 'Unknown',
+                        current: _selectedFilterCustomer,
+                        equals: (a, b) => a.id == b.id,
+                      );
+                      setState(() => _selectedFilterCustomer = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Supervisor ────────────────────────────────────────
+                  sectionLabel('Supervisor'),
+                  pickerField(
+                    hint: 'All supervisors',
+                    value: _selectedFilterSupervisor?.user?.name,
+                    icon: Icons.supervisor_account_rounded,
+                    onClear: () =>
+                        setState(() => _selectedFilterSupervisor = null),
+                    onTap: () async {
+                      final r = await _pickFromList<SupportSupervisor>(
+                        title: 'Select Supervisor',
+                        items: _filterSupervisors,
+                        display: (s) => s.user?.name ?? 'Unknown',
+                        current: _selectedFilterSupervisor,
+                        equals: (a, b) => a.user?.id == b.user?.id,
+                      );
+                      setState(() => _selectedFilterSupervisor = r);
+                    },
+                  ),
+                  SizedBox(height: 14.h),
+
+                  // ─ Assignee ──────────────────────────────────────────
+                  sectionLabel('Assignee'),
+                  pickerField(
+                    hint: 'All assignees',
+                    value: _selectedFilterUser?.name,
+                    icon: Icons.people_rounded,
+                    onClear: () => setState(() => _selectedFilterUser = null),
+                    onTap: () async {
+                      final r = await _pickFromList<User>(
+                        title: 'Select Assignee',
+                        items: _filterUsers,
+                        display: (u) => u.name ?? 'Unknown',
+                        current: _selectedFilterUser,
+                        equals: (a, b) => a.id == b.id,
+                      );
+                      setState(() => _selectedFilterUser = r);
+                    },
+                  ),
+                  SizedBox(height: 24.h),
+                ],
               ),
-            ],
+            ),
           ),
+
+          // ── Bottom Buttons ────────────────────────────────────────────
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF151A2E) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedFilterStatus = null;
+                        _selectedFilterPriority = null;
+                        _selectedFilterService = null;
+                        _selectedFilterLocation = null;
+                        _selectedFilterDepartment = null;
+                        _selectedFilterCategory = null;
+                        _selectedFilterSupervisor = null;
+                        _selectedFilterCustomer = null;
+                        _selectedFilterUser = null;
+                        _filterDateRangeType = null;
+                        _filterDateFrom = null;
+                        _filterDateTo = null;
+                        _filterDateFromCtrl.clear();
+                        _filterDateToCtrl.clear();
+                      });
+                      Navigator.pop(context);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isDark
+                          ? Colors.white70
+                          : Colors.grey.shade700,
+                      side: BorderSide(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
+                    child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Apply Filters',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildDateRangeOption(String label) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  String _fmtFilterDate(DateTime? d) {
+    if (d == null) return '';
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
 
-    return RadioListTile<String>(
-      title: Text(label, style: TextStyle(fontSize: 14.sp)),
-      value: label,
-      groupValue: _selectedDateRange,
-      onChanged: (value) async {
-        if (value == 'Custom Range') {
-          final range = await showDateRangePicker(
-            context: context,
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-            initialDateRange: _customDateRange,
-            builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: isDark 
-                      ? const ColorScheme.dark(
-                          primary: AppColors.primary,
-                          onPrimary: Colors.white,
-                        )
-                      : const ColorScheme.light(
-                          primary: AppColors.primary,
-                          onPrimary: Colors.white,
-                        ),
-                ),
-                child: child!,
-              );
-            },
-          );
-          if (range != null) {
-            setState(() {
-              _customDateRange = range;
-              _selectedDateRange = value!;
-            });
-          }
-        } else if (value != null) {
-          setState(() {
-            _selectedDateRange = value;
-          });
-        }
-      },
-      activeColor: const Color(0xFF4A6FA5),
-      contentPadding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      tileColor: isDark ? Colors.white10 : Colors.grey.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+  void _selectFilterPreset(String type) {
+    final now = DateTime.now();
+    late DateTime from, to;
+    switch (type) {
+      case 'daily':
+        from = DateTime(now.year, now.month, now.day);
+        to = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        break;
+      case 'weekly':
+        final offset = now.weekday - 1;
+        from = DateTime(now.year, now.month, now.day - offset);
+        to = DateTime(from.year, from.month, from.day + 6, 23, 59, 59);
+        break;
+      case 'monthly':
+        from = DateTime(now.year, now.month, 1);
+        to = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+        break;
+      case 'annually':
+        from = DateTime(now.year, 1, 1);
+        to = DateTime(now.year, 12, 31, 23, 59, 59);
+        break;
+      default:
+        return;
+    }
+    setState(() {
+      _filterDateRangeType = type;
+      _filterDateFrom = from;
+      _filterDateTo = to;
+      _filterDateFromCtrl.text = _fmtFilterDate(from);
+      _filterDateToCtrl.text = _fmtFilterDate(to);
+    });
+  }
+
+  Future<void> _pickFilterDate(bool isFrom) async {
+    final initial = isFrom
+        ? (_filterDateFrom ?? DateTime.now())
+        : (_filterDateTo ?? DateTime.now());
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        ),
+        child: child!,
+      ),
     );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (isFrom) {
+        _filterDateFrom = picked;
+        _filterDateFromCtrl.text = _fmtFilterDate(picked);
+      } else {
+        _filterDateTo = picked;
+        _filterDateToCtrl.text = _fmtFilterDate(picked);
+      }
+      _filterDateRangeType = 'custom';
+    });
+  }
+
+  Future<T?> _pickFromList<T>({
+    required String title,
+    required List<T> items,
+    required String Function(T) display,
+    required T? current,
+    bool Function(T, T)? equals,
+  }) async {
+    T? result = current;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.5,
+            maxChildSize: 0.85,
+            builder: (_, controller) => Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: isDark
+                        ? Colors.white12
+                        : Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.clear_rounded,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
+                  ),
+                  title: Text(
+                    'All',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                  ),
+                  trailing: current == null
+                      ? Icon(
+                          LucideIcons.checkCircle,
+                          color: AppColors.primary,
+                          size: 18.r,
+                        )
+                      : null,
+                  onTap: () {
+                    result = null;
+                    Navigator.pop(ctx);
+                  },
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: controller,
+                    itemCount: items.length,
+                    itemBuilder: (_, i) {
+                      final item = items[i];
+                      final name = display(item);
+                      final isSelected =
+                          current != null &&
+                          (equals != null
+                              ? equals(item, current)
+                              : item == current);
+                      return ListTile(
+                        leading: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? AppColors.primary
+                                : (isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1A2634)),
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? Icon(
+                                LucideIcons.checkCircle,
+                                color: AppColors.primary,
+                                size: 18.r,
+                              )
+                            : null,
+                        onTap: () {
+                          result = item;
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    return result;
   }
 }
 

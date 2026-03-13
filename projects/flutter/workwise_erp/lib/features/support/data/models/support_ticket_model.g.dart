@@ -20,9 +20,9 @@ _$SupportTicketModelImpl _$$SupportTicketModelImplFromJson(
       : StatusModel.fromJson(json['statuses'] as Map<String, dynamic>),
   endDate: json['end_date'] as String?,
   description: json['description'] as String?,
-  customerName: json['customer_name'] == null
+  customerName: json['customer_row'] == null
       ? null
-      : CustomerModel.fromJson(json['customer_name'] as Map<String, dynamic>),
+      : CustomerModel.fromJson(json['customer_row'] as Map<String, dynamic>),
   replies: (json['replies'] as List<dynamic>?)
       ?.map((e) => SupportReplyModel.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -55,7 +55,7 @@ Map<String, dynamic> _$$SupportTicketModelImplToJson(
   'statuses': instance.statuses,
   'end_date': instance.endDate,
   'description': instance.description,
-  'customer_name': instance.customerName,
+  'customer_row': instance.customerName,
   'replies': instance.replies,
   'attachments': instance.attachments,
   'created_at': instance.createdAt,

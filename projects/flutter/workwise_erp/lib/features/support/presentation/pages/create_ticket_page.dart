@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
+import '../../domain/entities/support_ticket.dart';
 import '../../domain/entities/support_create_params.dart';
 import '../../domain/entities/priority.dart';
 import '../../domain/entities/support_category.dart';
@@ -19,12 +20,14 @@ import '../../../auth/domain/entities/user.dart';
 import '../providers/support_providers.dart';
 import '../../../../../core/themes/app_colors.dart';
 import '../../../../../core/widgets/app_bar.dart';
+import '../../../../../core/widgets/app_button.dart';
 import 'package:workwise_erp/features/jobcard/presentation/widgets/searchable_dialog.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 
 class CreateTicketPage extends ConsumerStatefulWidget {
-  const CreateTicketPage({super.key});
+  final SupportTicket? ticket; // null = create, non-null = edit
+  const CreateTicketPage({super.key, this.ticket});
 
   @override
   ConsumerState<CreateTicketPage> createState() => _CreateTicketPageState();
@@ -35,6 +38,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   final _subjectController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _endDate;
+  int? _editId;
 
   final List<Map<String, dynamic>> _localFiles = [];
 
@@ -59,7 +63,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   int? _selectedDepartmentId;
   int? _selectedStatusId;
   int? _selectedCustomerId;
-  
+
   // Multi-select lists
   final List<int> _selectedAssignees = [];
   final List<int> _selectedContactIds = [];
@@ -69,6 +73,18 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   @override
   void initState() {
     super.initState();
+    // Pre-fill basic fields from existing ticket (edit mode)
+    final t = widget.ticket;
+    if (t != null) {
+      _editId = t.id;
+      _subjectController.text = t.subject ?? '';
+      _descriptionController.text = t.description ?? '';
+      if (t.endDate != null) _endDate = DateTime.tryParse(t.endDate!);
+      _selectedPriorityId = t.priority?.id;
+      _selectedStatusId = t.status?.id;
+      _selectedCustomerId = t.customer?.id;
+      if (t.assignUser?.id != null) _selectedAssignees.add(t.assignUser!.id!);
+    }
     _loadMetaData();
   }
 
@@ -119,7 +135,46 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       final uRes = await getUsers.call();
       uRes.fold((_) => null, (list) => _users = list);
 
-      if (mounted) setState(() {});
+      if (mounted) {
+        // Match name-based fields from existing ticket (edit mode)
+        final t = widget.ticket;
+        if (t != null) {
+          if (t.category != null) {
+            final match = _categories
+                .where((c) => c.name == t.category)
+                .firstOrNull;
+            if (match != null) _selectedCategoryId = match.id;
+          }
+          if (t.location != null) {
+            final match = _locations
+                .where((l) => l.name == t.location)
+                .firstOrNull;
+            if (match != null) _selectedLocationId = match.id;
+          }
+          if (t.department != null) {
+            final match = _departments
+                .where((d) => d.name == t.department)
+                .firstOrNull;
+            if (match != null) _selectedDepartmentId = match.id;
+          }
+          if (t.services != null && t.services!.isNotEmpty) {
+            final match = _services
+                .where((s) => s.name == t.services!.first)
+                .firstOrNull;
+            if (match != null) _selectedServiceId = match.id;
+          }
+          if (t.supervisors != null && t.supervisors!.isNotEmpty) {
+            final match = _supervisors
+                .where((s) => s.user?.name == t.supervisors!.first)
+                .firstOrNull;
+            if (match != null) _selectedSupervisorId = match.user?.id;
+          }
+          if (_selectedCustomerId != null) {
+            _loadCustomerContacts(_selectedCustomerId!);
+          }
+        }
+        setState(() {});
+      }
     } catch (e) {
       debugPrint('Error loading metadata: $e');
     }
@@ -128,7 +183,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result == null) return;
-    
+
     setState(() {
       for (final f in result.files) {
         _localFiles.add({
@@ -165,10 +220,11 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSubmitting = true);
 
     final params = SupportCreateParams(
+      id: _editId,
       subject: _subjectController.text.trim(),
       priorityId: _selectedPriorityId,
       endDate: _endDate?.toIso8601String().split('T').first,
@@ -185,10 +241,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       files: _localFiles.isNotEmpty
           ? _localFiles.map((e) => e['path'] as String).toList()
           : null,
-      userId: ref.read(authNotifierProvider).maybeWhen(
-        authenticated: (u) => u.id,
-        orElse: () => null,
-      ),
+      userId: ref
+          .read(authNotifierProvider)
+          .maybeWhen(authenticated: (u) => u.id, orElse: () => null),
     );
 
     final createUc = ref.read(createSupportTicketUseCaseProvider);
@@ -202,8 +257,11 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline_rounded,
-                    color: Colors.red.shade400, size: 20.r),
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.red.shade400,
+                  size: 20.r,
+                ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
@@ -228,12 +286,17 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle_rounded,
-                    color: Colors.green.shade400, size: 20.r),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green.shade400,
+                  size: 20.r,
+                ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
-                    'Ticket created successfully',
+                    _editId != null
+                        ? 'Ticket updated successfully'
+                        : 'Ticket created successfully',
                     style: TextStyle(fontSize: 13.sp),
                   ),
                 ),
@@ -247,7 +310,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
             margin: EdgeInsets.all(16.r),
           ),
         );
-        
+
         Navigator.pop(context, true);
       },
     );
@@ -262,16 +325,16 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
 
   /// Shared card decoration
   BoxDecoration _cardDecoration(bool isDark) => BoxDecoration(
-        color: isDark ? const Color(0xFF151A2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      );
+    color: isDark ? const Color(0xFF151A2E) : Colors.white,
+    borderRadius: BorderRadius.circular(16.r),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.03),
+        blurRadius: 10,
+        offset: const Offset(0, 2),
+      ),
+    ],
+  );
 
   /// Shared selector decoration
   InputDecoration _selectorDecoration({
@@ -279,31 +342,27 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     required IconData icon,
     required Color primary,
     required bool isDark,
-  }) =>
-      InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: isDark ? Colors.white70 : Colors.grey.shade600,
-          fontSize: 14.sp,
-        ),
-        prefixIcon: Icon(icon, size: 20.r, color: primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16.r),
-          borderSide: BorderSide.none,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.transparent,
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      );
+  }) => InputDecoration(
+    labelText: label,
+    labelStyle: TextStyle(
+      color: isDark ? Colors.white70 : Colors.grey.shade600,
+      fontSize: 14.sp,
+    ),
+    prefixIcon: Icon(icon, size: 20.r, color: primary),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16.r),
+      borderSide: BorderSide.none,
+    ),
+    filled: true,
+    fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+  );
 
   Widget _selectorArrow(bool isDark) => Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: isDark ? Colors.white54 : Colors.grey.shade600,
-        size: 20.r,
-      );
+    Icons.keyboard_arrow_down_rounded,
+    color: isDark ? Colors.white54 : Colors.grey.shade600,
+    size: 20.r,
+  );
 
   Widget _buildSectionHeader({
     required String title,
@@ -331,10 +390,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
             color: isDark ? Colors.white : const Color(0xFF1A2634),
           ),
         ),
-        if (trailing != null) ...[
-          const Spacer(),
-          trailing,
-        ],
+        if (trailing != null) ...[const Spacer(), trailing],
       ],
     );
   }
@@ -394,8 +450,14 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     final displayText = _selectedAssignees.isEmpty
         ? 'Select assignees'
         : _selectedAssignees.length == 1
-            ? _users.firstWhere((u) => u.id == _selectedAssignees.first, orElse: () => User(name: 'Unknown')).name ?? 'Unknown'
-            : '${_selectedAssignees.length} selected';
+        ? _users
+                  .firstWhere(
+                    (u) => u.id == _selectedAssignees.first,
+                    orElse: () => User(name: 'Unknown'),
+                  )
+                  .name ??
+              'Unknown'
+        : '${_selectedAssignees.length} selected';
 
     return _buildSelectorCard(
       context: context,
@@ -407,7 +469,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       hasValue: _selectedAssignees.isNotEmpty,
       isDisabled: _users.isEmpty,
       onTap: () async {
-        final initial = _users.where((u) => _selectedAssignees.contains(u.id)).toList();
+        final initial = _users
+            .where((u) => _selectedAssignees.contains(u.id))
+            .toList();
         await showDialog(
           context: context,
           builder: (ctx) => SearchableDialog<User>(
@@ -419,7 +483,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
             onMultiSelected: (selected) {
               setState(() {
                 _selectedAssignees.clear();
-                _selectedAssignees.addAll(selected.map((u) => u.id ?? -1).where((id) => id != -1));
+                _selectedAssignees.addAll(
+                  selected.map((u) => u.id ?? -1).where((id) => id != -1),
+                );
               });
             },
           ),
@@ -436,8 +502,14 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     final displayText = _selectedContactIds.isEmpty
         ? 'Select contacts'
         : _selectedContactIds.length == 1
-            ? _contacts.firstWhere((c) => c.id == _selectedContactIds.first, orElse: () => CustomerContact(name: 'Unknown')).name ?? 'Unknown'
-            : '${_selectedContactIds.length} selected';
+        ? _contacts
+                  .firstWhere(
+                    (c) => c.id == _selectedContactIds.first,
+                    orElse: () => CustomerContact(name: 'Unknown'),
+                  )
+                  .name ??
+              'Unknown'
+        : '${_selectedContactIds.length} selected';
 
     return _buildSelectorCard(
       context: context,
@@ -458,7 +530,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
           );
           return;
         }
-        final initial = _contacts.where((c) => _selectedContactIds.contains(c.id)).toList();
+        final initial = _contacts
+            .where((c) => _selectedContactIds.contains(c.id))
+            .toList();
         await showDialog(
           context: context,
           builder: (ctx) => SearchableDialog<CustomerContact>(
@@ -470,7 +544,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
             onMultiSelected: (selected) {
               setState(() {
                 _selectedContactIds.clear();
-                _selectedContactIds.addAll(selected.map((c) => c.id ?? -1).where((id) => id != -1));
+                _selectedContactIds.addAll(
+                  selected.map((c) => c.id ?? -1).where((id) => id != -1),
+                );
               });
             },
           ),
@@ -479,10 +555,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     );
   }
 
-  Widget _buildEndDateSection({
-    required bool isDark,
-    required Color primary,
-  }) {
+  Widget _buildEndDateSection({required bool isDark, required Color primary}) {
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: _cardDecoration(isDark),
@@ -609,8 +682,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.cloud_upload_rounded,
-                      color: primary, size: 24.r),
+                  Icon(Icons.cloud_upload_rounded, color: primary, size: 24.r),
                   SizedBox(width: 12.w),
                   Expanded(
                     child: Column(
@@ -622,14 +694,18 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13.sp,
-                            color: isDark ? Colors.white70 : Colors.grey.shade700,
+                            color: isDark
+                                ? Colors.white70
+                                : Colors.grey.shade700,
                           ),
                         ),
                         Text(
                           'Selected files will be uploaded',
                           style: TextStyle(
                             fontSize: 11.sp,
-                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
                           ),
                         ),
                       ],
@@ -702,8 +778,11 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close_rounded,
-                          size: 18.r, color: Colors.red.shade300),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 18.r,
+                        color: Colors.red.shade300,
+                      ),
                       onPressed: () => setState(() => _localFiles.remove(f)),
                       splashRadius: 20,
                       padding: EdgeInsets.zero,
@@ -758,472 +837,469 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     final primary = AppColors.primary;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
-      appBar: const CustomAppBar(title: 'Create Ticket'),
+      backgroundColor: isDark
+          ? const Color(0xFF0A0E21)
+          : const Color(0xFFF8F9FC),
+      appBar: CustomAppBar(
+        title: _editId != null ? 'Edit Ticket' : 'Create Ticket',
+      ),
       body: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.r),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Subject ──────────────────────────────────────────────
-                    AppTextField(
-                      controller: _subjectController,
-                      labelText: 'Subject',
-                      prefixIcon: Icon(Icons.subject_rounded,
-                          size: 20.r, color: primary),
-                      validator: (v) =>
-                          v?.trim().isEmpty == true ? 'Subject is required' : null,
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16.r),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Subject ──────────────────────────────────────────────
+              AppTextField(
+                controller: _subjectController,
+                labelText: 'Subject',
+                prefixIcon: Icon(
+                  Icons.subject_rounded,
+                  size: 20.r,
+                  color: primary,
+                ),
+                validator: (v) =>
+                    v?.trim().isEmpty == true ? 'Subject is required' : null,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Customer ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Customer',
+                icon: Icons.person_rounded,
+                displayText: _selectedCustomerId == null
+                    ? 'Select customer'
+                    : (_customers
+                              .firstWhere(
+                                (c) => c.id == _selectedCustomerId,
+                                orElse: () =>
+                                    Customer(id: null, name: 'Unknown'),
+                              )
+                              .name ??
+                          'Unknown'),
+                hasValue: _selectedCustomerId != null,
+                isDisabled: _customers.isEmpty,
+                onTap: () async {
+                  final init =
+                      _customers
+                          .where((c) => c.id == _selectedCustomerId)
+                          .isNotEmpty
+                      ? _customers.firstWhere(
+                          (c) => c.id == _selectedCustomerId,
+                        )
+                      : null;
+                  final selected = await showDialog<Customer?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<Customer>(
+                      title: 'Select Customer',
+                      items: _customers,
+                      itemDisplay: (c) => c.name ?? '',
+                      initialValue: init,
+                      onSelected: (c) => c,
                     ),
+                  );
+                  if (selected != null) {
+                    setState(() {
+                      _selectedCustomerId = selected.id;
+                      _selectedContactIds
+                          .clear(); // Reset contacts when customer changes
+                    });
+                    if (selected.id != null) {
+                      _loadCustomerContacts(selected.id!);
+                    }
+                  }
+                },
+              ),
 
-                    SizedBox(height: 16.h),
+              SizedBox(height: 16.h),
 
-                    // ── Customer ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Customer',
-                      icon: Icons.person_rounded,
-                      displayText: _selectedCustomerId == null
-                          ? 'Select customer'
-                          : (_customers
-                                  .firstWhere(
-                                    (c) => c.id == _selectedCustomerId,
-                                    orElse: () =>
-                                        Customer(id: null, name: 'Unknown'),
-                                  )
-                                  .name ??
-                              'Unknown'),
-                      hasValue: _selectedCustomerId != null,
-                      isDisabled: _customers.isEmpty,
-                      onTap: () async {
-                        final init = _customers
-                                .where((c) => c.id == _selectedCustomerId)
-                                .isNotEmpty
-                            ? _customers.firstWhere(
-                                (c) => c.id == _selectedCustomerId)
-                            : null;
-                        final selected = await showDialog<Customer?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<Customer>(
-                            title: 'Select Customer',
-                            items: _customers,
-                            itemDisplay: (c) => c.name ?? '',
-                            initialValue: init,
-                            onSelected: (c) => c,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() {
-                            _selectedCustomerId = selected.id;
-                            _selectedContactIds.clear(); // Reset contacts when customer changes
-                          });
-                          if (selected.id != null) {
-                            _loadCustomerContacts(selected.id!);
-                          }
-                        }
-                      },
+              // ── Contacts ─────────────────────────────────────────────
+              _buildContactsSection(
+                isDark: isDark,
+                primary: primary,
+                context: context,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Priority ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Priority',
+                icon: Icons.priority_high_rounded,
+                displayText: _selectedPriorityId == null
+                    ? 'Select priority'
+                    : (_priorities
+                              .firstWhere(
+                                (p) => p.id == _selectedPriorityId,
+                                orElse: () =>
+                                    Priority(id: null, priority: 'Unknown'),
+                              )
+                              .priority ??
+                          'Unknown'),
+                hasValue: _selectedPriorityId != null,
+                isDisabled: _priorities.isEmpty,
+                onTap: () async {
+                  final init =
+                      _priorities
+                          .where((p) => p.id == _selectedPriorityId)
+                          .isNotEmpty
+                      ? _priorities.firstWhere(
+                          (p) => p.id == _selectedPriorityId,
+                        )
+                      : null;
+                  final selected = await showDialog<Priority?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<Priority>(
+                      title: 'Select Priority',
+                      items: _priorities,
+                      itemDisplay: (p) => p.priority ?? '',
+                      initialValue: init,
+                      onSelected: (p) => p,
                     ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedPriorityId = selected.id);
+                  }
+                },
+              ),
 
-                    SizedBox(height: 16.h),
+              SizedBox(height: 16.h),
 
-                    // ── Contacts ─────────────────────────────────────────────
-                    _buildContactsSection(
-                      isDark: isDark,
-                      primary: primary,
-                      context: context,
+              // ── Category ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Category',
+                icon: Icons.category_rounded,
+                displayText: _selectedCategoryId == null
+                    ? 'Select category'
+                    : (_categories
+                              .firstWhere(
+                                (c) => c.id == _selectedCategoryId,
+                                orElse: () =>
+                                    SupportCategory(id: null, name: 'Unknown'),
+                              )
+                              .name ??
+                          'Unknown'),
+                hasValue: _selectedCategoryId != null,
+                isDisabled: _categories.isEmpty,
+                onTap: () async {
+                  final init =
+                      _categories
+                          .where((c) => c.id == _selectedCategoryId)
+                          .isNotEmpty
+                      ? _categories.firstWhere(
+                          (c) => c.id == _selectedCategoryId,
+                        )
+                      : null;
+                  final selected = await showDialog<SupportCategory?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportCategory>(
+                      title: 'Select Category',
+                      items: _categories,
+                      itemDisplay: (c) => c.name ?? '',
+                      initialValue: init,
+                      onSelected: (c) => c,
                     ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedCategoryId = selected.id);
+                  }
+                },
+              ),
 
-                    SizedBox(height: 16.h),
+              SizedBox(height: 16.h),
 
-                    // ── Priority ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Priority',
-                      icon: Icons.priority_high_rounded,
-                      displayText: _selectedPriorityId == null
-                          ? 'Select priority'
-                          : (_priorities
-                                  .firstWhere(
-                                    (p) => p.id == _selectedPriorityId,
-                                    orElse: () =>
-                                        Priority(id: null, priority: 'Unknown'),
-                                  )
-                                  .priority ??
-                              'Unknown'),
-                      hasValue: _selectedPriorityId != null,
-                      isDisabled: _priorities.isEmpty,
-                      onTap: () async {
-                        final init = _priorities
-                                .where((p) => p.id == _selectedPriorityId)
-                                .isNotEmpty
-                            ? _priorities.firstWhere(
-                                (p) => p.id == _selectedPriorityId)
-                            : null;
-                        final selected = await showDialog<Priority?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<Priority>(
-                            title: 'Select Priority',
-                            items: _priorities,
-                            itemDisplay: (p) => p.priority ?? '',
-                            initialValue: init,
-                            onSelected: (p) => p,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedPriorityId = selected.id);
-                        }
-                      },
+              // ── Service ──────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Service',
+                icon: Icons.build_rounded,
+                displayText: _selectedServiceId == null
+                    ? 'Select service'
+                    : (_services
+                              .firstWhere(
+                                (s) => s.id == _selectedServiceId,
+                                orElse: () =>
+                                    SupportService(id: null, name: 'Unknown'),
+                              )
+                              .name ??
+                          'Unknown'),
+                hasValue: _selectedServiceId != null,
+                isDisabled: _services.isEmpty,
+                onTap: () async {
+                  final init =
+                      _services
+                          .where((s) => s.id == _selectedServiceId)
+                          .isNotEmpty
+                      ? _services.firstWhere((s) => s.id == _selectedServiceId)
+                      : null;
+                  final selected = await showDialog<SupportService?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportService>(
+                      title: 'Select Service',
+                      items: _services,
+                      itemDisplay: (s) => s.name ?? '',
+                      initialValue: init,
+                      onSelected: (s) => s,
                     ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedServiceId = selected.id);
+                  }
+                },
+              ),
 
-                    SizedBox(height: 16.h),
+              SizedBox(height: 16.h),
 
-                    // ── Category ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Category',
-                      icon: Icons.category_rounded,
-                      displayText: _selectedCategoryId == null
-                          ? 'Select category'
-                          : (_categories
-                                  .firstWhere(
-                                    (c) => c.id == _selectedCategoryId,
-                                    orElse: () =>
-                                        SupportCategory(id: null, name: 'Unknown'),
-                                  )
-                                  .name ??
-                              'Unknown'),
-                      hasValue: _selectedCategoryId != null,
-                      isDisabled: _categories.isEmpty,
-                      onTap: () async {
-                        final init = _categories
-                                .where((c) => c.id == _selectedCategoryId)
-                                .isNotEmpty
-                            ? _categories.firstWhere(
-                                (c) => c.id == _selectedCategoryId)
-                            : null;
-                        final selected = await showDialog<SupportCategory?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportCategory>(
-                            title: 'Select Category',
-                            items: _categories,
-                            itemDisplay: (c) => c.name ?? '',
-                            initialValue: init,
-                            onSelected: (c) => c,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedCategoryId = selected.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Service ──────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Service',
-                      icon: Icons.build_rounded,
-                      displayText: _selectedServiceId == null
-                          ? 'Select service'
-                          : (_services
-                                  .firstWhere(
-                                    (s) => s.id == _selectedServiceId,
-                                    orElse: () =>
-                                        SupportService(id: null, name: 'Unknown'),
-                                  )
-                                  .name ??
-                              'Unknown'),
-                      hasValue: _selectedServiceId != null,
-                      isDisabled: _services.isEmpty,
-                      onTap: () async {
-                        final init = _services
-                                .where((s) => s.id == _selectedServiceId)
-                                .isNotEmpty
-                            ? _services.firstWhere(
-                                (s) => s.id == _selectedServiceId)
-                            : null;
-                        final selected = await showDialog<SupportService?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportService>(
-                            title: 'Select Service',
-                            items: _services,
-                            itemDisplay: (s) => s.name ?? '',
-                            initialValue: init,
-                            onSelected: (s) => s,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedServiceId = selected.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Department ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Department',
-                      icon: Icons.business_rounded,
-                      displayText: _selectedDepartmentId == null
-                          ? 'Select department'
-                          : (_departments
-                                  .firstWhere(
-                                    (d) => d.id == _selectedDepartmentId,
-                                    orElse: () =>
-                                        const SupportDepartment(id: null, name: 'Unknown'),
-                                  )
-                                  .name ??
-                              'Unknown'),
-                      hasValue: _selectedDepartmentId != null,
-                      isDisabled: _departments.isEmpty,
-                      onTap: () async {
-                        final init = _departments
-                                .where((d) => d.id == _selectedDepartmentId)
-                                .isNotEmpty
-                            ? _departments.firstWhere(
-                                (d) => d.id == _selectedDepartmentId)
-                            : null;
-                        final selected = await showDialog<SupportDepartment?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportDepartment>(
-                            title: 'Select Department',
-                            items: _departments,
-                            itemDisplay: (d) => d.name ?? '',
-                            initialValue: init,
-                            onSelected: (d) => d,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedDepartmentId = selected.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Status ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Status',
-                      icon: Icons.flag_rounded,
-                      displayText: _selectedStatusId == null
-                          ? 'Select status'
-                          : (_statuses
-                                  .firstWhere(
-                                    (s) => s.id == _selectedStatusId,
-                                    orElse: () =>
-                                        const SupportStatus(id: null, status: 'Unknown'),
-                                  )
-                                  .status ??
-                              'Unknown'),
-                      hasValue: _selectedStatusId != null,
-                      isDisabled: _statuses.isEmpty,
-                      onTap: () async {
-                        final init = _statuses
-                                .where((s) => s.id == _selectedStatusId)
-                                .isNotEmpty
-                            ? _statuses.firstWhere(
-                                (s) => s.id == _selectedStatusId)
-                            : null;
-                        final selected = await showDialog<SupportStatus?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportStatus>(
-                            title: 'Select Status',
-                            items: _statuses,
-                            itemDisplay: (s) => s.status ?? '',
-                            initialValue: init,
-                            onSelected: (s) => s,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedStatusId = selected.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Assignees ────────────────────────────────────────────
-                    _buildAssigneesSection(
-                      isDark: isDark,
-                      primary: primary,
-                      context: context,
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Supervisor ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Supervisor',
-                      icon: Icons.supervisor_account_rounded,
-                      displayText: _selectedSupervisorId == null
-                          ? 'Select supervisor'
-                          : (_supervisors
-                                  .firstWhere(
-                                    (s) => s.user?.id == _selectedSupervisorId,
-                                    orElse: () => SupportSupervisor(
-                                      user: AssignedUser(id: null, name: 'Unknown'),
-                                    ),
-                                  )
-                                  .user
-                                  ?.name ??
-                              'Unknown'),
-                      hasValue: _selectedSupervisorId != null,
-                      isDisabled: _supervisors.isEmpty,
-                      onTap: () async {
-                        final init = _supervisors
-                                .where((s) => s.user?.id == _selectedSupervisorId)
-                                .isNotEmpty
-                            ? _supervisors.firstWhere(
-                                (s) => s.user?.id == _selectedSupervisorId)
-                            : null;
-                        final selected = await showDialog<SupportSupervisor?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportSupervisor>(
-                            title: 'Select Supervisor',
-                            items: _supervisors,
-                            itemDisplay: (s) => s.user?.name ?? '',
-                            initialValue: init,
-                            onSelected: (s) => s,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedSupervisorId = selected.user?.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Location ─────────────────────────────────────────────
-                    _buildSelectorCard(
-                      context: context,
-                      isDark: isDark,
-                      primary: primary,
-                      label: 'Location',
-                      icon: Icons.location_on_rounded,
-                      displayText: _selectedLocationId == null
-                          ? 'Select location'
-                          : (_locations
-                                  .firstWhere(
-                                    (l) => l.id == _selectedLocationId,
-                                    orElse: () =>
-                                        SupportLocation(id: null, name: 'Unknown'),
-                                  )
-                                  .name ??
-                              'Unknown'),
-                      hasValue: _selectedLocationId != null,
-                      isDisabled: _locations.isEmpty,
-                      onTap: () async {
-                        final init = _locations
-                                .where((l) => l.id == _selectedLocationId)
-                                .isNotEmpty
-                            ? _locations.firstWhere(
-                                (l) => l.id == _selectedLocationId)
-                            : null;
-                        final selected = await showDialog<SupportLocation?>(
-                          context: context,
-                          builder: (ctx) => SearchableDialog<SupportLocation>(
-                            title: 'Select Location',
-                            items: _locations,
-                            itemDisplay: (l) => l.name ?? '',
-                            initialValue: init,
-                            onSelected: (l) => l,
-                          ),
-                        );
-                        if (selected != null) {
-                          setState(() => _selectedLocationId = selected.id);
-                        }
-                      },
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── End Date ─────────────────────────────────────────────
-                    _buildEndDateSection(
-                      isDark: isDark,
-                      primary: primary,
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Description ──────────────────────────────────────────
-                    AppTextField(
-                      controller: _descriptionController,
-                      labelText: 'Description',
-                      prefixIcon: Icon(Icons.description_rounded,
-                          size: 20.r, color: primary),
-                      minLines: 3,
-                      maxLines: 6,
-                    ),
-
-                    SizedBox(height: 16.h),
-
-                    // ── Attachments ──────────────────────────────────────────
-                    _buildAttachmentsSection(
-                      isDark: isDark,
-                      primary: primary,
-                    ),
-
-                    SizedBox(height: 24.h),
-
-                    // ── Submit Button ───────────────────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54.h,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                        ),
-                        child: _isSubmitting
-                            ? SizedBox(
-                                width: 24.r,
-                                height: 24.r,
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+              // ── Department ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Department',
+                icon: Icons.business_rounded,
+                displayText: _selectedDepartmentId == null
+                    ? 'Select department'
+                    : (_departments
+                              .firstWhere(
+                                (d) => d.id == _selectedDepartmentId,
+                                orElse: () => const SupportDepartment(
+                                  id: null,
+                                  name: 'Unknown',
                                 ),
                               )
-                            : Text(
-                                'Create Ticket',
-                                style: TextStyle(
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
+                              .name ??
+                          'Unknown'),
+                hasValue: _selectedDepartmentId != null,
+                isDisabled: _departments.isEmpty,
+                onTap: () async {
+                  final init =
+                      _departments
+                          .where((d) => d.id == _selectedDepartmentId)
+                          .isNotEmpty
+                      ? _departments.firstWhere(
+                          (d) => d.id == _selectedDepartmentId,
+                        )
+                      : null;
+                  final selected = await showDialog<SupportDepartment?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportDepartment>(
+                      title: 'Select Department',
+                      items: _departments,
+                      itemDisplay: (d) => d.name ?? '',
+                      initialValue: init,
+                      onSelected: (d) => d,
                     ),
-
-                    SizedBox(height: 20.h),
-                  ],
-                ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedDepartmentId = selected.id);
+                  }
+                },
               ),
-            ),
+
+              SizedBox(height: 16.h),
+
+              // ── Status ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Status',
+                icon: Icons.flag_rounded,
+                displayText: _selectedStatusId == null
+                    ? 'Select status'
+                    : (_statuses
+                              .firstWhere(
+                                (s) => s.id == _selectedStatusId,
+                                orElse: () => const SupportStatus(
+                                  id: null,
+                                  status: 'Unknown',
+                                ),
+                              )
+                              .status ??
+                          'Unknown'),
+                hasValue: _selectedStatusId != null,
+                isDisabled: _statuses.isEmpty,
+                onTap: () async {
+                  final init =
+                      _statuses
+                          .where((s) => s.id == _selectedStatusId)
+                          .isNotEmpty
+                      ? _statuses.firstWhere((s) => s.id == _selectedStatusId)
+                      : null;
+                  final selected = await showDialog<SupportStatus?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportStatus>(
+                      title: 'Select Status',
+                      items: _statuses,
+                      itemDisplay: (s) => s.status ?? '',
+                      initialValue: init,
+                      onSelected: (s) => s,
+                    ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedStatusId = selected.id);
+                  }
+                },
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Assignees ────────────────────────────────────────────
+              _buildAssigneesSection(
+                isDark: isDark,
+                primary: primary,
+                context: context,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Supervisor ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Supervisor',
+                icon: Icons.supervisor_account_rounded,
+                displayText: _selectedSupervisorId == null
+                    ? 'Select supervisor'
+                    : (_supervisors
+                              .firstWhere(
+                                (s) => s.user?.id == _selectedSupervisorId,
+                                orElse: () => SupportSupervisor(
+                                  user: AssignedUser(id: null, name: 'Unknown'),
+                                ),
+                              )
+                              .user
+                              ?.name ??
+                          'Unknown'),
+                hasValue: _selectedSupervisorId != null,
+                isDisabled: _supervisors.isEmpty,
+                onTap: () async {
+                  final init =
+                      _supervisors
+                          .where((s) => s.user?.id == _selectedSupervisorId)
+                          .isNotEmpty
+                      ? _supervisors.firstWhere(
+                          (s) => s.user?.id == _selectedSupervisorId,
+                        )
+                      : null;
+                  final selected = await showDialog<SupportSupervisor?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportSupervisor>(
+                      title: 'Select Supervisor',
+                      items: _supervisors,
+                      itemDisplay: (s) => s.user?.name ?? '',
+                      initialValue: init,
+                      onSelected: (s) => s,
+                    ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedSupervisorId = selected.user?.id);
+                  }
+                },
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Location ─────────────────────────────────────────────
+              _buildSelectorCard(
+                context: context,
+                isDark: isDark,
+                primary: primary,
+                label: 'Location',
+                icon: Icons.location_on_rounded,
+                displayText: _selectedLocationId == null
+                    ? 'Select location'
+                    : (_locations
+                              .firstWhere(
+                                (l) => l.id == _selectedLocationId,
+                                orElse: () =>
+                                    SupportLocation(id: null, name: 'Unknown'),
+                              )
+                              .name ??
+                          'Unknown'),
+                hasValue: _selectedLocationId != null,
+                isDisabled: _locations.isEmpty,
+                onTap: () async {
+                  final init =
+                      _locations
+                          .where((l) => l.id == _selectedLocationId)
+                          .isNotEmpty
+                      ? _locations.firstWhere(
+                          (l) => l.id == _selectedLocationId,
+                        )
+                      : null;
+                  final selected = await showDialog<SupportLocation?>(
+                    context: context,
+                    builder: (ctx) => SearchableDialog<SupportLocation>(
+                      title: 'Select Location',
+                      items: _locations,
+                      itemDisplay: (l) => l.name ?? '',
+                      initialValue: init,
+                      onSelected: (l) => l,
+                    ),
+                  );
+                  if (selected != null) {
+                    setState(() => _selectedLocationId = selected.id);
+                  }
+                },
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── End Date ─────────────────────────────────────────────
+              _buildEndDateSection(isDark: isDark, primary: primary),
+
+              SizedBox(height: 16.h),
+
+              // ── Description ──────────────────────────────────────────
+              AppTextField(
+                controller: _descriptionController,
+                labelText: 'Description',
+                prefixIcon: Icon(
+                  Icons.description_rounded,
+                  size: 20.r,
+                  color: primary,
+                ),
+                maxLines: 6,
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Attachments ──────────────────────────────────────────
+              _buildAttachmentsSection(isDark: isDark, primary: primary),
+
+              SizedBox(height: 24.h),
+
+              SizedBox(height: 20.h),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16.r),
+          child: AppButton.primary(
+            text: _editId != null ? 'Save Changes' : 'Create Ticket',
+            onPressed: _isSubmitting ? null : _submit,
+            isLoading: _isSubmitting,
+            isSticky: true,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -17,6 +17,13 @@ class JobcardDetailModel extends JobcardDetail {
     super.receiverName,
     super.technicianId,
     super.notes,
+    super.description,
+    super.contact,
+    super.departments,
+    super.location,
+    super.supervisor,
+    super.approvals,
+    super.userCreator,
   });
 
   factory JobcardDetailModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +50,13 @@ class JobcardDetailModel extends JobcardDetail {
       receiverName: json['receiver_name']?.toString(),
       technicianId: json['technician_id']?.toString(),
       notes: json['notes']?.toString(),
+      description: json['description']?.toString(),
+      contact: json['contact']?.toString(),
+      departments: json['departments']?.toString(),
+      location: json['location']?.toString(),
+      supervisor: json['supervisor']?.toString(),
+      approvals: list(json['approvals']),
+      userCreator: map(json['user_creator']),
     );
   }
 }

@@ -23,7 +23,9 @@ CustomerModel _$CustomerModelFromJson(Map<String, dynamic> json) {
 mixin _$CustomerModel {
   int? get id => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
-  String? get email => throw _privateConstructorUsedError;
+  String? get email =>
+      throw _privateConstructorUsedError; // The support ticket API returns phone as 'contact' in customer_row
+  @JsonKey(name: 'contact')
   String? get phone => throw _privateConstructorUsedError;
 
   /// Serializes this CustomerModel to a JSON map.
@@ -43,7 +45,12 @@ abstract class $CustomerModelCopyWith<$Res> {
     $Res Function(CustomerModel) then,
   ) = _$CustomerModelCopyWithImpl<$Res, CustomerModel>;
   @useResult
-  $Res call({int? id, String? name, String? email, String? phone});
+  $Res call({
+    int? id,
+    String? name,
+    String? email,
+    @JsonKey(name: 'contact') String? phone,
+  });
 }
 
 /// @nodoc
@@ -99,7 +106,12 @@ abstract class _$$CustomerModelImplCopyWith<$Res>
   ) = __$$CustomerModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int? id, String? name, String? email, String? phone});
+  $Res call({
+    int? id,
+    String? name,
+    String? email,
+    @JsonKey(name: 'contact') String? phone,
+  });
 }
 
 /// @nodoc
@@ -147,7 +159,12 @@ class __$$CustomerModelImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$CustomerModelImpl implements _CustomerModel {
-  const _$CustomerModelImpl({this.id, this.name, this.email, this.phone});
+  const _$CustomerModelImpl({
+    this.id,
+    this.name,
+    this.email,
+    @JsonKey(name: 'contact') this.phone,
+  });
 
   factory _$CustomerModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$CustomerModelImplFromJson(json);
@@ -158,7 +175,9 @@ class _$CustomerModelImpl implements _CustomerModel {
   final String? name;
   @override
   final String? email;
+  // The support ticket API returns phone as 'contact' in customer_row
   @override
+  @JsonKey(name: 'contact')
   final String? phone;
 
   @override
@@ -200,7 +219,7 @@ abstract class _CustomerModel implements CustomerModel {
     final int? id,
     final String? name,
     final String? email,
-    final String? phone,
+    @JsonKey(name: 'contact') final String? phone,
   }) = _$CustomerModelImpl;
 
   factory _CustomerModel.fromJson(Map<String, dynamic> json) =
@@ -211,8 +230,9 @@ abstract class _CustomerModel implements CustomerModel {
   @override
   String? get name;
   @override
-  String? get email;
+  String? get email; // The support ticket API returns phone as 'contact' in customer_row
   @override
+  @JsonKey(name: 'contact')
   String? get phone;
 
   /// Create a copy of CustomerModel

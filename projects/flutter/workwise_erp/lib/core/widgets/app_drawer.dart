@@ -5,6 +5,7 @@ import 'package:workwise_erp/core/constants/app_constant.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/permission_provider.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
+import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 import '../menu/menus.dart';
 import '../themes/app_colors.dart';
@@ -87,7 +88,7 @@ class AppDrawer extends ConsumerWidget {
 
             _buildDivider(isDark),
 
-            _buildMenuHeader(isDark),
+            _buildMenuHeader(isDark, context),
 
             const SizedBox(height: 12),
 
@@ -336,7 +337,7 @@ class AppDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuHeader(bool isDark) {
+  Widget _buildMenuHeader(bool isDark, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -355,7 +356,7 @@ class AppDrawer extends ConsumerWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            'MAIN MENU',
+            context.l10n.mainMenu,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -640,7 +641,7 @@ class AppDrawer extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Sign Out',
+                        context.l10n.signOut,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w600,
@@ -699,35 +700,6 @@ class AppDrawer extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -796,7 +768,7 @@ class AppDrawer extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Sign Out',
+                      context.l10n.signOut,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -804,7 +776,7 @@ class AppDrawer extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Are you sure you want to sign out of your account?',
+                      context.l10n.signOutMessage,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontSize: 15,
@@ -825,7 +797,7 @@ class AppDrawer extends ConsumerWidget {
                               ),
                             ),
                             child: Text(
-                              'Cancel',
+                              context.l10n.back,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -856,7 +828,7 @@ class AppDrawer extends ConsumerWidget {
                               ),
                             ),
                             child: Text(
-                              'Sign Out',
+                              context.l10n.signOut,
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(color: Colors.white),
                             ),

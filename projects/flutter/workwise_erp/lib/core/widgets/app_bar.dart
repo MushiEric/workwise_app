@@ -77,18 +77,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: foregroundColor ??
             (isDark ? Colors.white70 : AppColors.white),
       ),
-      // icon: Container(
-      //   padding: const EdgeInsets.all(8),
-      //   decoration: BoxDecoration(
-      //     color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
-      //     borderRadius: BorderRadius.circular(12),
-      //   ),
-      //   child: Icon(
-      //     Icons.arrow_back_ios_new_rounded,
-      //     size: 18,
-      //     color: isDark ? Colors.white70 : Colors.grey.shade700,
-      //   ),
-      // ),
+      
       onPressed: () => Navigator.pop(context),
       tooltip: 'Back',
     );

@@ -91,11 +91,14 @@ class AuthRemoteDataSource {
     required String password,
   }) async {
     try {
-      // login can be slow on some environments — increase receiveTimeout for this call
+      // Give the server a reasonable window but fail fast to avoid multi-minute waits.
       final resp = await client.post(
         '/login',
         data: {'email': email, 'password': password},
-        options: Options(receiveTimeout: const Duration(seconds: 30)),
+        options: Options(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+        ),
       );
       final raw = resp.data;
 
@@ -202,7 +205,18 @@ class AuthRemoteDataSource {
 
       if (!looksLikeUser && token != null && token.isNotEmpty) {
         try {
-          final userResp = await client.get('/user');
+          // Use a short timeout — this is an auxiliary call during login;
+          // if it hangs and gets retried the login appears frozen for minutes.
+          final userResp = await client.get(
+            '/user',
+            options: Options(
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+              extra: const {
+                '__retry_count': 99,
+              }, // disable retries for this call
+            ),
+          );
           final userRaw = userResp.data;
           Map<String, dynamic>? fetchedMap;
           if (userRaw is Map<String, dynamic>) {
@@ -417,6 +431,29 @@ class AuthRemoteDataSource {
         case DioExceptionType.receiveTimeout:
           throw TimeoutException(e.message ?? 'Request timed out');
         case DioExceptionType.badResponse:
+          final statusCode = e.response?.statusCode;
+          if (statusCode == 413) {
+            throw ServerException(
+              'The image is too large. Please choose a smaller image and try again.',
+            );
+          }
+          // Try to extract a server-provided message before falling back to Dio's
+          // technical string (e.g. "Http status error [422]").
+          final respData = e.response?.data;
+          if (respData is Map && respData['message'] != null) {
+            throw ServerException(respData['message'].toString());
+          }
+          if (respData is String) {
+            final s = respData.trim();
+            if (!s.startsWith('<')) {
+              try {
+                final decoded = json.decode(s);
+                if (decoded is Map && decoded['message'] != null) {
+                  throw ServerException(decoded['message'].toString());
+                }
+              } catch (_) {}
+            }
+          }
           throw ServerException(e.message ?? 'Server error');
         case DioExceptionType.connectionError:
         case DioExceptionType.unknown:
@@ -425,7 +462,11 @@ class AuthRemoteDataSource {
           throw NetworkException(e.message ?? 'Network error');
       }
     } catch (e) {
-      throw ServerException('Unknown error: ${e.toString()}');
+      if (e is ServerException ||
+          e is NetworkException ||
+          e is TimeoutException)
+        rethrow;
+      throw ServerException('Unknown error');
     }
   }
 }

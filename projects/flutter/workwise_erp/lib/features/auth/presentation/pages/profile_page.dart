@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
@@ -1050,10 +1051,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
                 // Show confirmation
                 if (mounted) {
-                  context.showSuccessModal(
-                    title: context.l10n.success,
-                    message: context.l10n.languageUpdatedSuccess,
-                    buttonText: context.l10n.done,
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(LucideIcons.checkCircle, color: Colors.white, size: 18),
+                          const SizedBox(width: 10),
+                          Text(context.l10n.languageUpdatedSuccess),
+                        ],
+                      ),
+                      backgroundColor: Colors.green.shade600,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      duration: const Duration(seconds: 3),
+                    ),
                   );
                 }
               },

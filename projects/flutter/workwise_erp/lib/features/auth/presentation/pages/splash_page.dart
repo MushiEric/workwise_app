@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/provider/token_provider.dart';
 import '../providers/auth_providers.dart';
@@ -124,15 +126,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
                   SizedBox(
                     width: 28,
                     height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isDark
-                            ? Colors.white38
-                            : const Color.fromARGB(255, 0, 60, 255)
-                                .withOpacity(0.5),
-                      ),
-                    ),
+                    child: CupertinoActivityIndicator(
+                      radius: 15.r,
+                      
+                  )
                   ),
                 ],
               ),

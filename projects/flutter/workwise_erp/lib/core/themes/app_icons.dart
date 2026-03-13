@@ -13,6 +13,11 @@ class AppIcons {
   static const IconData user = LucideIcons.user;
   static const IconData x = LucideIcons.x;
   static const IconData moreHorizontal = LucideIcons.moreHorizontal;
+  static const IconData chatBUbble = LucideIcons.messageSquare;
+  static const IconData  delete = LucideIcons.trash;
+  static const IconData print = LucideIcons.printer;
+  static const IconData refreshCcwRounded = LucideIcons.refreshCcw;
+  static const IconData uploadFileRounded = LucideIcons.uploadCloud;
 
   // auth / profile icons
   static const IconData mail = LucideIcons.mail;
@@ -23,6 +28,8 @@ class AppIcons {
   static const IconData calendar = LucideIcons.calendar;
   static const IconData phone = LucideIcons.phone;
   static const IconData chevronRight = LucideIcons.chevronRight;
+  static const IconData filter = LucideIcons.filter;
+  static const IconData arrowdropDown = LucideIcons.chevronDown;
 
   // additional icons used by auth/profile pages
   static const IconData image = LucideIcons.image;
@@ -33,7 +40,7 @@ class AppIcons {
   static const IconData server = LucideIcons.server;
   static const IconData logOut = LucideIcons.logOut;
   static const IconData check = LucideIcons.check;
-
+  static const IconData personRounded = LucideIcons.userCircle2;
   // jobcard feature icons
   static const IconData eye = LucideIcons.eye;
   static const IconData eyeOff = LucideIcons.eyeOff;
@@ -78,7 +85,12 @@ class AppIcons {
   static const IconData deleteOutlineRounded = Icons.delete_outline_rounded;
   static const IconData checkCircleRounded = Icons.check_circle_rounded;
   static const IconData receiptRounded = Icons.receipt_rounded;
-  static const IconData uploadFileRounded = Icons.upload_file_rounded;
+  static const IconData cancelRounded = Icons.cancel_rounded;
+  static const IconData notificationsRounded = Icons.notifications_rounded;
+  static const IconData locationOnRounded = Icons.location_on_rounded;
+  static const IconData categoryRounded = Icons.category_rounded;
+  static const IconData businessRounded = Icons.business_rounded;
+  static const IconData editCalendarRounded = Icons.edit_calendar_rounded;
 }
 
 /// Lightweight icon wrapper (keeps sizing/color consistent)

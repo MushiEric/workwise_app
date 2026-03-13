@@ -43,12 +43,20 @@ class EnvConfig {
   /// for developers to point the app at a different endpoint without modifying
   /// the production configuration or adding extra files.
   static final AppEnvironment currentEnv = _envFromString(
-      const String.fromEnvironment('RUNTIME_ENV',
-          defaultValue: const String.fromEnvironment('APP_ENV',
-              defaultValue: 'staging')));
+    const String.fromEnvironment(
+      'RUNTIME_ENV',
+      defaultValue: const String.fromEnvironment(
+        'APP_ENV',
+        defaultValue: 'staging',
+      ),
+    ),
+  );
 
   /// Optional Sentry DSN passed at build-time: --dart-define=SENTRY_DSN=\"...\"
-  static final String sentryDsn = const String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  static final String sentryDsn = const String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue: '',
+  );
 
   // --- Runtime override support -------------------------------------------------
   // Call `EnvConfig.init(AppEnvironment.dev)` early in `main()` to override the

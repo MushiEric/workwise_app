@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,20 +7,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
-import 'package:workwise_erp/core/widgets/app_textfield.dart';
+import 'package:workwise_erp/core/widgets/app_textfields.dart';
 import 'package:workwise_erp/core/widgets/app_smart_dropdown.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../../domain/entities/jobcard_create_params.dart';
+import '../../domain/entities/jobcard_detail.dart';
 import '../providers/jobcard_providers.dart';
 import '../../../support/presentation/providers/support_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/technician_selector.dart';
 import '../widgets/items_list.dart';
-import '../widgets/attachments_section.dart';
 import '../../../../core/themes/app_icons.dart';
 
 class JobcardCreatePage extends ConsumerStatefulWidget {
-  const JobcardCreatePage({super.key});
+  /// When provided the page operates in edit mode, pre-filling all fields
+  /// from the existing jobcard.
+  final JobcardDetail? existingJobcard;
+  const JobcardCreatePage({super.key, this.existingJobcard});
 
   @override
   ConsumerState<JobcardCreatePage> createState() => _JobcardCreatePageState();
@@ -29,13 +31,15 @@ class JobcardCreatePage extends ConsumerStatefulWidget {
 
 class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     with SingleTickerProviderStateMixin {
-  int _currentStep = 0;
   final _subjectCtl = TextEditingController();
   final _jobcardNumberCtl = TextEditingController();
   final _reportedDateCtl = TextEditingController();
   final _dispatchedDateCtl = TextEditingController();
 
-  String? _relatedTo = 'Vehicle';
+  // Edit mode — set when widget.existingJobcard is non-null
+  int? _editId;
+
+  String? _relatedTo = 'Customer';
   int? _vehicleId;
   List<int> _technicianIds = [];
   int? _receiverId;
@@ -44,6 +48,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
   int? _statusId;
   int? _supervisorId;
   int? _locationId;
+  int? _departmentId;
   List<Map<String, dynamic>> _items = [];
   num _grandTotal = 0;
 
@@ -66,8 +71,22 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
   List<Map<String, dynamic>> _supportStatuses = [];
   int? _supportTicketId;
 
+  // Cached futures for FutureBuilder dropdowns (prevents re-firing on rebuild)
+  Future<dynamic>? _supervisorFuture;
+  Future<dynamic>? _departmentFuture;
+  Future<dynamic>? _locationFuture;
+
   bool _submitting = false;
+  bool _showMoreOptional = false;
   bool _generatingNumber = false;
+  final _descriptionCtl = TextEditingController(); // Summary of Tasks
+
+  // Field-level validation errors (shown inline, not via snackbar)
+  String? _numError;
+  String? _subjectError;
+  String? _dateError;
+  String? _statusError;
+  String? _staffError;
 
   final TextEditingController _relatedOtherCtl = TextEditingController();
   final TextEditingController _notesCtl = TextEditingController();
@@ -84,13 +103,81 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       duration: const Duration(milliseconds: 700),
     );
 
-    _loadAuxData();
-    // restore draft if present, otherwise prefill generated number
-    _loadDraft().then((restored) {
-      if (!restored) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _generateNumber());
+    // Pre-fill today's date as Starting On
+    _reportedDateCtl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // Cache futures for FutureBuilder dropdowns so they don't re-fire on every rebuild
+    _supervisorFuture = ref.read(getSupportSupervisorsUseCaseProvider).call();
+    _departmentFuture = ref.read(getSupportDepartmentsUseCaseProvider).call();
+    _locationFuture = ref.read(getSupportLocationsUseCaseProvider).call();
+
+    // Pre-fill from existing jobcard (edit mode)
+    final existing = widget.existingJobcard;
+    if (existing != null) {
+      _editId = existing.id;
+      _jobcardNumberCtl.text = existing.jobcardNumber ?? '';
+      _subjectCtl.text = existing.service ?? '';
+      _reportedDateCtl.text = existing.reportedDate ?? '';
+      _dispatchedDateCtl.text = existing.dispatchedDate ?? '';
+      _relatedTo = existing.relatedTo?.isNotEmpty == true
+          ? existing.relatedTo
+          : 'Customer';
+      _descriptionCtl.text = existing.description ?? '';
+      _notesCtl.text = existing.notes ?? '';
+      _items = List<Map<String, dynamic>>.from(existing.items ?? []);
+      _grandTotal = num.tryParse(existing.grandTotal?.toString() ?? '') ?? 0;
+
+      // Parse technician IDs from stringified JSON array
+      final rawTech = existing.technicianId ?? '[]';
+      final cleanTech = rawTech.replaceAll(RegExp(r'[\[\]"\\]'), '').trim();
+      if (cleanTech.isNotEmpty && cleanTech != 'null') {
+        _technicianIds = cleanTech
+            .split(',')
+            .map((e) => int.tryParse(e.trim()))
+            .whereType<int>()
+            .toList();
       }
-    });
+      // Parse department ID(s)
+      final rawDepts = existing.departments ?? '[]';
+      final cleanDepts = rawDepts.replaceAll(RegExp(r'[\[\]" ]'), '').trim();
+      if (cleanDepts.isNotEmpty && cleanDepts != 'null') {
+        final ids = cleanDepts
+            .split(',')
+            .map((e) => int.tryParse(e.trim()))
+            .whereType<int>()
+            .toList();
+        if (ids.isNotEmpty) _departmentId = ids.first;
+      }
+      // Receiver / Vehicle
+      final receiver = int.tryParse(existing.receiver?.toString() ?? '');
+      if (_relatedTo == 'Vehicle') {
+        _vehicleId = receiver;
+      } else {
+        _receiverId = receiver;
+      }
+      // Status
+      final sr = existing.statusRow;
+      if (sr != null) {
+        _statusId = int.tryParse(sr['id']?.toString() ?? '');
+      } else {
+        _statusId = int.tryParse(existing.status?.toString() ?? '');
+      }
+      // Location / supervisor
+      _locationId = int.tryParse(existing.location?.toString() ?? '');
+      _supervisorId = int.tryParse(existing.supervisor?.toString() ?? '');
+    }
+
+    _loadAuxData();
+    // In edit mode, skip draft restore/number generation
+    if (_editId == null) {
+      _loadDraft().then((restored) {
+        if (!restored) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _generateNumber(),
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -98,6 +185,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     _rotationController.dispose();
     _relatedOtherCtl.dispose();
     _notesCtl.dispose();
+    _descriptionCtl.dispose();
     _subjectCtl.dispose();
     _jobcardNumberCtl.dispose();
     _reportedDateCtl.dispose();
@@ -190,6 +278,15 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       _supportStatuses = [];
     }
 
+    // auto-select "Open" status if none was pre-selected (e.g. from draft)
+    if (_statusId == null && _supportStatuses.isNotEmpty) {
+      final openStatus = _supportStatuses.firstWhere(
+        (s) => (s['name'] ?? '').toString().toLowerCase() == 'open',
+        orElse: () => _supportStatuses.first,
+      );
+      _statusId = int.tryParse(openStatus['id']?.toString() ?? '');
+    }
+
     // support tickets (for Support Ticket dropdown)
     try {
       final tRes = await ref.read(getSupportTicketsUseCaseProvider).call();
@@ -200,6 +297,19 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       });
     } catch (_) {
       _tickets = [];
+    }
+
+    // Pre-load receivers for the default relatedTo so the dropdown is ready on first render
+    const _receiverTypeMap = {
+      'Customer': 'customer',
+      'Vendor': 'vendor',
+      'Users': 'user',
+      'User': 'user',
+      'Employee': 'employee',
+    };
+    final defaultReceiverType = _receiverTypeMap[_relatedTo];
+    if (defaultReceiverType != null) {
+      await _loadReceiversByType(defaultReceiverType);
     }
 
     setState(() {});
@@ -218,7 +328,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to load receivers')),
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Failed to load receivers'),
+            ),
           );
         }
       },
@@ -226,19 +339,6 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         if (mounted) setState(() => _receivers = list);
       },
     );
-  }
-
-  String? _findReceiverNameById(int id) {
-    try {
-      final r = _receivers.firstWhere(
-        (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-      );
-      return r['name']?.toString() ??
-          r['title']?.toString() ??
-          r['username']?.toString();
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> _generateNumber() async {
@@ -264,7 +364,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         (l) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to generate jobcard number')),
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Failed to generate jobcard number'),
+            ),
           );
         },
         (r) {
@@ -274,7 +377,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Error generating jobcard number')),
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Error generating jobcard number'),
+          ),
         );
     } finally {
       // Stop animation
@@ -284,88 +390,8 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
   }
 
   void _recalcTotal() {
+    // Price is no longer collected at item entry; grand total is not tracked
     _grandTotal = 0;
-    for (final it in _items) {
-      final qty = (it['qty'] is int)
-          ? it['qty'] as int
-          : int.tryParse(it['qty'].toString()) ?? 0;
-      final price = (it['price'] is num)
-          ? it['price'] as num
-          : num.tryParse(it['price'].toString()) ?? 0;
-      _grandTotal += qty * price;
-    }
-  }
-
-  String _humanFileSize(int? bytes) {
-    if (bytes == null) return 'Unknown size';
-    if (bytes < 1024) return '$bytes B';
-    final kb = bytes / 1024;
-    if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
-    final mb = kb / 1024;
-    return '${mb.toStringAsFixed(1)} MB';
-  }
-
-  Future<void> _pickItemFiles() async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
-    if (result == null) return;
-    setState(() {
-      for (final f in result.files) {
-        // enforce 5MB per-file limit
-        if (f.size > 5 * 1024 * 1024) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(behavior: SnackBarBehavior.floating, content: Text('${f.name} exceeds 5MB limit')),
-          );
-          continue;
-        }
-        _itemFiles.add({'name': f.name, 'size': f.size, 'path': f.path});
-      }
-    });
-  }
-
-  Future<void> _pickServiceFiles() async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
-    if (result == null) return;
-    setState(() {
-      for (final f in result.files) {
-        if (f.size > 5 * 1024 * 1024) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(behavior: SnackBarBehavior.floating, content: Text('${f.name} exceeds 5MB limit')),
-          );
-          continue;
-        }
-        _serviceFiles.add({'name': f.name, 'size': f.size, 'path': f.path});
-      }
-    });
-  }
-
-  Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final draft = {
-      'jobcard_number': _jobcardNumberCtl.text,
-      'subject': _subjectCtl.text,
-      'reported_date': _reportedDateCtl.text,
-      'dispatched_date': _dispatchedDateCtl.text,
-      'related_to': _relatedTo,
-      'vehicle_id': _vehicleId,
-      'technician_ids': _technicianIds,
-      'receiver_id': _receiverId,
-      'receiver_type': _receiverType,
-      'receiver_name': _receiverName ?? _relatedOtherCtl.text,
-      'supervisor_id': _supervisorId,
-      'location_id': _locationId,
-      'items': _items,
-      'grand_total': _grandTotal,
-      'item_files': _itemFiles,
-      'service_files': _serviceFiles,
-      'notes': _notesCtl.text,
-      'support_ticket_id': _supportTicketId,
-      'current_step': _currentStep,
-    };
-    await prefs.setString('jobcard_create_draft_v1', json.encode(draft));
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft saved')));
   }
 
   Future<bool> _loadDraft() async {
@@ -398,6 +424,9 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         _supervisorId = data['supervisor_id'] != null
             ? int.tryParse(data['supervisor_id'].toString())
             : null;
+        _departmentId = data['department_id'] != null
+            ? int.tryParse(data['department_id'].toString())
+            : null;
         _locationId = data['location_id'] != null
             ? int.tryParse(data['location_id'].toString())
             : null;
@@ -415,11 +444,6 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         _supportTicketId = data['support_ticket_id'] != null
             ? int.tryParse(data['support_ticket_id'].toString())
             : null;
-        final rawStep = data['current_step'];
-        final parsedStep = rawStep is int
-            ? rawStep
-            : int.tryParse(rawStep?.toString() ?? '') ?? 0;
-        _currentStep = parsedStep.clamp(0, 4);
       });
       if (!mounted) return true;
       // if draft contained receiver type we should load its options so UI can show selection
@@ -431,9 +455,12 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         // ignore: unawaited_futures
         _loadReceiversByType(_receiverType!);
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft loaded')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Draft loaded'),
+        ),
+      );
       return true;
     } catch (_) {
       return false;
@@ -446,37 +473,30 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
   }
 
   Future<void> _submit() async {
-    // basic validation for required fields
-    if (_jobcardNumberCtl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Jobcard number is required')),
-      );
-      return;
+    // Validate required fields inline — highlight the field, no snackbar
+    setState(() {
+      _numError = _jobcardNumberCtl.text.trim().isEmpty
+          ? 'Jobcard number is required'
+          : null;
+      _subjectError = _subjectCtl.text.trim().isEmpty
+          ? 'Subject is required'
+          : null;
+      _dateError = _reportedDateCtl.text.trim().isEmpty
+          ? 'Starting date is required'
+          : null;
+      _staffError = _technicianIds.isEmpty
+          ? 'At least one staff member is required'
+          : null;
+      _statusError = _statusId == null ? 'Status is required' : null;
+    });
+    if (_staffError != null) {
+      setState(() => _showMoreOptional = true);
     }
-    if (_subjectCtl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Subject is required')));
-      return;
-    }
-    if (_reportedDateCtl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Starting On is required')));
-      return;
-    }
-    if (_technicianIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(behavior: SnackBarBehavior.floating, content: Text('At least one staff member is required')),
-      );
-      return;
-    }
-
-    // Status is required
-    if (_statusId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Status is required')));
+    if (_numError != null ||
+        _subjectError != null ||
+        _dateError != null ||
+        _staffError != null ||
+        _statusError != null) {
       return;
     }
 
@@ -484,7 +504,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     if (_relatedTo == 'Other') {
       if ((_receiverName ?? _relatedOtherCtl.text).trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Please enter a value for "Other"')),
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Please enter a value for "Other"'),
+          ),
         );
         return;
       }
@@ -494,21 +517,28 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         _relatedTo == 'Employee' ||
         _relatedTo == 'User') {
       if (_receiverId == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Receiver is required')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Receiver is required'),
+          ),
+        );
         return;
       }
     } else if (_relatedTo == 'Vehicle') {
       if (_vehicleId == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Vehicle is required')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Vehicle is required'),
+          ),
+        );
         return;
       }
     }
 
     final params = JobcardCreateParams(
+      id: _editId,
       jobcardNumber: _jobcardNumberCtl.text.trim(),
       subject: _subjectCtl.text.trim(),
       reportedDate: _reportedDateCtl.text.trim(),
@@ -517,12 +547,16 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           : _dispatchedDateCtl.text.trim(),
       vehicleId: _vehicleId,
       technicianIds: _technicianIds,
-      departmentIds: null,
-      service: null,
-      description: null,
+      departmentIds: _departmentId != null ? [_departmentId!] : null,
+      service: _subjectCtl.text.trim().isNotEmpty
+          ? _subjectCtl.text.trim()
+          : null,
+      description: _descriptionCtl.text.trim().isNotEmpty
+          ? _descriptionCtl.text.trim()
+          : null,
       notes: _notesCtl.text.trim().isNotEmpty ? _notesCtl.text.trim() : null,
       relatedTo: _relatedTo,
-      receiverId: _receiverId,
+      receiverId: _relatedTo == 'Vehicle' ? _vehicleId : _receiverId,
       receiverName: (_receiverName != null && _receiverName!.trim().isNotEmpty)
           ? _receiverName
           : (_relatedOtherCtl.text.trim().isNotEmpty
@@ -584,7 +618,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     res.fold(
       (l) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(behavior: SnackBarBehavior.floating, content: Text('Create failed: ${l.toString()}')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Create failed: ${l.toString()}'),
+          ),
         );
       },
       (id) async {
@@ -621,335 +658,6 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     if (date != null) {
       controller.text = DateFormat('yyyy-MM-dd').format(date);
     }
-  }
-
-  Widget _buildStep1(BuildContext ctx) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        // Jobcard Number (use AppTextField directly for consistent styling)
-        AppTextField(
-          controller: _jobcardNumberCtl,
-          readOnly: true,
-          labelText: 'Jobcard Number',
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: 16,
-          suffixIcon: _generatingNumber
-              ? SizedBox(
-                  width: 32,
-                  height: 24,
-                  child: Center(
-                    child: RotationTransition(
-                      turns: _rotationController,
-                      child: const Icon(AppIcons.autorenew, size: 18),
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(AppIcons.autorenew, size: 18),
-                  onPressed: _generateNumber,
-                ),
-        ),
-        const SizedBox(height: 12),
-
-        // Subject (use AppTextField without external container)
-        AppTextField(
-          controller: _subjectCtl,
-          labelText: 'Subject',
-          hintText: 'Enter subject',
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: 16,
-          prefixIcon: Icon(AppIcons.subjectRounded, size: 18),
-        ),
-        const SizedBox(height: 12),
-
-        // Related To
-        AppSmartDropdown<String>(
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: 16,
-          value: _relatedTo,
-          items: const ['Customer', 'Vehicle', 'Vendor', 'Users', 'Other'],
-          itemBuilder: (item) => item,
-          label: 'Related To',
-          // prefixIcon: Icons.category_rounded,
-          onChanged: (v) async {
-            if (v == null) return;
-            setState(() {
-              _relatedTo = v;
-              _receiverId = null;
-              _receiverType = null;
-              _receiverName = null;
-            });
-
-            if (v == 'Customer' || v == 'Vendor' || v == 'Users') {
-              final map = {
-                'Customer': 'customer',
-                'Vendor': 'vendor',
-                'Users': 'user',
-              };
-              final type = map[v] ?? v.toLowerCase();
-              await _loadReceiversByType(type);
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // Vehicle (conditional)
-        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty)
-          AppSmartDropdown<int>(
-            backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: 16,
-            value: _vehicleId,
-            items: _vehicles
-                .map((v) => int.tryParse(v['id']?.toString() ?? '') ?? 0)
-                .where((id) => id > 0)
-                .toList(),
-            itemBuilder: (id) {
-              final v = _vehicles.firstWhere(
-                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-                orElse: () => {},
-              );
-              return v.isNotEmpty
-                  ? (v['vehicle_name'] ?? v['name'] ?? 'Vehicle $id')
-                  : 'Vehicle $id';
-            },
-            label: 'Select Vehicle',
-            // prefixIcon: Icons.directions_car_rounded,
-            onChanged: (v) => setState(() => _vehicleId = v),
-          ),
-
-        // Receiver selection when Related To is customer/vendor/users
-        if ((_relatedTo == 'Customer' ||
-            _relatedTo == 'Vendor' ||
-            _relatedTo == 'Users'))
-          AppSmartDropdown<int>(
-            backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: 16,
-            value: _receiverId,
-            items: _receivers
-                .map((r) => int.tryParse(r['id']?.toString() ?? '') ?? 0)
-                .where((id) => id > 0)
-                .toList(),
-            itemBuilder: (id) {
-              final r = _receivers.firstWhere(
-                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-                orElse: () => {},
-              );
-              return r.isNotEmpty
-                  ? (r['name'] ?? r['title'] ?? r['username'] ?? 'Receiver $id')
-                  : 'Receiver $id';
-            },
-            label: 'Select ${_relatedTo ?? 'Receiver'}',
-            enabled: _receivers.isNotEmpty,
-            onChanged: (v) => setState(() => _receiverId = v),
-          ),
-
-        // 'Other' free-text input
-        if (_relatedTo == 'Other')
-          AppTextField(
-            controller: _relatedOtherCtl,
-            onChanged: (v) => _receiverName = v,
-            labelText: 'Specify (other)',
-            hintText: 'Enter related value',
-            backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: 16,
-          ),
-        const SizedBox(height: 12),
-
-        // Dates Row
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                controller: _reportedDateCtl,
-                readOnly: true,
-                labelText: 'Starting On',
-                hintText: 'Select date',
-                prefixIcon: Icon(AppIcons.eventRounded, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(AppIcons.calendarTodayRounded, size: 16),
-                  onPressed: () => _selectDate(_reportedDateCtl),
-                ),
-                backgroundColor: isDark
-                    ? const Color(0xFF151A2E)
-                    : Colors.white,
-                borderRadius: 16,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppTextField(
-                controller: _dispatchedDateCtl,
-                readOnly: true,
-                labelText: 'Dispatched Date',
-                hintText: 'Optional',
-                prefixIcon: Icon(AppIcons.eventRounded, size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(AppIcons.calendarTodayRounded, size: 16),
-                  onPressed: () => _selectDate(_dispatchedDateCtl),
-                ),
-                backgroundColor: isDark
-                    ? const Color(0xFF151A2E)
-                    : Colors.white,
-                borderRadius: 16,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStep2(BuildContext ctx) {
-    return Column(
-      children: [
-        // Technician Selector
-        TechnicianSelector(
-          selectedIds: _technicianIds,
-          users: _users,
-          onChanged: (ids) => setState(() => _technicianIds = ids),
-        ),
-        const SizedBox(height: 12),
-
-        // Receiver (managed in Basic / "Related To") — show summary here and allow quick jump
-        ListTile(
-          title: const Text('Receiver'),
-          subtitle: _receiverId != null
-              ? Text(
-                  _findReceiverNameById(_receiverId!) ??
-                      _receiverName ??
-                      'Receiver $_receiverId',
-                )
-              : Text(
-                  (_receiverName != null && _receiverName!.isNotEmpty)
-                      ? _receiverName!
-                      : 'Select via Basic -> Related To',
-                ),
-          trailing: IconButton(
-            icon: const Icon(AppIcons.editRounded),
-            onPressed: () => setState(() => _currentStep = 0),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Supervisor
-        FutureBuilder(
-          future: ref.read(getSupportSupervisorsUseCaseProvider).call(),
-          builder: (ctx, snap) {
-            if (!snap.hasData) return const SizedBox.shrink();
-            final either = snap.data!;
-            return either.fold((l) => const SizedBox.shrink(), (list) {
-              return AppSmartDropdown<int>(
-                backgroundColor: Colors.white,
-                borderRadius: 16,
-                value: _supervisorId,
-                items: list.map((s) => s.user?.id).whereType<int>().toList(),
-                itemBuilder: (id) {
-                  final s = list.firstWhere((e) => e.user?.id == id);
-                  return s.user?.name ?? 'Supervisor $id';
-                },
-                label: 'Supervisor (Optional)',
-                onChanged: (v) => setState(() => _supervisorId = v),
-              );
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStep3(BuildContext ctx) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        // Department
-        FutureBuilder(
-          future: ref.read(getSupportDepartmentsUseCaseProvider).call(),
-          builder: (ctx, snap) {
-            if (!snap.hasData) return const SizedBox.shrink();
-            final either = snap.data!;
-            return either.fold((l) => const SizedBox.shrink(), (list) {
-              return AppSmartDropdown<int>(
-                backgroundColor: isDark
-                    ? const Color(0xFF151A2E)
-                    : Colors.white,
-                borderRadius: 16,
-                value: _locationId,
-                items: list.map((d) => d.id).whereType<int>().toList(),
-                itemBuilder: (id) {
-                  final d = list.firstWhere((e) => e.id == id);
-                  return d.name ?? 'Department $id';
-                },
-                label: 'Department (Optional)',
-                onChanged: (v) => setState(() => _locationId = v),
-              );
-            });
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // Location
-        FutureBuilder(
-          future: ref.read(getSupportLocationsUseCaseProvider).call(),
-          builder: (ctx, snap) {
-            if (!snap.hasData) return const SizedBox.shrink();
-            final either = snap.data!;
-            return either.fold((l) => const SizedBox.shrink(), (list) {
-              return AppSmartDropdown<int>(
-                backgroundColor: isDark
-                    ? const Color(0xFF151A2E)
-                    : Colors.white,
-                borderRadius: 16,
-                value: _locationId,
-                items: list.map((d) => d.id).whereType<int>().toList(),
-                itemBuilder: (id) {
-                  final d = list.firstWhere((e) => e.id == id);
-                  return d.name ?? 'Location $id';
-                },
-                label: 'Location',
-                onChanged: (v) => setState(() => _locationId = v),
-              );
-            });
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        // Status (required)
-        AppSmartDropdown<int>(
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: 16,
-          value: _statusId,
-          items: _supportStatuses
-              .map((s) => int.tryParse(s['id']?.toString() ?? '') ?? 0)
-              .where((id) => id > 0)
-              .toList(),
-          itemBuilder: (id) {
-            final s = _supportStatuses.firstWhere(
-              (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-              orElse: () => {},
-            );
-            return s.isNotEmpty ? (s['name'] ?? 'Status $id') : 'Status $id';
-          },
-          label: 'Status',
-          onChanged: (v) => setState(() => _statusId = v),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Recommendation (optional)
-        AppTextField(
-          controller: _notesCtl,
-          labelText: 'Recommendation',
-          hintText: 'Optional',
-          maxLines: 3,
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: 16,
-        ),
-      ],
-    );
   }
 
   Widget _buildStep4(BuildContext ctx) {
@@ -995,349 +703,315 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     );
   }
 
-  Widget _buildStep5(BuildContext ctx) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  /// Required fields — always visible at the top.
+  Widget _buildCoreRequired(bool isDark) {
+    // const darkBg = Color(0xFF151A2E);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Preview CTA (summary hidden on the form)
-        /*
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey.shade200,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Summary is hidden on the form. Tap Preview to view the jobcard summary and manage drafts.',
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
+        // Jobcard Number *
+        AppTextField(
+          controller: _jobcardNumberCtl,
+          label: 'Jobcard Number',
+          isRequired: true,
+          enabled: false,
+          suffixIcon: _generatingNumber
+              ? SizedBox(
+                  width: 32,
+                  height: 24,
+                  child: Center(
+                    child: RotationTransition(
+                      turns: _rotationController,
+                      child: const Icon(AppIcons.autorenew, size: 18),
+                    ),
                   ),
+                )
+              : IconButton(
+                  icon: const Icon(AppIcons.autorenew, size: 18),
+                  onPressed: _generateNumber,
                 ),
-              ),
-              const SizedBox(width: 12),
-              AppButton(
-                text: 'Preview',
-                icon: AppIcons.visibilityRounded,
-                onPressed: _showPreviewDialog,
-                variant: AppButtonVariant.secondary,
-                size: AppButtonSize.small,
-              ),
-            ],
-          ),
         ),
-
-        const SizedBox(height: 16),
-
-        // Action Buttons
-        Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey.shade200,
-              width: 1,
+        if (_numError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              _numError!,
+              style: TextStyle(color: Colors.red.shade400, fontSize: 12),
             ),
           ),
-          child: Column(
-            children: [
-              // Draft Actions
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        text: 'Save Draft',
-                        icon: AppIcons.saveOutlined,
-                        onPressed: _saveDraft,
-                        variant: AppButtonVariant.outline,
-                        size: AppButtonSize.small,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        text: 'Clear Draft',
-                        icon: AppIcons.deleteOutlineRounded,
-                        onPressed: () async {
-                          await _clearDraft();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft cleared')),
-                            );
-                          }
-                        },
-                        variant: AppButtonVariant.danger,
-                        size: AppButtonSize.small,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-        */
-        // Submit Button
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: AppButton(
-            text: _submitting ? 'Creating...' : 'Create Jobcard',
-            icon: AppIcons.checkCircleRounded,
-            onPressed: _submitting ? null : _submit,
-            variant: AppButtonVariant.primary,
-            size: AppButtonSize.large,
-            fullWidth: true,
-            isLoading: false,
+        // Subject *
+        AppTextField(
+          controller: _subjectCtl,
+          label: 'Subject',
+          isRequired: true,
+          hintText: 'Enter subject',
+          onChanged: (_) => setState(() => _subjectError = null),
+        ),
+        if (_subjectError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              _subjectError!,
+              style: TextStyle(color: Colors.red.shade400, fontSize: 12),
+            ),
           ),
+        // Starting On *
+        AppTextField(
+          controller: _reportedDateCtl,
+          label: 'Starting On',
+          isRequired: true,
+          hintText: 'Select date',
+          isDropdown: true,
+          onDropdownTap: () async {
+            await _selectDate(_reportedDateCtl);
+            if (_reportedDateCtl.text.isNotEmpty) {
+              setState(() => _dateError = null);
+            }
+          },
+          prefixIcon: Icon(AppIcons.eventRounded, size: 18),
+        ),
+        if (_dateError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              _dateError!,
+              style: TextStyle(color: Colors.red.shade400, fontSize: 12),
+            ),
+          ),
+        // Status *
+        AppSmartDropdown<int>(
+          value: _statusId,
+          items: _supportStatuses
+              .map((s) => int.tryParse(s['id']?.toString() ?? '') ?? 0)
+              .where((id) => id > 0)
+              .toList(),
+          itemBuilder: (id) {
+            final s = _supportStatuses.firstWhere(
+              (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+              orElse: () => {},
+            );
+            return s.isNotEmpty ? (s['name'] ?? 'Status $id') : 'Status $id';
+          },
+          label: 'Status *',
+          errorText: _statusError,
+          backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
+          borderRadius: 12,
+          onChanged: (v) => setState(() {
+            _statusId = v;
+            _statusError = null;
+          }),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryRow(
-    String label,
-    String value,
-    bool isDark, {
-    bool highlight = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white54 : Colors.grey.shade600,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
-              color: highlight
-                  ? AppColors.primary
-                  : (isDark ? Colors.white : const Color(0xFF1A2634)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF151A2E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.grey.shade200,
-          width: 1,
+  /// Optional fields — revealed by the "Show more" button.
+  Widget _buildOptionalFields(bool isDark) {
+    const darkBg = Color(0xFF151A2E);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 4),
+        // Assigned Staff *
+        TechnicianSelector(
+          selectedIds: _technicianIds,
+          users: _users,
+          errorText: _staffError,
+          onChanged: (ids) => setState(() {
+            _technicianIds = ids;
+            _staffError = null;
+          }),
         ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.white10 : Colors.grey.shade200,
-                  width: 1,
-                ),
+        // Supervisor
+        FutureBuilder(
+          future: _supervisorFuture,
+          builder: (ctx, snap) {
+            if (!snap.hasData) return const SizedBox.shrink();
+            return snap.data!.fold(
+              (l) => const SizedBox.shrink(),
+              (list) => AppSmartDropdown<int>(
+                value: _supervisorId,
+                items: list.map((s) => s.user?.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final s = list.firstWhere((e) => e.user?.id == id);
+                  return s.user?.name ?? 'Supervisor $id';
+                },
+                label: 'Supervisor',
+                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+                borderRadius: 12,
+                onChanged: (v) => setState(() => _supervisorId = v),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    AppIcons.receiptRounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Jobcard Summary',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
-                ),
-              ],
-            ),
+            );
+          },
+        ),
+        // Department
+        FutureBuilder(
+          future: _departmentFuture,
+          builder: (ctx, snap) {
+            if (!snap.hasData) return const SizedBox.shrink();
+            return snap.data!.fold(
+              (l) => const SizedBox.shrink(),
+              (list) => AppSmartDropdown<int>(
+                value: _departmentId,
+                items: list.map((d) => d.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final d = list.firstWhere((e) => e.id == id);
+                  return d.name ?? 'Department $id';
+                },
+                label: 'Department',
+                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+                borderRadius: 12,
+                onChanged: (v) => setState(() => _departmentId = v),
+              ),
+            );
+          },
+        ),
+        // Location
+        FutureBuilder(
+          future: _locationFuture,
+          builder: (ctx, snap) {
+            if (!snap.hasData) return const SizedBox.shrink();
+            return snap.data!.fold(
+              (l) => const SizedBox.shrink(),
+              (list) => AppSmartDropdown<int>(
+                value: _locationId,
+                items: list.map((d) => d.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final d = list.firstWhere((e) => e.id == id);
+                  return d.name ?? 'Location $id';
+                },
+                label: 'Location',
+                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+                borderRadius: 12,
+                onChanged: (v) => setState(() => _locationId = v),
+              ),
+            );
+          },
+        ),
+        // Support Ticket
+        AppSmartDropdown<int>(
+          value: _supportTicketId,
+          items: _tickets
+              .map((t) => int.tryParse(t['id']?.toString() ?? '') ?? 0)
+              .where((id) => id > 0)
+              .toList(),
+          itemBuilder: (id) {
+            final t = _tickets.firstWhere(
+              (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+              orElse: () => {},
+            );
+            return t.isNotEmpty ? (t['name'] ?? 'Ticket $id') : 'Ticket $id';
+          },
+          label: 'Support Ticket',
+          backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+          borderRadius: 12,
+          onChanged: (v) => setState(() => _supportTicketId = v),
+        ),
+        // Related To
+        AppSmartDropdown<String>(
+          value: _relatedTo,
+          items: const ['Customer', 'Vehicle', 'Vendor', 'Users', 'Other'],
+          itemBuilder: (item) => item,
+          label: 'Related To',
+          backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+          borderRadius: 12,
+          onChanged: (v) async {
+            if (v == null) return;
+            setState(() {
+              _relatedTo = v;
+              _receiverId = null;
+              _receiverType = null;
+              _receiverName = null;
+            });
+            if (v == 'Customer' || v == 'Vendor' || v == 'Users') {
+              final map = {
+                'Customer': 'customer',
+                'Vendor': 'vendor',
+                'Users': 'user',
+              };
+              await _loadReceiversByType(map[v] ?? v.toLowerCase());
+            }
+          },
+        ),
+        // Vehicle (conditional)
+        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty)
+          AppSmartDropdown<int>(
+            value: _vehicleId,
+            items: _vehicles
+                .map((v) => int.tryParse(v['id']?.toString() ?? '') ?? 0)
+                .where((id) => id > 0)
+                .toList(),
+            itemBuilder: (id) {
+              final v = _vehicles.firstWhere(
+                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+                orElse: () => {},
+              );
+              return v.isNotEmpty
+                  ? (v['vehicle_name'] ?? v['name'] ?? 'Vehicle $id')
+                  : 'Vehicle $id';
+            },
+            label: 'Select Vehicle',
+            backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+            borderRadius: 12,
+            onChanged: (v) => setState(() => _vehicleId = v),
           ),
-
-          // Details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildSummaryRow(
-                  'Jobcard Number',
-                  _jobcardNumberCtl.text,
-                  isDark,
-                ),
-                _buildSummaryRow('Subject', _subjectCtl.text, isDark),
-                _buildSummaryRow('Related To', _relatedTo ?? '-', isDark),
-                _buildSummaryRow('Starting On', _reportedDateCtl.text, isDark),
-                if (_dispatchedDateCtl.text.isNotEmpty)
-                  _buildSummaryRow(
-                    'Dispatched Date',
-                    _dispatchedDateCtl.text,
-                    isDark,
-                  ),
-                _buildSummaryRow(
-                  'Status',
-                  _supportStatuses
-                          .firstWhere(
-                            (s) =>
-                                (int.tryParse(s['id']?.toString() ?? '') ??
-                                    0) ==
-                                (_statusId ?? 0),
-                            orElse: () => {},
-                          )['name']
-                          ?.toString() ??
-                      (_statusId?.toString() ?? '-'),
-                  isDark,
-                ),
-                _buildSummaryRow(
-                  'Technicians',
-                  '${_technicianIds.length} selected',
-                  isDark,
-                ),
-                if (_receiverId != null ||
-                    (_receiverName != null && _receiverName!.isNotEmpty))
-                  _buildSummaryRow(
-                    'Receiver',
-                    _receiverId != null
-                        ? (_findReceiverNameById(_receiverId!) ??
-                              'ID: $_receiverId')
-                        : _receiverName!,
-                    isDark,
-                  ),
-                if (_supportTicketId != null)
-                  _buildSummaryRow(
-                    'Support Ticket',
-                    _tickets
-                            .firstWhere(
-                              (t) =>
-                                  (int.tryParse(t['id']?.toString() ?? '') ??
-                                      0) ==
-                                  _supportTicketId,
-                              orElse: () => {},
-                            )['name']
-                            ?.toString() ??
-                        '-',
-                    isDark,
-                  ),
-                if (_notesCtl.text.trim().isNotEmpty)
-                  _buildSummaryRow(
-                    'Recommendation',
-                    _notesCtl.text.trim(),
-                    isDark,
-                  ),
-                _buildSummaryRow('Items', '${_items.length} items', isDark),
-                _buildSummaryRow(
-                  'Grand Total',
-                  _grandTotal.toStringAsFixed(2),
-                  isDark,
-                  highlight: true,
-                ),
-              ],
-            ),
+        // Receiver (conditional)
+        if (_relatedTo == 'Customer' ||
+            _relatedTo == 'Vendor' ||
+            _relatedTo == 'Users')
+          AppSmartDropdown<int>(
+            value: _receiverId,
+            items: _receivers
+                .map((r) => int.tryParse(r['id']?.toString() ?? '') ?? 0)
+                .where((id) => id > 0)
+                .toList(),
+            itemBuilder: (id) {
+              final r = _receivers.firstWhere(
+                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+                orElse: () => {},
+              );
+              return r.isNotEmpty
+                  ? (r['name'] ?? r['title'] ?? r['username'] ?? 'Receiver $id')
+                  : 'Receiver $id';
+            },
+            label: 'Select ${_relatedTo ?? 'Receiver'}',
+            enabled: _receivers.isNotEmpty,
+            backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+            borderRadius: 12,
+            onChanged: (v) => setState(() => _receiverId = v),
           ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showPreviewDialog() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        return Dialog(
-          insetPadding: const EdgeInsets.all(24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        // Other free-text
+        if (_relatedTo == 'Other')
+          AppTextField(
+            controller: _relatedOtherCtl,
+            onChanged: (v) => _receiverName = v,
+            label: 'Specify (Other)',
+            hintText: 'Enter related value',
           ),
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700, maxHeight: 600),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: _buildSummaryCard(isDark),
-                  ),
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          text: 'Save Draft',
-                          icon: AppIcons.saveOutlined,
-                          onPressed: () async {
-                            await _saveDraft();
-                          },
-                          variant: AppButtonVariant.outline,
-                          size: AppButtonSize.small,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: AppButton(
-                          text: 'Clear Draft',
-                          icon: AppIcons.deleteOutlineRounded,
-                          onPressed: () async {
-                            await _clearDraft();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Draft cleared')),
-                              );
-                            }
-                            Navigator.pop(ctx);
-                          },
-                          variant: AppButtonVariant.danger,
-                          size: AppButtonSize.small,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      AppButton(
-                        text: 'Close',
-                        onPressed: () => Navigator.pop(ctx),
-                        variant: AppButtonVariant.text,
-                        size: AppButtonSize.small,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        // Completed On (dispatched date)
+        AppTextField(
+          controller: _dispatchedDateCtl,
+          label: 'Completed On',
+          hintText: 'Optional',
+          isDropdown: true,
+          onDropdownTap: () => _selectDate(_dispatchedDateCtl),
+          prefixIcon: Icon(AppIcons.eventRounded, size: 18),
+        ),
+        // Summary of Tasks (maps to `description` in params)
+        AppTextField(
+          controller: _descriptionCtl,
+          label: 'Summary of Tasks',
+          hintText: 'Optional',
+          maxLines: 3,
+        ),
+        // Recommendation (maps to `notes` in params)
+        AppTextField(
+          controller: _notesCtl,
+          label: 'Recommendation',
+          hintText: 'Optional',
+          maxLines: 3,
+        ),
+      ],
     );
   }
 
@@ -1346,98 +1020,65 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0A0E21)
-          : const Color(0xFFF8F9FC),
+      backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
       appBar: CustomAppBar(
-        title: 'Create Jobcard',
-        actions: [
-          IconButton(
-            tooltip: 'Save draft',
-            icon: Icon(
-              AppIcons.saveOutlined,
-              color: isDark ? Colors.white70 : Colors.grey.shade700,
-            ),
-            onPressed: _saveDraft,
-          ),
-          IconButton(
-            tooltip: 'Load draft',
-            icon: Icon(
-              AppIcons.uploadFileRounded,
-              color: isDark ? Colors.white70 : Colors.grey.shade700,
-            ),
-            onPressed: () => _loadDraft(),
-          ),
-        ],
+        title: _editId != null ? 'Edit Jobcard' : 'Create Jobcard',
+        actions: const [],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Basic Info
-            Text(
-              'Basic Info',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A2634),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildStep1(context),
-            const SizedBox(height: 20),
+            // ── Required fields (always visible) ─────────────────────
+            _buildCoreRequired(isDark),
+            const SizedBox(height: 4),
 
-            // Assignment
-            Text(
-              'Assignment',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A2634),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildStep2(context),
-            const SizedBox(height: 20),
+            // ── "Show more / fewer" toggle ────────────────────────────
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () =>
+                    setState(() => _showMoreOptional = !_showMoreOptional),
 
-            // Department
-            Text(
-              'Department',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A2634),
+                label: Text(_showMoreOptional ? 'Hide ' : 'Show more'),
+                icon: Icon(
+                  _showMoreOptional
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  size: 18,
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            _buildStep3(context),
-            const SizedBox(height: 20),
 
-            // Items & Files
-            Text(
-              'Items & Files',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A2634),
-              ),
+            // ── Optional fields (animated expand/collapse) ────────────
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: _showMoreOptional
+                  ? _buildOptionalFields(isDark)
+                  : const SizedBox(width: double.infinity),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 16),
+
+            // ── Items & Files ─────────────────────────────────────────
             _buildStep4(context),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Review
-            Text(
-              'Review',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A2634),
-              ),
+            // ── Submit ────────────────────────────────────────────────
+            AppButton(
+              text: _submitting ? 'Creating...' : 'Create Jobcard',
+              onPressed: _submitting ? null : _submit,
+              isSticky: true,
+              textColor: AppColors.white,
             ),
-            const SizedBox(height: 8),
-            _buildStep5(context),
+            const SizedBox(height: 24),
           ],
         ),
       ),

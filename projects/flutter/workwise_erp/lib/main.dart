@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
 import 'l10n/app_localizations.dart';
+import 'core/extensions/l10n_extension.dart';
 
 import 'core/themes/app_colors.dart';
 import 'core/themes/app_typography.dart';
@@ -29,7 +30,10 @@ void main() async {
 
   // You can also override using a build-time dart-define `RUNTIME_ENV` like:
   // flutter run --dart-define=RUNTIME_ENV=dev
-  const runtimeEnv = String.fromEnvironment('RUNTIME_ENV', defaultValue: 'staging');
+  const runtimeEnv = String.fromEnvironment(
+    'RUNTIME_ENV',
+    defaultValue: 'staging',
+  );
   if (runtimeEnv.isNotEmpty) {
     EnvConfig.init(EnvConfig.parseEnv(runtimeEnv));
   }
@@ -55,8 +59,9 @@ void main() async {
   // simply launch the app with `--dart-define=RUNTIME_ENV=dev` and skip the
   // workspace entry screen entirely.
   if (tenantOverride == null && EnvConfig.current.env == AppEnvironment.dev) {
-    providerOverrides.add(tenantProvider
-        .overrideWith((ref) => Tenant(EnvConfig.current.baseUrl)));
+    providerOverrides.add(
+      tenantProvider.overrideWith((ref) => Tenant(EnvConfig.current.baseUrl)),
+    );
   }
 
   if (sentryDsn.isNotEmpty) {
@@ -98,34 +103,44 @@ class Workwise extends ConsumerWidget {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (_, __) => MaterialApp(
-        navigatorKey: ref.watch(navigatorKeyProvider),
-        scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
-        title: AppConstant.appName,
-        debugShowCheckedModeBanner: false,
-        locale: Locale(localeCode),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('en'), Locale('sw'), Locale('fr')],
-        theme: ThemeData(
-          primaryColor: AppColors.primary,
-          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-          appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+      // supply a dummy child so internal null-checks cannot fail
+      child: const SizedBox.shrink(),
+      builder: (context, child) {
+        // child will be null when not provided, so guard but we don't use it
+        return MaterialApp(
+          navigatorKey: ref.watch(navigatorKeyProvider),
+          scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
+          // title must not call context.l10n here — localizations aren't ready
+          // until MaterialApp itself is built. onGenerateTitle receives a
+          // properly-localized context and is the correct place for this.
+          onGenerateTitle: (ctx) => ctx.l10n.appName,
+          debugShowCheckedModeBanner: false,
+          locale: Locale(localeCode),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en'), Locale('sw'), Locale('fr')],
+          theme: ThemeData(
+            primaryColor: AppColors.primary,
+            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+            appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
+            ),
+            // Centralized typography (Inter default, Figtree for titles/numbers)
+            textTheme: AppTypography.textTheme,
+            // Standardize icon sizing across the app
+            iconTheme: const IconThemeData(size: 20),
           ),
-          // Centralized typography (Inter default, Figtree for titles/numbers)
-          textTheme: AppTypography.textTheme,
-          // Standardize icon sizing across the app
-          iconTheme: const IconThemeData(size: 20),
-        ),
-        routes: AppRouter.routes,
-        initialRoute: '/splash',
-      ),
+          routes: AppRouter.routes,
+          initialRoute: '/splash',
+        ); // end MaterialApp
+      }, // end builder
     );
   }
 }

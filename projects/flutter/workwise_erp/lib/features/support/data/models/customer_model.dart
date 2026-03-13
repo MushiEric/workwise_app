@@ -10,7 +10,8 @@ class CustomerModel with _$CustomerModel {
     int? id,
     String? name,
     String? email,
-    String? phone,
+    // The support ticket API returns phone as 'contact' in customer_row
+    @JsonKey(name: 'contact') String? phone,
   }) = _CustomerModel;
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) => _$CustomerModelFromJson(json);

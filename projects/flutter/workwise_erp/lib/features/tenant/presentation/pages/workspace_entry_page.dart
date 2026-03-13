@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/config/environment.dart';
-import '../../../../core/constants/app_constant.dart';
 import '../../../../core/models/tenant.dart';
 import '../../../../core/provider/tenant_provider.dart';
 // import '../../../../core/storage/tenant_local_data_source.dart';
@@ -44,31 +43,29 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animations
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-    
+
     _iconController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
-    _iconAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _iconController,
-        curve: Curves.easeInOutSine,
-      ),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _iconController.reverse();
-        } else if (status == AnimationStatus.dismissed) {
-          _iconController.forward();
-        }
-      });
-    
+
+    _iconAnimation =
+        Tween<double>(begin: 0.8, end: 1.2).animate(
+          CurvedAnimation(parent: _iconController, curve: Curves.easeInOutSine),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _iconController.reverse();
+          } else if (status == AnimationStatus.dismissed) {
+            _iconController.forward();
+          }
+        });
+
     _iconController.forward();
 
     if (EnvConfig.current.env == AppEnvironment.dev) {
@@ -104,9 +101,9 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
   Future<void> _validateAndSave() async {
     final validation = _subdomainValidation(_subdomainCtrl.text);
     if (validation != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildErrorSnackBar(validation),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_buildErrorSnackBar(validation));
       return;
     }
     setState(() {
@@ -163,7 +160,6 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
     );
   }
 
-
   String? _subdomainValidation(String? v) {
     if (v == null || v.trim().isEmpty) {
       return 'Workspace subdomain or IP is required';
@@ -200,7 +196,9 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
         );
       },
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : AppColors.surfaceVariantLight,
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : AppColors.surfaceVariantLight,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -361,8 +359,8 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
                 animation: _iconAnimation,
                 builder: (context, child) {
                   return Transform.scale(
-                    scale: _subdomainFocus.hasFocus 
-                        ? _iconAnimation.value 
+                    scale: _subdomainFocus.hasFocus
+                        ? _iconAnimation.value
                         : 1.0,
                     child: Icon(
                       _subdomainFocus.hasFocus
@@ -421,7 +419,8 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
                       fontSize: 14,
                     ),
                   ),
-                ),            ],
+                ),
+            ],
           ),
         ),
 
@@ -433,11 +432,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
             padding: const EdgeInsets.only(left: 4, top: 8),
             child: Row(
               children: [
-                Icon(
-                  LucideIcons.info,
-                  size: 14,
-                  color: Colors.grey.shade400,
-                ),
+                Icon(LucideIcons.info, size: 14, color: Colors.grey.shade400),
                 const SizedBox(width: 6),
                 Text(
                   'Use letters, numbers, and hyphens only',
@@ -515,10 +510,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(
-                            LucideIcons.arrowRight,
-                            size: 20,
-                          ),
+                          const Icon(LucideIcons.arrowRight, size: 20),
                         ],
                       ),
               ),
@@ -562,21 +554,16 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
         Text(
           context.l10n.termsAgreement,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppColors.muted,
-            height: 1.5,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.5),
         ),
         const SizedBox(height: 8),
         // Additional trust indicators
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              LucideIcons.shield,
-              size: 14,
-              color: Colors.green.shade400,
-            ),
+            Icon(LucideIcons.shield, size: 14, color: Colors.green.shade400),
             const SizedBox(width: 6),
             Text(
               'Enterprise-grade security',
@@ -595,11 +582,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
                 shape: BoxShape.circle,
               ),
             ),
-            Icon(
-              LucideIcons.lock,
-              size: 14,
-              color: Colors.blue.shade400,
-            ),
+            Icon(LucideIcons.lock, size: 14, color: Colors.blue.shade400),
             const SizedBox(width: 6),
             Text(
               'SSL encrypted',
@@ -702,7 +685,7 @@ class _BrandingHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    AppConstant.appName,
+                    context.l10n.appName,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 28,

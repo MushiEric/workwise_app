@@ -1,8 +1,17 @@
 {
   "@@locale": "en",
 
-  "appName": "Workwise",
-  "selectLanguage": "Select Language",
+  "appName": "Workwise",  "goodMorning": "Good Morning",
+  "goodAfternoon": "Good Afternoon",
+  "goodEvening": "Good Evening",
+  "goodNight": "Good Night",
+  "mainMenu": "Main Menu",
+  "welcomeToApp": "Welcome to {appName}",
+  "@welcomeToApp": {
+    "placeholders": {
+      "appName": { "type": "String" }
+    }
+  },  "selectLanguage": "Select Language",
   "languageUpdatedSuccess": "Language updated successfully.",
   "success": "Success!",
   "done": "Done",

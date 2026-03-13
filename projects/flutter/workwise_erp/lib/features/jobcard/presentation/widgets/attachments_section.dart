@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/themes/app_colors.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class AttachmentsSection extends StatelessWidget {
   final String title;
@@ -195,11 +196,9 @@ class AttachmentsSection extends StatelessWidget {
             ),
             child: AppButton(
               text: 'Upload Files',
-              icon: Icons.cloud_upload_rounded,
+              icon: Icon(AppIcons.uploadFileRounded),
               onPressed: onPickFiles,
-              variant: AppButtonVariant.outline,
-              size: AppButtonSize.small,
-              fullWidth: true,
+            
             ),
           ),
         ],

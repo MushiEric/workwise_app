@@ -1,4 +1,5 @@
 class SupportCreateParams {
+  final int? id; // null = create, non-null = update
   final String subject;
   final int? priorityId;
   final String? endDate; // ISO string (yyyy-MM-dd or ISO8601)
@@ -12,11 +13,13 @@ class SupportCreateParams {
   final int? statusId;
   final int? customerId;
   final List<int>? contactIds; // contacts[]
-  final List<String>? attachmentPaths; // single attachment expected by API but accept list
+  final List<String>?
+  attachmentPaths; // single attachment expected by API but accept list
   final int? userId;
   final List<String>? files; // files[]
 
   SupportCreateParams({
+    this.id,
     required this.subject,
     this.userId,
     this.priorityId,

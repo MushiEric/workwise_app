@@ -11,7 +11,7 @@ _$CustomerModelImpl _$$CustomerModelImplFromJson(Map<String, dynamic> json) =>
       id: (json['id'] as num?)?.toInt(),
       name: json['name'] as String?,
       email: json['email'] as String?,
-      phone: json['phone'] as String?,
+      phone: json['contact'] as String?,
     );
 
 Map<String, dynamic> _$$CustomerModelImplToJson(_$CustomerModelImpl instance) =>
@@ -19,5 +19,5 @@ Map<String, dynamic> _$$CustomerModelImplToJson(_$CustomerModelImpl instance) =>
       'id': instance.id,
       'name': instance.name,
       'email': instance.email,
-      'phone': instance.phone,
+      'contact': instance.phone,
     };

@@ -6,6 +6,7 @@ import '../../domain/entities/sales_order.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_tab_bar.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class OrderDetailContent extends ConsumerStatefulWidget {
   final SalesOrder order;
@@ -369,10 +370,9 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
               Expanded(
                 child: AppButton(
                   text: 'Edit Order',
-                  icon: Icons.edit_rounded,
+                  icon: Icon(AppIcons.edit),
                   onPressed: () {},
-                  variant: AppButtonVariant.outline,
-                  size: AppButtonSize.medium,
+           
                 ),
               ),
               const SizedBox(width: 12),
@@ -380,10 +380,9 @@ class _OrderDetailContentState extends ConsumerState<OrderDetailContent>
                 child: AppButton(
                   text: 'Convert to Invoice',
                   textColor: AppColors.white,
-                  icon: Icons.receipt_long_rounded,
+                  icon: Icon(AppIcons.receiptLongRounded),
                   onPressed: () {},
-                  variant: AppButtonVariant.primary,
-                  size: AppButtonSize.medium,
+               
                 ),
               ),
             ],

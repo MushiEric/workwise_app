@@ -8,6 +8,8 @@ import '../../domain/entities/support_ticket.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
+import 'create_ticket_page.dart';
+import '../../../../core/themes/app_icons.dart';
 
 class SupportViewPage extends ConsumerWidget {
   final SupportTicket ticket;
@@ -24,13 +26,15 @@ class SupportViewPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(
-              Icons.share_rounded,
+              AppIcons.edit,
               color: isDark ? Colors.white70 : AppColors.white,
               size: 20.r,
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Share ticket — not implemented')),
+            onPressed: () {              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CreateTicketPage(ticket: ticket),
+                ),
               );
             },
           ),
@@ -76,10 +80,7 @@ class SupportViewPage extends ConsumerWidget {
                 ),
               ),
               const PopupMenuDivider(),
-              PopupMenuItem(
-                value: 'more',
-                child: Text('More...', style: TextStyle(fontSize: 14.sp)),
-              ),
+             
             ],
           ),
         ],
@@ -138,7 +139,15 @@ class SupportViewPage extends ConsumerWidget {
                   ),
                 ),
                 title: Text('Edit Ticket', style: TextStyle(fontSize: 14.sp)),
-                onTap: () => Navigator.pop(sheetCtx),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateTicketPage(ticket: ticket),
+                    ),
+                  );
+                },
               ),
               ListTile(
                 leading: Container(
@@ -233,7 +242,10 @@ class SupportViewPage extends ConsumerWidget {
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to delete ticket')),
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text('Failed to delete ticket'),
+            ),
           );
         }
       },

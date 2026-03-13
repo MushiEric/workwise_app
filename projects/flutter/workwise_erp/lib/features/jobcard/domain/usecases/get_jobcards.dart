@@ -7,7 +7,7 @@ class GetJobcards {
   final JobcardRepository repository;
   GetJobcards(this.repository);
 
-  Future<Either<dynamic, List<Jobcard>>> call({int page = 1, int perPage = 20, String? status}) {
-    return repository.getJobcards(page: page, perPage: perPage, status: status);
+  Future<Either<dynamic, List<Jobcard>>> call({int page = 1, int perPage = 500, String? status, bool force = false}) {
+    return repository.getJobcards(page: page, perPage: perPage, status: status, force: force);
   }
 }

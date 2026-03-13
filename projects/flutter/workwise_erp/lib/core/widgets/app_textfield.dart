@@ -32,8 +32,7 @@ class AppTextField extends StatefulWidget {
   final double borderRadius;
   final EdgeInsets? contentPadding;
   final bool floatingLabel;
-  final Color? backgroundColor; // New property for custom background
-
+  final Color? backgroundColor; 
   const AppTextField({
     super.key,
     this.controller,
@@ -70,7 +69,8 @@ class AppTextField extends StatefulWidget {
   State<AppTextField> createState() => _AppTextFieldState();
 }
 
-class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMixin {
+class _AppTextFieldState extends State<AppTextField>
+    with TickerProviderStateMixin {
   late final FocusNode _focusNode;
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
@@ -82,22 +82,23 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_handleFocusChange);
-    
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   void _handleFocusChange() {
     setState(() {
       _isFocused = _focusNode.hasFocus;
     });
-    
+
     if (_focusNode.hasFocus) {
       _controller.forward();
     } else {
@@ -119,22 +120,25 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
     final hasError = widget.errorText != null || _hasError;
-    
+
     // Check if controller has text
-    final bool hasText = widget.controller != null && widget.controller!.text.isNotEmpty;
+    final bool hasText =
+        widget.controller != null && widget.controller!.text.isNotEmpty;
 
     // Determine background color with better visibility
     Color getBackgroundColor() {
       if (widget.backgroundColor != null) return widget.backgroundColor!;
       if (widget.fillColor != null) return widget.fillColor!;
-      
+
       if (isDark) {
-        return _isFocused 
+        return _isFocused
             ? const Color(0x2AFFFFFF) // More visible when focused
             : const Color(0x1AFFFFFF); // Visible in dark mode
       } else {
-        return _isFocused 
-            ? const Color(0xFFF0F3F8) // Slightly darker when focused in light mode
+        return _isFocused
+            ? const Color(
+                0xFFF0F3F8,
+              ) // Slightly darker when focused in light mode
             : const Color(0xFFF5F7FA); // Visible light background
       }
     }
@@ -159,18 +163,18 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
                 style: TextStyle(
                   fontSize: _isFocused || hasText ? 12 : 14,
                   fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w500,
-                  color: hasError 
+                  color: hasError
                       ? Colors.red.shade400
                       : _isFocused
-                          ? primaryColor
-                          : (isDark ? Colors.white70 : Colors.grey.shade700),
+                      ? primaryColor
+                      : (isDark ? Colors.white70 : Colors.grey.shade700),
                   letterSpacing: 0.3,
                 ),
                 child: Text(widget.labelText!),
               ),
             ),
           ],
-          
+
           // Input Field with Scale Animation
           AnimatedBuilder(
             animation: _scaleAnimation,
@@ -186,13 +190,15 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
                 boxShadow: _isFocused && widget.enabled && !widget.readOnly
                     ? [
                         BoxShadow(
-                          color: (hasError ? Colors.red : primaryColor).withOpacity(0.15),
+                          color: (hasError ? Colors.red : primaryColor)
+                              .withOpacity(0.15),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                           spreadRadius: 0,
                         ),
                         BoxShadow(
-                          color: (hasError ? Colors.red : primaryColor).withOpacity(0.1),
+                          color: (hasError ? Colors.red : primaryColor)
+                              .withOpacity(0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 0),
                         ),
@@ -244,24 +250,20 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
                     fontSize: 15,
                     fontWeight: FontWeight.w400,
                   ),
-                  errorText: widget.errorText,
-                  errorStyle: const TextStyle(
-                    fontSize: 12,
-                    height: 0.8,
-                    letterSpacing: 0.2,
-                  ),
                   prefixIcon: widget.prefixIcon != null
                       ? IconTheme(
-                        data: IconThemeData(
-                          color: hasError
-                              ? Colors.red.shade400
-                              : _isFocused
-                                  ? primaryColor
-                                  : (isDark ? Colors.white70 : Colors.grey.shade600),
-                          size: 20,
-                        ),
-                        child: widget.prefixIcon!,
-                      )
+                          data: IconThemeData(
+                            color: hasError
+                                ? Colors.red.shade400
+                                : _isFocused
+                                ? primaryColor
+                                : (isDark
+                                      ? Colors.white70
+                                      : Colors.grey.shade600),
+                            size: 20,
+                          ),
+                          child: widget.prefixIcon!,
+                        )
                       : null,
                   suffixIcon: widget.suffixIcon != null
                       ? IconTheme(
@@ -269,8 +271,10 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
                             color: hasError
                                 ? Colors.red.shade400
                                 : _isFocused
-                                    ? primaryColor
-                                    : (isDark ? Colors.white70 : Colors.grey.shade600),
+                                ? primaryColor
+                                : (isDark
+                                      ? Colors.white70
+                                      : Colors.grey.shade600),
                             size: 20,
                           ),
                           child: widget.suffixIcon!,
@@ -317,11 +321,9 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
                       width: 1,
                     ),
                   ),
-                  contentPadding: widget.contentPadding ?? 
-                      const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
+                  contentPadding:
+                      widget.contentPadding ??
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   counterText: widget.showCounter ? null : '',
                   counterStyle: TextStyle(
                     color: isDark ? Colors.white38 : Colors.grey.shade500,
@@ -331,7 +333,7 @@ class _AppTextFieldState extends State<AppTextField> with TickerProviderStateMix
               ),
             ),
           ),
-          
+
           // Error Message with Animation
           if (hasError && widget.errorText != null)
             AnimatedContainer(
@@ -400,7 +402,8 @@ class AppPasswordField extends StatefulWidget {
   State<AppPasswordField> createState() => _AppPasswordFieldState();
 }
 
-class _AppPasswordFieldState extends State<AppPasswordField> with TickerProviderStateMixin {
+class _AppPasswordFieldState extends State<AppPasswordField>
+    with TickerProviderStateMixin {
   bool _obscureText = true;
   late final AnimationController _toggleController;
   String? _passwordStrength;
@@ -428,13 +431,13 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
 
   void _checkPasswordStrength(String password) {
     if (!widget.showStrengthIndicator) return;
-    
+
     double strength = 0;
     if (password.length >= 8) strength += 0.25;
     if (password.contains(RegExp(r'[A-Z]'))) strength += 0.25;
     if (password.contains(RegExp(r'[0-9]'))) strength += 0.25;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.25;
-    
+
     setState(() {
       _strengthValue = strength;
       if (strength <= 0.25) {
@@ -457,8 +460,6 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = AppColors.primary;
-    
     return Column(
       children: [
         AppTextField(
@@ -475,7 +476,9 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
             _checkPasswordStrength(value);
           },
           onFieldSubmitted: widget.onFieldSubmitted,
-          prefixIcon: widget.showPrefixIcon ? const Icon(LucideIcons.lock) : null,
+          prefixIcon: widget.showPrefixIcon
+              ? const Icon(LucideIcons.lock)
+              : null,
           suffixIcon: AnimatedBuilder(
             animation: _toggleController,
             builder: (context, child) {
@@ -493,7 +496,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
           ),
           backgroundColor: widget.backgroundColor,
         ),
-        
+
         // Password Strength Indicator
         if (widget.showStrengthIndicator && _strengthValue > 0)
           Padding(
@@ -512,10 +515,10 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
                             _strengthValue <= 0.25
                                 ? Colors.red.shade400
                                 : _strengthValue <= 0.5
-                                    ? Colors.orange.shade400
-                                    : _strengthValue <= 0.75
-                                        ? Colors.blue.shade400
-                                        : Colors.green.shade400,
+                                ? Colors.orange.shade400
+                                : _strengthValue <= 0.75
+                                ? Colors.blue.shade400
+                                : Colors.green.shade400,
                           ),
                           minHeight: 4,
                         ),
@@ -530,10 +533,10 @@ class _AppPasswordFieldState extends State<AppPasswordField> with TickerProvider
                         color: _strengthValue <= 0.25
                             ? Colors.red.shade400
                             : _strengthValue <= 0.5
-                                ? Colors.orange.shade400
-                                : _strengthValue <= 0.75
-                                    ? Colors.blue.shade400
-                                    : Colors.green.shade400,
+                            ? Colors.orange.shade400
+                            : _strengthValue <= 0.75
+                            ? Colors.blue.shade400
+                            : Colors.green.shade400,
                       ),
                     ),
                   ],
@@ -593,13 +596,13 @@ class AppSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
-    
+
     final bool hasText = controller != null && controller!.text.isNotEmpty;
 
     // Determine background color
     Color getBackgroundColor() {
       if (backgroundColor != null) return backgroundColor!;
-      return isDark 
+      return isDark
           ? const Color(0x2AFFFFFF) // More visible in dark mode
           : const Color(0xFFF0F3F8); // Visible light background
     }
@@ -636,11 +639,7 @@ class AppSearchField extends StatelessWidget {
               color: primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              LucideIcons.search,
-              size: 18,
-              color: primaryColor,
-            ),
+            child: Icon(LucideIcons.search, size: 18, color: primaryColor),
           ),
           suffixIcon: hasText
               ? Container(
@@ -677,10 +676,7 @@ class AppSearchField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: primaryColor,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: primaryColor, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

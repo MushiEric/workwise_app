@@ -27,6 +27,7 @@ const List<MenuItemModel> appMenus = [
     title: 'Logistic',
     icon: Icons.local_shipping,
     route: '/logistic',
+    requiredPermissions: ['show logistic dashboard']
   ),
 
   // TODO(assets): Temporarily disabled — uncomment when assets module is restored

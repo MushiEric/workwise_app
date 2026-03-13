@@ -19,11 +19,13 @@ class JobcardNotifier extends StateNotifier<JobcardState> {
 
   JobcardNotifier({required this.getJobcards}) : super(const JobcardState.initial());
 
-  Future<void> loadJobcards({int page = 1, int perPage = 20, String? status}) async {
+  Future<void> loadJobcards({int page = 1, int perPage = 500, String? status, bool force = false}) async {
     // avoid concurrent/redundant loads
     if (state.loading) return;
+    // skip reload if data is already loaded and caller did not force a refresh
+    if (!force && state.items.isNotEmpty && state.error == null) return;
     state = const JobcardState.loading();
-    final res = await getJobcards.call(page: page, perPage: perPage, status: status);
+    final res = await getJobcards.call(page: page, perPage: perPage, status: status, force: force);
     res.fold(
       (l) => state = JobcardState.error(l is Exception ? l.toString() : '$l'),
       (r) => state = JobcardState.loaded(r),

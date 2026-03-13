@@ -35,7 +35,22 @@ class AppTypography {
     fontWeight: weight,
   ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 
+    static const double borderRadius = 12.0;
+
+     static const TextStyle hintStyle = TextStyle(
+    fontSize: 16,
+    color: Color(0xFF999999),
+  );
+
+  static const double buttonBorderRadius = 8.0;
+
+
   // Convenience getters
   static TextStyle get title => textTheme.titleLarge!;
   static TextStyle get bodySmall => textTheme.bodySmall!;
+    static const TextStyle labelStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: Color(0xFF333333),
+  );
 }

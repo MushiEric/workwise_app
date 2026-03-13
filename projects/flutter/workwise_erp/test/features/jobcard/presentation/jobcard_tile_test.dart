@@ -5,7 +5,9 @@ import 'package:workwise_erp/features/jobcard/presentation/widgets/jobcard_tile.
 import 'package:workwise_erp/features/jobcard/domain/entities/jobcard.dart';
 
 void main() {
-  testWidgets('JobcardTile prefers status_row color when present', (tester) async {
+  testWidgets('JobcardTile prefers status_row color when present', (
+    tester,
+  ) async {
     final jc = Jobcard(
       id: 1,
       jobcardNumber: 'JB-1',
@@ -17,7 +19,19 @@ void main() {
       statusRow: {'id': 2, 'name': 'In progress', 'color': '#457af7'},
     );
 
-    await tester.pumpWidget(ProviderScope(child: MaterialApp(home: Scaffold(body: JobcardTile(jobcard: jc)))));
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: JobcardTile(jobcard: jc)),
+          ),
+        ),
+        builder: (context, child) => child!,
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Status text should be colored with parsed color

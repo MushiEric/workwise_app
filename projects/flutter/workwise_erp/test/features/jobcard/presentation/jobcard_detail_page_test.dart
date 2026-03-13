@@ -51,10 +51,14 @@ void main() {
 
     await tester.pumpWidget(
       ScreenUtilInit(
-        builder: () => UncontrolledProviderScope(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(home: JobcardDetailPage()),
         ),
+        builder: (context, child) => child!,
       ),
     );
 

@@ -22,9 +22,14 @@ SupportReplyModel _$SupportReplyModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$SupportReplyModel {
   int? get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'description')
   String? get message => throw _privateConstructorUsedError;
+  int? get user => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_by')
   int? get createdBy => throw _privateConstructorUsedError;
+  @JsonKey(name: 'is_read')
+  int? get isRead => throw _privateConstructorUsedError;
+  String? get name => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   DateTime? get createdAt => throw _privateConstructorUsedError;
 
@@ -47,8 +52,11 @@ abstract class $SupportReplyModelCopyWith<$Res> {
   @useResult
   $Res call({
     int? id,
-    String? message,
+    @JsonKey(name: 'description') String? message,
+    int? user,
     @JsonKey(name: 'created_by') int? createdBy,
+    @JsonKey(name: 'is_read') int? isRead,
+    String? name,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   });
 }
@@ -70,7 +78,10 @@ class _$SupportReplyModelCopyWithImpl<$Res, $Val extends SupportReplyModel>
   $Res call({
     Object? id = freezed,
     Object? message = freezed,
+    Object? user = freezed,
     Object? createdBy = freezed,
+    Object? isRead = freezed,
+    Object? name = freezed,
     Object? createdAt = freezed,
   }) {
     return _then(
@@ -83,10 +94,22 @@ class _$SupportReplyModelCopyWithImpl<$Res, $Val extends SupportReplyModel>
                 ? _value.message
                 : message // ignore: cast_nullable_to_non_nullable
                       as String?,
+            user: freezed == user
+                ? _value.user
+                : user // ignore: cast_nullable_to_non_nullable
+                      as int?,
             createdBy: freezed == createdBy
                 ? _value.createdBy
                 : createdBy // ignore: cast_nullable_to_non_nullable
                       as int?,
+            isRead: freezed == isRead
+                ? _value.isRead
+                : isRead // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            name: freezed == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String?,
             createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -108,8 +131,11 @@ abstract class _$$SupportReplyModelImplCopyWith<$Res>
   @useResult
   $Res call({
     int? id,
-    String? message,
+    @JsonKey(name: 'description') String? message,
+    int? user,
     @JsonKey(name: 'created_by') int? createdBy,
+    @JsonKey(name: 'is_read') int? isRead,
+    String? name,
     @JsonKey(name: 'created_at') DateTime? createdAt,
   });
 }
@@ -130,7 +156,10 @@ class __$$SupportReplyModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? message = freezed,
+    Object? user = freezed,
     Object? createdBy = freezed,
+    Object? isRead = freezed,
+    Object? name = freezed,
     Object? createdAt = freezed,
   }) {
     return _then(
@@ -143,10 +172,22 @@ class __$$SupportReplyModelImplCopyWithImpl<$Res>
             ? _value.message
             : message // ignore: cast_nullable_to_non_nullable
                   as String?,
+        user: freezed == user
+            ? _value.user
+            : user // ignore: cast_nullable_to_non_nullable
+                  as int?,
         createdBy: freezed == createdBy
             ? _value.createdBy
             : createdBy // ignore: cast_nullable_to_non_nullable
                   as int?,
+        isRead: freezed == isRead
+            ? _value.isRead
+            : isRead // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        name: freezed == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String?,
         createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -161,8 +202,11 @@ class __$$SupportReplyModelImplCopyWithImpl<$Res>
 class _$SupportReplyModelImpl implements _SupportReplyModel {
   const _$SupportReplyModelImpl({
     this.id,
-    this.message,
+    @JsonKey(name: 'description') this.message,
+    this.user,
     @JsonKey(name: 'created_by') this.createdBy,
+    @JsonKey(name: 'is_read') this.isRead,
+    this.name,
     @JsonKey(name: 'created_at') this.createdAt,
   });
 
@@ -172,17 +216,25 @@ class _$SupportReplyModelImpl implements _SupportReplyModel {
   @override
   final int? id;
   @override
+  @JsonKey(name: 'description')
   final String? message;
+  @override
+  final int? user;
   @override
   @JsonKey(name: 'created_by')
   final int? createdBy;
+  @override
+  @JsonKey(name: 'is_read')
+  final int? isRead;
+  @override
+  final String? name;
   @override
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
 
   @override
   String toString() {
-    return 'SupportReplyModel(id: $id, message: $message, createdBy: $createdBy, createdAt: $createdAt)';
+    return 'SupportReplyModel(id: $id, message: $message, user: $user, createdBy: $createdBy, isRead: $isRead, name: $name, createdAt: $createdAt)';
   }
 
   @override
@@ -192,16 +244,27 @@ class _$SupportReplyModelImpl implements _SupportReplyModel {
             other is _$SupportReplyModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.message, message) || other.message == message) &&
+            (identical(other.user, user) || other.user == user) &&
             (identical(other.createdBy, createdBy) ||
                 other.createdBy == createdBy) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead) &&
+            (identical(other.name, name) || other.name == name) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, message, createdBy, createdAt);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    message,
+    user,
+    createdBy,
+    isRead,
+    name,
+    createdAt,
+  );
 
   /// Create a copy of SupportReplyModel
   /// with the given fields replaced by the non-null parameter values.
@@ -223,8 +286,11 @@ class _$SupportReplyModelImpl implements _SupportReplyModel {
 abstract class _SupportReplyModel implements SupportReplyModel {
   const factory _SupportReplyModel({
     final int? id,
-    final String? message,
+    @JsonKey(name: 'description') final String? message,
+    final int? user,
     @JsonKey(name: 'created_by') final int? createdBy,
+    @JsonKey(name: 'is_read') final int? isRead,
+    final String? name,
     @JsonKey(name: 'created_at') final DateTime? createdAt,
   }) = _$SupportReplyModelImpl;
 
@@ -234,10 +300,18 @@ abstract class _SupportReplyModel implements SupportReplyModel {
   @override
   int? get id;
   @override
+  @JsonKey(name: 'description')
   String? get message;
+  @override
+  int? get user;
   @override
   @JsonKey(name: 'created_by')
   int? get createdBy;
+  @override
+  @JsonKey(name: 'is_read')
+  int? get isRead;
+  @override
+  String? get name;
   @override
   @JsonKey(name: 'created_at')
   DateTime? get createdAt;

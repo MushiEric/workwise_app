@@ -30,9 +30,15 @@ class SupportRepositoryImpl implements SupportRepository {
   SupportRepositoryImpl(this.remote);
 
   @override
-  Future<Either<Failure, List<domain.SupportTicket>>> getTickets({int page = 1, int limit = 20}) async {
+  Future<Either<Failure, List<domain.SupportTicket>>> getTickets({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final List<SupportTicketModel> models = await remote.getSupportTickets(page: page, limit: limit);
+      final List<SupportTicketModel> models = await remote.getSupportTickets(
+        page: page,
+        limit: limit,
+      );
       final list = models.map((m) => m.toDomain()).toList();
       return Either.right(list);
     } on ServerException catch (e) {
@@ -54,7 +60,9 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportStatuses();
       final list = raw.map((m) {
         return SupportStatus(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           status: m['status']?.toString(),
           color: m['color']?.toString(),
         );
@@ -73,7 +81,9 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportPriorities();
       final list = raw.map((m) {
         return Priority(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           priority: m['priority']?.toString(),
           color: m['color']?.toString(),
         );
@@ -92,14 +102,30 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportCategories();
       final list = raw.map((m) {
         return SupportCategory(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           name: m['name']?.toString(),
-          isDefault: m['is_default'] is int ? m['is_default'] as int : (m['is_default'] is String ? int.tryParse(m['is_default']) : null),
-          createdBy: m['created_by'] is int ? m['created_by'] as int : (m['created_by'] is String ? int.tryParse(m['created_by']) : null),
-          updatedBy: m['updated_by'] is int ? m['updated_by'] as int : (m['updated_by'] is String ? int.tryParse(m['updated_by']) : null),
+          isDefault: m['is_default'] is int
+              ? m['is_default'] as int
+              : (m['is_default'] is String
+                    ? int.tryParse(m['is_default'])
+                    : null),
+          createdBy: m['created_by'] is int
+              ? m['created_by'] as int
+              : (m['created_by'] is String
+                    ? int.tryParse(m['created_by'])
+                    : null),
+          updatedBy: m['updated_by'] is int
+              ? m['updated_by'] as int
+              : (m['updated_by'] is String
+                    ? int.tryParse(m['updated_by'])
+                    : null),
           createdAt: m['created_at']?.toString(),
           updatedAt: m['updated_at']?.toString(),
-          archive: m['archive'] is int ? m['archive'] as int : (m['archive'] is String ? int.tryParse(m['archive']) : null),
+          archive: m['archive'] is int
+              ? m['archive'] as int
+              : (m['archive'] is String ? int.tryParse(m['archive']) : null),
         );
       }).toList();
       return Either.right(list);
@@ -116,15 +142,27 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportDepartments();
       final list = raw.map((m) {
         return SupportDepartment(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           customerId: m['customer_id']?.toString(),
           clientId: m['client_id']?.toString(),
           name: m['name']?.toString(),
-          updatedBy: m['updated_by'] is int ? m['updated_by'] as int : (m['updated_by'] is String ? int.tryParse(m['updated_by']) : null),
-          createdBy: m['created_by'] is int ? m['created_by'] as int : (m['created_by'] is String ? int.tryParse(m['created_by']) : null),
+          updatedBy: m['updated_by'] is int
+              ? m['updated_by'] as int
+              : (m['updated_by'] is String
+                    ? int.tryParse(m['updated_by'])
+                    : null),
+          createdBy: m['created_by'] is int
+              ? m['created_by'] as int
+              : (m['created_by'] is String
+                    ? int.tryParse(m['created_by'])
+                    : null),
           createdAt: m['created_at']?.toString(),
           updatedAt: m['updated_at']?.toString(),
-          archive: m['archive'] is int ? m['archive'] as int : (m['archive'] is String ? int.tryParse(m['archive']) : null),
+          archive: m['archive'] is int
+              ? m['archive'] as int
+              : (m['archive'] is String ? int.tryParse(m['archive']) : null),
         );
       }).toList();
       return Either.right(list);
@@ -141,7 +179,9 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportLocations();
       final list = raw.map((m) {
         return SupportLocation(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           name: m['name']?.toString(),
           number: m['number']?.toString(),
           latitude: m['latitude']?.toString(),
@@ -155,11 +195,21 @@ class SupportRepositoryImpl implements SupportRepository {
           phone: m['phone']?.toString(),
           fax: m['fax']?.toString(),
           address: m['address']?.toString(),
-          createdBy: m['created_by'] is int ? m['created_by'] as int : (m['created_by'] is String ? int.tryParse(m['created_by']) : null),
-          updatedBy: m['updated_by'] is int ? m['updated_by'] as int : (m['updated_by'] is String ? int.tryParse(m['updated_by']) : null),
+          createdBy: m['created_by'] is int
+              ? m['created_by'] as int
+              : (m['created_by'] is String
+                    ? int.tryParse(m['created_by'])
+                    : null),
+          updatedBy: m['updated_by'] is int
+              ? m['updated_by'] as int
+              : (m['updated_by'] is String
+                    ? int.tryParse(m['updated_by'])
+                    : null),
           createdAt: m['created_at']?.toString(),
           updatedAt: m['updated_at']?.toString(),
-          archive: m['archive'] is int ? m['archive'] as int : (m['archive'] is String ? int.tryParse(m['archive']) : null),
+          archive: m['archive'] is int
+              ? m['archive'] as int
+              : (m['archive'] is String ? int.tryParse(m['archive']) : null),
           locationNumber: m['location_number']?.toString(),
         );
       }).toList();
@@ -177,13 +227,25 @@ class SupportRepositoryImpl implements SupportRepository {
       final raw = await remote.getSupportServices();
       final list = raw.map((m) {
         return SupportService(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           name: m['name']?.toString(),
-          createdBy: m['created_by'] is int ? m['created_by'] as int : (m['created_by'] is String ? int.tryParse(m['created_by']) : null),
-          updatedBy: m['updated_by'] is int ? m['updated_by'] as int : (m['updated_by'] is String ? int.tryParse(m['updated_by']) : null),
+          createdBy: m['created_by'] is int
+              ? m['created_by'] as int
+              : (m['created_by'] is String
+                    ? int.tryParse(m['created_by'])
+                    : null),
+          updatedBy: m['updated_by'] is int
+              ? m['updated_by'] as int
+              : (m['updated_by'] is String
+                    ? int.tryParse(m['updated_by'])
+                    : null),
           createdAt: m['created_at']?.toString(),
           updatedAt: m['updated_at']?.toString(),
-          archive: m['archive'] is int ? m['archive'] as int : (m['archive'] is String ? int.tryParse(m['archive']) : null),
+          archive: m['archive'] is int
+              ? m['archive'] as int
+              : (m['archive'] is String ? int.tryParse(m['archive']) : null),
         );
       }).toList();
       return Either.right(list);
@@ -204,16 +266,22 @@ class SupportRepositoryImpl implements SupportRepository {
         if (m['user'] is Map<String, dynamic>) {
           final u = m['user'] as Map<String, dynamic>;
           user = AssignedUser(
-            id: u['id'] is int ? u['id'] as int : (u['id'] is String ? int.tryParse(u['id']) : null),
+            id: u['id'] is int
+                ? u['id'] as int
+                : (u['id'] is String ? int.tryParse(u['id']) : null),
             name: u['name']?.toString(),
             type: u['type']?.toString(),
           );
         }
 
         return SupportSupervisor(
-          id: m['id'] is int ? m['id'] as int : (m['id'] is String ? int.tryParse(m['id']) : null),
+          id: m['id'] is int
+              ? m['id'] as int
+              : (m['id'] is String ? int.tryParse(m['id']) : null),
           entryNumber: m['entry_number']?.toString(),
-          userId: m['user_id'] is int ? m['user_id'] as int : (m['user_id'] is String ? int.tryParse(m['user_id']) : null),
+          userId: m['user_id'] is int
+              ? m['user_id'] as int
+              : (m['user_id'] is String ? int.tryParse(m['user_id']) : null),
           relatedTo: m['related_to']?.toString(),
           supervisorCustomer: m['supervisor_customer']?.toString(),
           customersAll: m['customers_all']?.toString(),
@@ -221,11 +289,21 @@ class SupportRepositoryImpl implements SupportRepository {
           departmentAll: m['department_all']?.toString(),
           branchesAll: m['branches_all']?.toString(),
           servicesAll: m['services_all']?.toString(),
-          createdBy: m['created_by'] is int ? m['created_by'] as int : (m['created_by'] is String ? int.tryParse(m['created_by']) : null),
-          updatedBy: m['updated_by'] is int ? m['updated_by'] as int : (m['updated_by'] is String ? int.tryParse(m['updated_by']) : null),
+          createdBy: m['created_by'] is int
+              ? m['created_by'] as int
+              : (m['created_by'] is String
+                    ? int.tryParse(m['created_by'])
+                    : null),
+          updatedBy: m['updated_by'] is int
+              ? m['updated_by'] as int
+              : (m['updated_by'] is String
+                    ? int.tryParse(m['updated_by'])
+                    : null),
           createdAt: m['created_at']?.toString(),
           updatedAt: m['updated_at']?.toString(),
-          archive: m['archive'] is int ? m['archive'] as int : (m['archive'] is String ? int.tryParse(m['archive']) : null),
+          archive: m['archive'] is int
+              ? m['archive'] as int
+              : (m['archive'] is String ? int.tryParse(m['archive']) : null),
           user: user,
         );
       }).toList();
@@ -251,7 +329,10 @@ class SupportRepositoryImpl implements SupportRepository {
   }
 
   @override
-  Future<Either<Failure, void>> changeTicketStatus({required int ticketId, required int statusId}) async {
+  Future<Either<Failure, void>> changeTicketStatus({
+    required int ticketId,
+    required int statusId,
+  }) async {
     try {
       await remote.changeTicketStatus(ticketId: ticketId, statusId: statusId);
       invalidateCache();
@@ -264,9 +345,15 @@ class SupportRepositoryImpl implements SupportRepository {
   }
 
   @override
-  Future<Either<Failure, void>> changeTicketPriority({required int ticketId, required int priorityId}) async {
+  Future<Either<Failure, void>> changeTicketPriority({
+    required int ticketId,
+    required int priorityId,
+  }) async {
     try {
-      await remote.changeTicketPriority(ticketId: ticketId, priorityId: priorityId);
+      await remote.changeTicketPriority(
+        ticketId: ticketId,
+        priorityId: priorityId,
+      );
       invalidateCache();
       return const Either.right(null);
     } on ServerException catch (e) {
@@ -290,9 +377,12 @@ class SupportRepositoryImpl implements SupportRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createTicket({required SupportCreateParams params}) async {
+  Future<Either<Failure, void>> createTicket({
+    required SupportCreateParams params,
+  }) async {
     try {
       final fields = <String, dynamic>{
+        if (params.id != null) 'id': params.id,
         'subject': params.subject,
         if (params.priorityId != null) ...{
           'priority': params.priorityId,
@@ -361,4 +451,3 @@ class SupportRepositoryImpl implements SupportRepository {
     }
   }
 }
-

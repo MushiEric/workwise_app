@@ -10,11 +10,33 @@ class JobcardTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
+  /// When true, swipe-to-approve (right) and swipe-to-reject (left) are enabled.
+  final bool showApproveReject;
+
+  /// When true, a long-press triggers the "Set Reminder" bottom sheet.
+  final bool showReminder;
+
+  /// Callbacks fired after confirmation dialogs
+  final Future<void> Function(int jobcardId)? onApprove;
+  final Future<void> Function(int jobcardId, String? reason)? onReject;
+  final VoidCallback? onSetReminder;
+
+  /// Pre-resolved receiver display name (passed from the list page after
+  /// looking up the receiver ID in the pre-loaded customers / users / vehicles list).
+  /// When provided, this takes priority over jobcard.receiverName.
+  final String? resolvedReceiverName;
+
   const JobcardTile({
     super.key,
     required this.jobcard,
     this.onTap,
     this.onDelete,
+    this.showApproveReject = false,
+    this.showReminder = false,
+    this.onApprove,
+    this.onReject,
+    this.onSetReminder,
+    this.resolvedReceiverName,
   });
 
   Color _getStatusColor(String? statusName) {
@@ -23,9 +45,8 @@ class JobcardTile extends StatelessWidget {
     if (lower.contains('open')) return const Color(0xFF4A6FA5);
     if (lower.contains('completed') ||
         lower.contains('done') ||
-        lower.contains('closed')) {
+        lower.contains('closed'))
       return Colors.green;
-    }
     if (lower.contains('pending') || lower.contains('waiting'))
       return Colors.orange;
     if (lower.contains('in progress') || lower.contains('processing'))
@@ -43,7 +64,6 @@ class JobcardTile extends StatelessWidget {
       statusName.isNotEmpty ? statusName : jobcard.status,
     );
 
-    // Prefer explicit color from backend status_row if provided
     final rowColorStr = jobcard.statusRow?['color']?.toString();
     if (rowColorStr != null && rowColorStr.isNotEmpty) {
       statusColor = hexToColor(rowColorStr, fallback: statusColor);
@@ -53,6 +73,299 @@ class JobcardTile extends StatelessWidget {
         ? statusName
         : (jobcard.status ?? 'Unknown');
 
+    Widget card = _buildCard(context, isDark, statusColor, displayStatus);
+
+    // Wrap with Dismissible for approve/reject swipe gestures
+    if (showApproveReject && jobcard.id != null) {
+      card = _wrapWithDismissible(context, card, isDark);
+    }
+
+    // Wrap with GestureDetector for long-press reminder
+    if (showReminder) {
+      card = GestureDetector(
+        onLongPress: () => _handleLongPress(context),
+        child: card,
+      );
+    }
+
+    return card;
+  }
+
+  Widget _wrapWithDismissible(BuildContext context, Widget child, bool isDark) {
+    return Dismissible(
+      key: ValueKey('jc-${jobcard.id}'),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe right → Approve
+          return await _showApproveDialog(context, isDark);
+        } else {
+          // Swipe left → Reject
+          return await _showRejectDialog(context, isDark);
+        }
+      },
+      // We never actually remove from list until refresh; return false from
+      // confirmDismiss so the item stays visible
+      onDismissed: (_) {},
+      background: _swipeBackground(
+        alignment: Alignment.centerLeft,
+        color: Colors.green.shade600,
+        icon: AppIcons.checkCircleRounded,
+        label: 'Approve',
+      ),
+      secondaryBackground: _swipeBackground(
+        alignment: Alignment.centerRight,
+        color: Colors.red.shade600,
+        icon: AppIcons.cancelRounded,
+        label: 'Reject',
+      ),
+      child: child,
+    );
+  }
+
+  Widget _swipeBackground({
+    required AlignmentGeometry alignment,
+    required Color color,
+    required IconData icon,
+    required String label,
+  }) {
+    final isLeft = alignment == Alignment.centerLeft;
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      alignment: alignment,
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: isLeft
+            ? [
+                Icon(icon, color: Colors.white, size: 24.r),
+                SizedBox(width: 8.w),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ]
+            : [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Icon(icon, color: Colors.white, size: 24.r),
+              ],
+      ),
+    );
+  }
+
+  Future<bool> _showApproveDialog(BuildContext context, bool isDark) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(AppIcons.checkCircleRounded, color: Colors.green, size: 24),
+            const SizedBox(width: 8),
+            const Text('Approve Jobcard'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to approve jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && onApprove != null) {
+      await onApprove!(jobcard.id!);
+    }
+    return false; // Don't dismiss the tile
+  }
+
+  Future<bool> _showRejectDialog(BuildContext context, bool isDark) async {
+    final reasonCtl = TextEditingController();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(AppIcons.cancelRounded, color: Colors.red.shade600, size: 24),
+            const SizedBox(width: 8),
+            const Text('Reject Jobcard'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reject jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonCtl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Reason (optional)',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && onReject != null) {
+      await onReject!(
+        jobcard.id!,
+        reasonCtl.text.trim().isEmpty ? null : reasonCtl.text.trim(),
+      );
+    }
+    reasonCtl.dispose();
+    return false; // Don't dismiss the tile
+  }
+
+  void _handleLongPress(BuildContext context) {
+    if (onSetReminder != null) {
+      onSetReminder!();
+      return;
+    }
+    // Default: show a simple bottom sheet
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(
+                      AppIcons.notificationsRounded,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Set Reminder',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF1A2634),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Jobcard: ${jobcard.jobcardNumber ?? '#${jobcard.id}'}',
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(AppIcons.accessTimeRounded),
+                  title: const Text('Remind me in 1 hour'),
+                  onTap: () => Navigator.of(ctx).pop(),
+                ),
+                ListTile(
+                  leading: const Icon(AppIcons.calendarTodayRounded),
+                  title: const Text('Remind me tomorrow'),
+                  onTap: () => Navigator.of(ctx).pop(),
+                ),
+                ListTile(
+                  leading: const Icon(AppIcons.editCalendarRounded),
+                  title: const Text('Custom reminder'),
+                  onTap: () => Navigator.of(ctx).pop(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    bool isDark,
+    Color statusColor,
+    String displayStatus,
+  ) {
     return Card(
       margin: EdgeInsets.only(bottom: 12.h),
       elevation: 0,
@@ -72,47 +385,10 @@ class JobcardTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header Row: JC chip · jobcard number · status badge ──
+              // ── Header Row: JC number · status badge ──
               Row(
                 children: [
-                  // Type chip
-                  // Container(
-                  //   padding: EdgeInsets.symmetric(
-                  //     horizontal: 10.w,
-                  //     vertical: 6.h,
-                  //   ),
-                  //   decoration: BoxDecoration(
-                  //     color: isDark ? Colors.white10 : Colors.white,
-                  //     borderRadius: BorderRadius.circular(12.r),
-                  //     border: Border.all(
-                  //       color: isDark ? Colors.white10 : Colors.grey.shade200,
-                  //     ),
-                  //   ),
-                  //   child: Row(
-                  //     mainAxisSize: MainAxisSize.min,
-                  //     children: [
-                  //       // Container(
-                  //       //   width: 8.r,
-                  //       //   height: 8.r,
-                  //       //   decoration: BoxDecoration(
-                  //       //     color: AppColors.primary,
-                  //       //     shape: BoxShape.circle,
-                  //       //   ),
-                  //       // ),
-                  //       // SizedBox(width: 6.w),
-                  //       // Text(
-                  //       //   'JC',
-                  //       //   style: TextStyle(
-                  //       //     color: Theme.of(context).colorScheme.onSurface,
-                  //       //     fontWeight: FontWeight.w600,
-                  //       //     fontSize: 12.sp,
-                  //       //   ),
-                  //       // ),
-                  //     ],
-                  //   ),
-                  // ),
-                  SizedBox(width: 8.w),
-                  // Jobcard number
+                  SizedBox(width: 4.w),
                   Expanded(
                     child: Text(
                       jobcard.jobcardNumber ?? 'N/A',
@@ -160,43 +436,67 @@ class JobcardTile extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Delete action
-                  // if (onDelete != null) ...[
-                  //   SizedBox(width: 4.w),
-                  //   IconButton(
-                  //     icon: Icon(
-                  //       Icons.delete_outline_rounded,
-                  //       size: 18.r,
-                  //       color: isDark ? Colors.white38 : AppColors.error,
-                  //     ),
-                  //     onPressed: onDelete,
-                  //     tooltip: 'Delete',
-                  //     padding: EdgeInsets.zero,
-                  //     constraints: BoxConstraints(minWidth: 28.w, minHeight: 28.h),
-                  //   ),
-                  // ],
                 ],
               ),
 
-              SizedBox(height: 12.h),
+              SizedBox(height: 10.h),
 
-              // ── Subject (service) ──
+              // ── Subject (full text, no truncation) ──
               Text(
                 jobcard.service != null && jobcard.service!.isNotEmpty
                     ? jobcard.service!
                     : 'No subject',
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : const Color(0xFF1A2634),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
 
-              SizedBox(height: 8.h),
+              SizedBox(height: 10.h),
 
-              // ── Creation date ──
+              // ── Meta chips row ──
+              Wrap(
+                spacing: 6.w,
+                runSpacing: 4.h,
+                children: [
+                  // Related To
+                  if (jobcard.relatedTo != null &&
+                      jobcard.relatedTo!.isNotEmpty)
+                    _metaChip(
+                      isDark: isDark,
+                      icon: AppIcons.categoryRounded,
+                      label: jobcard.relatedTo!,
+                    ),
+                  // Receiver name
+                  if (_receiverLabel.isNotEmpty)
+                    _metaChip(
+                      isDark: isDark,
+                      icon: AppIcons.personRounded,
+                      label: _receiverLabel,
+                    ),
+                  // Location
+                  if (jobcard.location != null &&
+                      jobcard.location!.isNotEmpty &&
+                      jobcard.location != 'null')
+                    _metaChip(
+                      isDark: isDark,
+                      icon: AppIcons.locationOnRounded,
+                      label: jobcard.location!,
+                    ),
+                  // Departments
+                  if (_departmentLabel.isNotEmpty)
+                    _metaChip(
+                      isDark: isDark,
+                      icon: AppIcons.businessRounded,
+                      label: _departmentLabel,
+                    ),
+                ],
+              ),
+
+              SizedBox(height: 10.h),
+
+              // ── Date row ──
               Row(
                 children: [
                   Icon(
@@ -214,13 +514,79 @@ class JobcardTile extends StatelessWidget {
                   ),
                 ],
               ),
-
-              SizedBox(height: 12.h),
-
-              // other details intentionally omitted; shown on tap via detail page
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  String get _receiverLabel {
+    // Prefer the pre-resolved name (looked up from cached customers/users/vehicles)
+    if (resolvedReceiverName != null && resolvedReceiverName!.isNotEmpty) {
+      return resolvedReceiverName!;
+    }
+    if (jobcard.receiverName != null &&
+        jobcard.receiverName!.isNotEmpty &&
+        jobcard.receiverName != 'null') {
+      return jobcard.receiverName!;
+    }
+    if (jobcard.receiver != null &&
+        jobcard.receiver!.isNotEmpty &&
+        jobcard.receiver != 'null' &&
+        jobcard.receiver != '0') {
+      return jobcard.receiver!;
+    }
+    return '';
+  }
+
+  String get _departmentLabel {
+    if (jobcard.departments == null) return '';
+    final d = jobcard.departments!.trim();
+    if (d.isEmpty || d == '[]' || d == 'null') return '';
+    if (d.startsWith('[')) {
+      final inner = d
+          .substring(1, d.length - 1)
+          .split(',')
+          .map((e) => e.trim().replaceAll('"', ''))
+          .where((e) => e.isNotEmpty)
+          .toList();
+      return inner.isEmpty ? '' : inner.join(', ');
+    }
+    return d;
+  }
+
+  Widget _metaChip({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 11.r,
+            color: isDark ? Colors.white38 : Colors.grey.shade500,
+          ),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: isDark ? Colors.white60 : Colors.grey.shade600,
+            ),
+          ),
+        ],
       ),
     );
   }

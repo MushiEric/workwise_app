@@ -14,9 +14,19 @@ class JobcardRepositoryImpl implements JobcardRepository {
   JobcardRepositoryImpl(this.remote);
 
   @override
-  Future<Either<dynamic, List<domain.Jobcard>>> getJobcards({int page = 1, int perPage = 20, String? status}) async {
+  Future<Either<dynamic, List<domain.Jobcard>>> getJobcards({
+    int page = 1,
+    int perPage = 20,
+    String? status,
+    bool force = false,
+  }) async {
     try {
-      final models = await remote.getJobcards(page: page, perPage: perPage, status: status);
+      final models = await remote.getJobcards(
+        page: page,
+        perPage: perPage,
+        status: status,
+        force: force,
+      );
       final list = models.map((m) => m as domain.Jobcard).toList();
       return Either.right(list);
     } on ServerException catch (e) {
@@ -39,47 +49,60 @@ class JobcardRepositoryImpl implements JobcardRepository {
   }
 
   @override
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getDashboardData() async {
+    try {
+      final raw = await remote.getDashboardData();
+      return Either.right(raw);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<dynamic, List<JobcardStatus>>> getSettings() async {
     try {
       final raw = await remote.getJobcardSettings();
-      
+
       // If raw is empty, return empty list instead of error
       if (raw.isEmpty) {
         return Either.right(<JobcardStatus>[]);
       }
-      
-      final list = raw.map((m) {
-        // Try multiple field name variations
-        int? id;
-        if (m['id'] != null) {
-          if (m['id'] is int) {
-            id = m['id'] as int;
-          } else if (m['id'] is String) {
-            id = int.tryParse(m['id']);
-          } else if (m['id'] is num) {
-            id = (m['id'] as num).toInt();
-          }
-        }
-        
-        // Try multiple name field variations
-        String? name = m['name']?.toString() ?? 
-                      m['status']?.toString() ?? 
-                      m['status_name']?.toString() ?? 
-                      m['label']?.toString() ?? 
-                      m['title']?.toString();
-        
-        // Try multiple color field variations
-        String? color = m['color']?.toString() ?? 
-                       m['status_color']?.toString() ?? 
-                       m['colour']?.toString();
-        
-        return JobcardStatus(
-          id: id,
-          name: name,
-          color: color,
-        );
-      }).where((s) => s.name != null && s.name!.isNotEmpty).toList();
-      
+
+      final list = raw
+          .map((m) {
+            // Try multiple field name variations
+            int? id;
+            if (m['id'] != null) {
+              if (m['id'] is int) {
+                id = m['id'] as int;
+              } else if (m['id'] is String) {
+                id = int.tryParse(m['id']);
+              } else if (m['id'] is num) {
+                id = (m['id'] as num).toInt();
+              }
+            }
+
+            // Try multiple name field variations
+            String? name =
+                m['name']?.toString() ??
+                m['status']?.toString() ??
+                m['status_name']?.toString() ??
+                m['label']?.toString() ??
+                m['title']?.toString();
+
+            // Try multiple color field variations
+            String? color =
+                m['color']?.toString() ??
+                m['status_color']?.toString() ??
+                m['colour']?.toString();
+
+            return JobcardStatus(id: id, name: name, color: color);
+          })
+          .where((s) => s.name != null && s.name!.isNotEmpty)
+          .toList();
+
       return Either.right(list);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -113,9 +136,19 @@ class JobcardRepositoryImpl implements JobcardRepository {
   }
 
   @override
-  Future<Either<dynamic, void>> changeJobcardStatus({required int id, required String status, String? note}) async {
-    // placeholder until you provide the exact endpoint. For now return right(null).
-    return Either.right(null);
+  Future<Either<dynamic, void>> changeJobcardStatus({
+    required int id,
+    required String status,
+    String? note,
+  }) async {
+    try {
+      await remote.changeJobcardStatus(id, status, note: note);
+      return const Either.right(null);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
   }
 
   @override
@@ -135,10 +168,12 @@ class JobcardRepositoryImpl implements JobcardRepository {
 
       // If attachments were provided as file paths, ensure the remote datasource will treat them as files
       // (we expect keys 'item_attachemt' and 'service_attachemt' to be lists of file paths)
-      if (payload['item_attachemt'] is List<String> && (payload['item_attachemt'] as List).isNotEmpty) {
+      if (payload['item_attachemt'] is List<String> &&
+          (payload['item_attachemt'] as List).isNotEmpty) {
         // leave as-is; remote will detect and convert to MultipartFile
       }
-      if (payload['service_attachemt'] is List<String> && (payload['service_attachemt'] as List).isNotEmpty) {
+      if (payload['service_attachemt'] is List<String> &&
+          (payload['service_attachemt'] as List).isNotEmpty) {
         // leave as-is
       }
 
@@ -148,46 +183,60 @@ class JobcardRepositoryImpl implements JobcardRepository {
       // 1. data: { id: ... } or data: '123' or data: 123
       if (resp.containsKey('data')) {
         final d = resp['data'];
-        if (d is Map && d['id'] != null) return Either.right(int.tryParse(d['id'].toString()) ?? 0);
-        if (d is Map && d['jobcard_id'] != null) return Either.right(int.tryParse(d['jobcard_id'].toString()) ?? 0);
+        if (d is Map && d['id'] != null)
+          return Either.right(int.tryParse(d['id'].toString()) ?? 0);
+        if (d is Map && d['jobcard_id'] != null)
+          return Either.right(int.tryParse(d['jobcard_id'].toString()) ?? 0);
         if (d is num) return Either.right(d.toInt());
-        if (d is String && int.tryParse(d) != null) return Either.right(int.parse(d));
+        if (d is String && int.tryParse(d) != null)
+          return Either.right(int.parse(d));
       }
 
       // 2. top-level id variants
       if (resp['id'] != null) {
         final v = resp['id'];
         if (v is num) return Either.right(v.toInt());
-        if (v is String && int.tryParse(v) != null) return Either.right(int.parse(v));
+        if (v is String && int.tryParse(v) != null)
+          return Either.right(int.parse(v));
       }
       if (resp['jobcard_id'] != null) {
         final v = resp['jobcard_id'];
         if (v is num) return Either.right(v.toInt());
-        if (v is String && int.tryParse(v) != null) return Either.right(int.parse(v));
+        if (v is String && int.tryParse(v) != null)
+          return Either.right(int.parse(v));
       }
 
       // 3. jobcard: { id: ... }
-      if (resp.containsKey('jobcard') && resp['jobcard'] is Map && resp['jobcard']['id'] != null) {
-        return Either.right(int.tryParse(resp['jobcard']['id'].toString()) ?? 0);
+      if (resp.containsKey('jobcard') &&
+          resp['jobcard'] is Map &&
+          resp['jobcard']['id'] != null) {
+        return Either.right(
+          int.tryParse(resp['jobcard']['id'].toString()) ?? 0,
+        );
       }
 
       // 4. payload or nested shapes
       if (resp.containsKey('payload') && resp['payload'] is Map) {
         final p = resp['payload'] as Map;
-        if (p['id'] != null) return Either.right(int.tryParse(p['id'].toString()) ?? 0);
-        if (p['jobcard_id'] != null) return Either.right(int.tryParse(p['jobcard_id'].toString()) ?? 0);
+        if (p['id'] != null)
+          return Either.right(int.tryParse(p['id'].toString()) ?? 0);
+        if (p['jobcard_id'] != null)
+          return Either.right(int.tryParse(p['jobcard_id'].toString()) ?? 0);
       }
 
       // 5. fallback: try to find the first numeric-like value in the response
       for (final v in resp.values) {
         if (v is num) return Either.right(v.toInt());
-        if (v is String && int.tryParse(v) != null) return Either.right(int.parse(v));
+        if (v is String && int.tryParse(v) != null)
+          return Either.right(int.parse(v));
       }
 
       // Debug: include the raw response in logs (only in debug/assert builds)
       assert(() {
         // ignore: avoid_print
-        print('[JobcardRepositoryImpl] createJobcard: could not parse response for payload; raw response: $resp');
+        print(
+          '[JobcardRepositoryImpl] createJobcard: could not parse response for payload; raw response: $resp',
+        );
         return true;
       }());
 
@@ -203,7 +252,8 @@ class JobcardRepositoryImpl implements JobcardRepository {
   Future<Either<dynamic, String>> generateUniqueNumber() async {
     try {
       final s = await remote.generateUniqueNumber();
-      if (s == null || s.isEmpty) return Either.left(ServerFailure('Failed to generate jobcard number'));
+      if (s == null || s.isEmpty)
+        return Either.left(ServerFailure('Failed to generate jobcard number'));
       return Either.right(s);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -221,12 +271,14 @@ class JobcardRepositoryImpl implements JobcardRepository {
         remote.getProducts(creatorId: creatorId),
         remote.getProductUnits(creatorId: creatorId),
       ]);
-      return Either.right(JobcardFormData(
-        vehicles: results[0],
-        users: results[1],
-        products: results[2],
-        productUnits: results[3],
-      ));
+      return Either.right(
+        JobcardFormData(
+          vehicles: results[0],
+          users: results[1],
+          products: results[2],
+          productUnits: results[3],
+        ),
+      );
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {
@@ -235,10 +287,53 @@ class JobcardRepositoryImpl implements JobcardRepository {
   }
 
   @override
-  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(String type) async {
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(
+    String type,
+  ) async {
     try {
       final list = await remote.getReceiversByType(type);
       return Either.right(list);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<dynamic, Map<String, dynamic>>> checkApprovalEligibility(
+    int jobcardId,
+  ) async {
+    try {
+      final result = await remote.checkApprovalEligibility(jobcardId);
+      return Either.right(result);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<dynamic, void>> approveJobcard(int jobcardId) async {
+    try {
+      await remote.approveJobcard(jobcardId);
+      return Either.right(null);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } catch (e) {
+      return Either.left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<dynamic, void>> rejectJobcard(
+    int jobcardId, {
+    String? reason,
+  }) async {
+    try {
+      await remote.rejectJobcard(jobcardId, reason: reason);
+      return Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {

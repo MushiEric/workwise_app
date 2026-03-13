@@ -40,6 +40,29 @@ class CacheInterceptor extends Interceptor {
   }
 
   @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // Only serve cache for GET requests
+    if (options.method.toUpperCase() != 'GET') {
+      return handler.next(options);
+    }
+    // Allow callers to bypass cache by setting extra: {'no_cache': true}
+    if (options.extra['no_cache'] == true) {
+      return handler.next(options);
+    }
+    final cached = await _readCache(options);
+    if (cached != null) {
+      final response = Response(
+        requestOptions: options,
+        data: cached,
+        statusCode: 200,
+        statusMessage: 'OK (cached)',
+      );
+      return handler.resolve(response, true);
+    }
+    handler.next(options);
+  }
+
+  @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     final opts = response.requestOptions;
 

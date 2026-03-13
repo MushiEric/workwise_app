@@ -5,7 +5,12 @@ import '../entities/jobcard_form_data.dart';
 import '../entities/jobcard_status.dart';
 
 abstract class JobcardRepository {
-  Future<Either<dynamic, List<Jobcard>>> getJobcards({int page = 1, int perPage = 20, String? status});
+  Future<Either<dynamic, List<Jobcard>>> getJobcards({
+    int page = 1,
+    int perPage = 20,
+    String? status,
+    bool force = false,
+  });
 
   Future<Either<dynamic, JobcardDetail>> getJobcardById(int id);
 
@@ -18,7 +23,11 @@ abstract class JobcardRepository {
   Future<Either<dynamic, void>> deleteJobcard({required int id});
 
   // placeholder for status change (implement when endpoint provided)
-  Future<Either<dynamic, void>> changeJobcardStatus({required int id, required String status, String? note});
+  Future<Either<dynamic, void>> changeJobcardStatus({
+    required int id,
+    required String status,
+    String? note,
+  });
 
   /// Create a jobcard. Returns created jobcard id on success.
   Future<Either<dynamic, int>> createJobcard({required dynamic params});
@@ -30,6 +39,21 @@ abstract class JobcardRepository {
   Future<Either<dynamic, JobcardFormData>> getFormData({int? creatorId});
 
   /// Fetch receivers filtered by [type] (customer | vendor | user | employee).
-  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(String type);
-}
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getReceiversByType(
+    String type,
+  );
 
+  /// Fetch dashboard statistics: list of statuses with their totals.
+  Future<Either<dynamic, List<Map<String, dynamic>>>> getDashboardData();
+
+  /// Check if the current user is eligible to approve a jobcard.
+  Future<Either<dynamic, Map<String, dynamic>>> checkApprovalEligibility(
+    int jobcardId,
+  );
+
+  /// Approve a jobcard.
+  Future<Either<dynamic, void>> approveJobcard(int jobcardId);
+
+  /// Reject a jobcard with an optional reason.
+  Future<Either<dynamic, void>> rejectJobcard(int jobcardId, {String? reason});
+}

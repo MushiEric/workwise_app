@@ -9,7 +9,9 @@ import 'package:workwise_erp/features/support/domain/entities/assigned_user.dart
 import 'package:workwise_erp/features/support/presentation/widgets/ticket_detail_content.dart';
 
 void main() {
-  testWidgets('TicketDetailContent builds with default options', (tester) async {
+  testWidgets('TicketDetailContent builds with default options', (
+    tester,
+  ) async {
     final ticket = SupportTicket(
       id: 1,
       subject: 'Test',
@@ -19,35 +21,70 @@ void main() {
       replies: const <SupportReply>[],
     );
 
-    await tester.pumpWidget(ProviderScope(
-      child: MaterialApp(home: Scaffold(body: TicketDetailContent(ticket: ticket))),
-    ));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(TicketDetailContent), findsOneWidget);
-  });
-
-  testWidgets('TicketDetailContent falls back to first option when value not in options', (tester) async {
-    final ticket = SupportTicket(
-      id: 2,
-      subject: 'Fallback test',
-      ticketCode: 'T-002',
-      status: const SupportStatus(id: 9, status: 'WeirdStatus', color: '#000000'),
-      priority: const Priority(id: 9, priority: 'StrangePriority', color: '#000000'),
-      replies: const <SupportReply>[],
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: TicketDetailContent(ticket: ticket)),
+          ),
+        ),
+        builder: (context, child) => child!,
+      ),
     );
-
-    await tester.pumpWidget(ProviderScope(
-      child: MaterialApp(home: Scaffold(body: TicketDetailContent(ticket: ticket))),
-    ));
     await tester.pumpAndSettle();
 
-    // Just ensure the widget builds and doesn't throw when provided unknown values.
     expect(find.byType(TicketDetailContent), findsOneWidget);
   });
+
+  testWidgets(
+    'TicketDetailContent falls back to first option when value not in options',
+    (tester) async {
+      final ticket = SupportTicket(
+        id: 2,
+        subject: 'Fallback test',
+        ticketCode: 'T-002',
+        status: const SupportStatus(
+          id: 9,
+          status: 'WeirdStatus',
+          color: '#000000',
+        ),
+        priority: const Priority(
+          id: 9,
+          priority: 'StrangePriority',
+          color: '#000000',
+        ),
+        replies: const <SupportReply>[],
+      );
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(390, 844),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          child: ProviderScope(
+            child: MaterialApp(
+              home: Scaffold(body: TicketDetailContent(ticket: ticket)),
+            ),
+          ),
+          builder: (context, child) => child!,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Just ensure the widget builds and doesn't throw when provided unknown values.
+      expect(find.byType(TicketDetailContent), findsOneWidget);
+    },
+  );
 
   testWidgets('shows assigned user and service/category', (tester) async {
-    final assignUser = AssignedUser(id: 4, name: 'HERMAN SOLOMON JONES', type: 'operator');
+    final assignUser = AssignedUser(
+      id: 4,
+      name: 'HERMAN SOLOMON JONES',
+      type: 'operator',
+    );
 
     final ticket = SupportTicket(
       id: 3,
@@ -58,9 +95,19 @@ void main() {
       assignUser: assignUser,
     );
 
-    await tester.pumpWidget(ProviderScope(
-      child: MaterialApp(home: Scaffold(body: TicketDetailContent(ticket: ticket))),
-    ));
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: TicketDetailContent(ticket: ticket)),
+          ),
+        ),
+        builder: (context, child) => child!,
+      ),
+    );
 
     await tester.pumpAndSettle();
 
@@ -71,7 +118,9 @@ void main() {
     expect(find.text('operator'), findsOneWidget);
   });
 
-  testWidgets('History tab normalizes numeric createdBy values to strings', (tester) async {
+  testWidgets('History tab normalizes numeric createdBy values to strings', (
+    tester,
+  ) async {
     final now = DateTime.now();
 
     final reply = SupportReply(
@@ -90,9 +139,19 @@ void main() {
       createdBy: 7,
     );
 
-    await tester.pumpWidget(ProviderScope(
-      child: MaterialApp(home: Scaffold(body: TicketDetailContent(ticket: ticket))),
-    ));
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        child: ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: TicketDetailContent(ticket: ticket)),
+          ),
+        ),
+        builder: (context, child) => child!,
+      ),
+    );
 
     await tester.pumpAndSettle();
 
@@ -105,4 +164,3 @@ void main() {
     expect(find.text('User 7'), findsOneWidget);
   });
 }
-
