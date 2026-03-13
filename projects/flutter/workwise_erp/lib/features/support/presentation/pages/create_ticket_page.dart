@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
+import 'package:workwise_erp/core/widgets/app_smart_dropdown.dart';
 
 import '../../domain/entities/support_ticket.dart';
 import '../../domain/entities/support_create_params.dart';
@@ -839,7 +840,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     return Scaffold(
       backgroundColor: isDark
           ? const Color(0xFF0A0E21)
-          : const Color(0xFFF8F9FC),
+          : AppColors.white,
       appBar: CustomAppBar(
         title: _editId != null ? 'Edit Ticket' : 'Create Ticket',
       ),
@@ -866,52 +867,32 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               SizedBox(height: 16.h),
 
               // ── Customer ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Customer',
-                icon: Icons.person_rounded,
-                displayText: _selectedCustomerId == null
-                    ? 'Select customer'
-                    : (_customers
-                              .firstWhere(
-                                (c) => c.id == _selectedCustomerId,
-                                orElse: () =>
-                                    Customer(id: null, name: 'Unknown'),
-                              )
-                              .name ??
-                          'Unknown'),
-                hasValue: _selectedCustomerId != null,
-                isDisabled: _customers.isEmpty,
-                onTap: () async {
-                  final init =
-                      _customers
-                          .where((c) => c.id == _selectedCustomerId)
-                          .isNotEmpty
-                      ? _customers.firstWhere(
-                          (c) => c.id == _selectedCustomerId,
-                        )
-                      : null;
-                  final selected = await showDialog<Customer?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<Customer>(
-                      title: 'Select Customer',
-                      items: _customers,
-                      itemDisplay: (c) => c.name ?? '',
-                      initialValue: init,
-                      onSelected: (c) => c,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedCustomerId,
+                items: _customers
+                    .map((c) => c.id)
+                    .whereType<int>()
+                    .toList(),
+                itemBuilder: (id) {
+                  final c = _customers.firstWhere(
+                    (c) => c.id == id,
+                    orElse: () => Customer(id: id, name: 'Customer $id'),
                   );
-                  if (selected != null) {
-                    setState(() {
-                      _selectedCustomerId = selected.id;
-                      _selectedContactIds
-                          .clear(); // Reset contacts when customer changes
-                    });
-                    if (selected.id != null) {
-                      _loadCustomerContacts(selected.id!);
-                    }
+                  return c.name ?? 'Customer $id';
+                },
+                label: 'Customer',
+                hintText: 'Select customer',
+                enabled: _customers.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) {
+                  setState(() {
+                    _selectedCustomerId = id;
+                    _selectedContactIds.clear();
+                  });
+                  if (id != null) {
+                    _loadCustomerContacts(id);
                   }
                 },
               ),
@@ -928,231 +909,112 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               SizedBox(height: 16.h),
 
               // ── Priority ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Priority',
-                icon: Icons.priority_high_rounded,
-                displayText: _selectedPriorityId == null
-                    ? 'Select priority'
-                    : (_priorities
-                              .firstWhere(
-                                (p) => p.id == _selectedPriorityId,
-                                orElse: () =>
-                                    Priority(id: null, priority: 'Unknown'),
-                              )
-                              .priority ??
-                          'Unknown'),
-                hasValue: _selectedPriorityId != null,
-                isDisabled: _priorities.isEmpty,
-                onTap: () async {
-                  final init =
-                      _priorities
-                          .where((p) => p.id == _selectedPriorityId)
-                          .isNotEmpty
-                      ? _priorities.firstWhere(
-                          (p) => p.id == _selectedPriorityId,
-                        )
-                      : null;
-                  final selected = await showDialog<Priority?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<Priority>(
-                      title: 'Select Priority',
-                      items: _priorities,
-                      itemDisplay: (p) => p.priority ?? '',
-                      initialValue: init,
-                      onSelected: (p) => p,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedPriorityId,
+                items: _priorities.map((p) => p.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final p = _priorities.firstWhere(
+                    (p) => p.id == id,
+                    orElse: () => Priority(id: id, priority: 'Priority $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedPriorityId = selected.id);
-                  }
+                  return p.priority ?? 'Priority $id';
                 },
+                label: 'Priority',
+                hintText: 'Select priority',
+                enabled: _priorities.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedPriorityId = id),
               ),
 
               SizedBox(height: 16.h),
 
               // ── Category ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Category',
-                icon: Icons.category_rounded,
-                displayText: _selectedCategoryId == null
-                    ? 'Select category'
-                    : (_categories
-                              .firstWhere(
-                                (c) => c.id == _selectedCategoryId,
-                                orElse: () =>
-                                    SupportCategory(id: null, name: 'Unknown'),
-                              )
-                              .name ??
-                          'Unknown'),
-                hasValue: _selectedCategoryId != null,
-                isDisabled: _categories.isEmpty,
-                onTap: () async {
-                  final init =
-                      _categories
-                          .where((c) => c.id == _selectedCategoryId)
-                          .isNotEmpty
-                      ? _categories.firstWhere(
-                          (c) => c.id == _selectedCategoryId,
-                        )
-                      : null;
-                  final selected = await showDialog<SupportCategory?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportCategory>(
-                      title: 'Select Category',
-                      items: _categories,
-                      itemDisplay: (c) => c.name ?? '',
-                      initialValue: init,
-                      onSelected: (c) => c,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedCategoryId,
+                items: _categories.map((c) => c.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final c = _categories.firstWhere(
+                    (c) => c.id == id,
+                    orElse: () =>
+                        SupportCategory(id: id, name: 'Category $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedCategoryId = selected.id);
-                  }
+                  return c.name ?? 'Category $id';
                 },
+                label: 'Category',
+                hintText: 'Select category',
+                enabled: _categories.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedCategoryId = id),
               ),
 
               SizedBox(height: 16.h),
 
               // ── Service ──────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Service',
-                icon: Icons.build_rounded,
-                displayText: _selectedServiceId == null
-                    ? 'Select service'
-                    : (_services
-                              .firstWhere(
-                                (s) => s.id == _selectedServiceId,
-                                orElse: () =>
-                                    SupportService(id: null, name: 'Unknown'),
-                              )
-                              .name ??
-                          'Unknown'),
-                hasValue: _selectedServiceId != null,
-                isDisabled: _services.isEmpty,
-                onTap: () async {
-                  final init =
-                      _services
-                          .where((s) => s.id == _selectedServiceId)
-                          .isNotEmpty
-                      ? _services.firstWhere((s) => s.id == _selectedServiceId)
-                      : null;
-                  final selected = await showDialog<SupportService?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportService>(
-                      title: 'Select Service',
-                      items: _services,
-                      itemDisplay: (s) => s.name ?? '',
-                      initialValue: init,
-                      onSelected: (s) => s,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedServiceId,
+                items: _services.map((s) => s.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final s = _services.firstWhere(
+                    (s) => s.id == id,
+                    orElse: () => SupportService(id: id, name: 'Service $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedServiceId = selected.id);
-                  }
+                  return s.name ?? 'Service $id';
                 },
+                label: 'Service',
+                hintText: 'Select service',
+                enabled: _services.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedServiceId = id),
               ),
 
               SizedBox(height: 16.h),
 
               // ── Department ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Department',
-                icon: Icons.business_rounded,
-                displayText: _selectedDepartmentId == null
-                    ? 'Select department'
-                    : (_departments
-                              .firstWhere(
-                                (d) => d.id == _selectedDepartmentId,
-                                orElse: () => const SupportDepartment(
-                                  id: null,
-                                  name: 'Unknown',
-                                ),
-                              )
-                              .name ??
-                          'Unknown'),
-                hasValue: _selectedDepartmentId != null,
-                isDisabled: _departments.isEmpty,
-                onTap: () async {
-                  final init =
-                      _departments
-                          .where((d) => d.id == _selectedDepartmentId)
-                          .isNotEmpty
-                      ? _departments.firstWhere(
-                          (d) => d.id == _selectedDepartmentId,
-                        )
-                      : null;
-                  final selected = await showDialog<SupportDepartment?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportDepartment>(
-                      title: 'Select Department',
-                      items: _departments,
-                      itemDisplay: (d) => d.name ?? '',
-                      initialValue: init,
-                      onSelected: (d) => d,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedDepartmentId,
+                items: _departments.map((d) => d.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final d = _departments.firstWhere(
+                    (d) => d.id == id,
+                    orElse: () => SupportDepartment(id: id, name: 'Department $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedDepartmentId = selected.id);
-                  }
+                  return d.name ?? 'Department $id';
                 },
+                label: 'Department',
+                hintText: 'Select department',
+                enabled: _departments.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedDepartmentId = id),
               ),
 
               SizedBox(height: 16.h),
 
               // ── Status ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Status',
-                icon: Icons.flag_rounded,
-                displayText: _selectedStatusId == null
-                    ? 'Select status'
-                    : (_statuses
-                              .firstWhere(
-                                (s) => s.id == _selectedStatusId,
-                                orElse: () => const SupportStatus(
-                                  id: null,
-                                  status: 'Unknown',
-                                ),
-                              )
-                              .status ??
-                          'Unknown'),
-                hasValue: _selectedStatusId != null,
-                isDisabled: _statuses.isEmpty,
-                onTap: () async {
-                  final init =
-                      _statuses
-                          .where((s) => s.id == _selectedStatusId)
-                          .isNotEmpty
-                      ? _statuses.firstWhere((s) => s.id == _selectedStatusId)
-                      : null;
-                  final selected = await showDialog<SupportStatus?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportStatus>(
-                      title: 'Select Status',
-                      items: _statuses,
-                      itemDisplay: (s) => s.status ?? '',
-                      initialValue: init,
-                      onSelected: (s) => s,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedStatusId,
+                items: _statuses.map((s) => s.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final s = _statuses.firstWhere(
+                    (s) => s.id == id,
+                    orElse: () => SupportStatus(id: id, status: 'Status $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedStatusId = selected.id);
-                  }
+                  return s.status ?? 'Status $id';
                 },
+                label: 'Status',
+                hintText: 'Select status',
+                enabled: _statuses.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedStatusId = id),
               ),
 
               SizedBox(height: 16.h),
@@ -1167,95 +1029,49 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               SizedBox(height: 16.h),
 
               // ── Supervisor ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Supervisor',
-                icon: Icons.supervisor_account_rounded,
-                displayText: _selectedSupervisorId == null
-                    ? 'Select supervisor'
-                    : (_supervisors
-                              .firstWhere(
-                                (s) => s.user?.id == _selectedSupervisorId,
-                                orElse: () => SupportSupervisor(
-                                  user: AssignedUser(id: null, name: 'Unknown'),
-                                ),
-                              )
-                              .user
-                              ?.name ??
-                          'Unknown'),
-                hasValue: _selectedSupervisorId != null,
-                isDisabled: _supervisors.isEmpty,
-                onTap: () async {
-                  final init =
-                      _supervisors
-                          .where((s) => s.user?.id == _selectedSupervisorId)
-                          .isNotEmpty
-                      ? _supervisors.firstWhere(
-                          (s) => s.user?.id == _selectedSupervisorId,
-                        )
-                      : null;
-                  final selected = await showDialog<SupportSupervisor?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportSupervisor>(
-                      title: 'Select Supervisor',
-                      items: _supervisors,
-                      itemDisplay: (s) => s.user?.name ?? '',
-                      initialValue: init,
-                      onSelected: (s) => s,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedSupervisorId,
+                items: _supervisors
+                    .map((s) => s.user?.id)
+                    .whereType<int>()
+                    .toList(),
+                itemBuilder: (id) {
+                  final s = _supervisors.firstWhere(
+                    (s) => s.user?.id == id,
+                    orElse: () =>
+                        SupportSupervisor(user: AssignedUser(id: id, name: 'Supervisor $id')),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedSupervisorId = selected.user?.id);
-                  }
+                  return s.user?.name ?? 'Supervisor $id';
                 },
+                label: 'Supervisor',
+                hintText: 'Select supervisor',
+                enabled: _supervisors.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedSupervisorId = id),
               ),
 
               SizedBox(height: 16.h),
 
               // ── Location ─────────────────────────────────────────────
-              _buildSelectorCard(
-                context: context,
-                isDark: isDark,
-                primary: primary,
-                label: 'Location',
-                icon: Icons.location_on_rounded,
-                displayText: _selectedLocationId == null
-                    ? 'Select location'
-                    : (_locations
-                              .firstWhere(
-                                (l) => l.id == _selectedLocationId,
-                                orElse: () =>
-                                    SupportLocation(id: null, name: 'Unknown'),
-                              )
-                              .name ??
-                          'Unknown'),
-                hasValue: _selectedLocationId != null,
-                isDisabled: _locations.isEmpty,
-                onTap: () async {
-                  final init =
-                      _locations
-                          .where((l) => l.id == _selectedLocationId)
-                          .isNotEmpty
-                      ? _locations.firstWhere(
-                          (l) => l.id == _selectedLocationId,
-                        )
-                      : null;
-                  final selected = await showDialog<SupportLocation?>(
-                    context: context,
-                    builder: (ctx) => SearchableDialog<SupportLocation>(
-                      title: 'Select Location',
-                      items: _locations,
-                      itemDisplay: (l) => l.name ?? '',
-                      initialValue: init,
-                      onSelected: (l) => l,
-                    ),
+              AppSmartDropdown<int>(
+                value: _selectedLocationId,
+                items: _locations.map((l) => l.id).whereType<int>().toList(),
+                itemBuilder: (id) {
+                  final l = _locations.firstWhere(
+                    (l) => l.id == id,
+                    orElse: () => SupportLocation(id: id, name: 'Location $id'),
                   );
-                  if (selected != null) {
-                    setState(() => _selectedLocationId = selected.id);
-                  }
+                  return l.name ?? 'Location $id';
                 },
+                label: 'Location',
+                hintText: 'Select location',
+                enabled: _locations.isNotEmpty,
+                backgroundColor:
+                    isDark ? AppColors.white : AppColors.greyFill,
+                borderRadius: 12,
+                onChanged: (id) => setState(() => _selectedLocationId = id),
               ),
 
               SizedBox(height: 16.h),

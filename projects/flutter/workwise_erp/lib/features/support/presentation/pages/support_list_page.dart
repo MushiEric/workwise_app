@@ -18,6 +18,7 @@ import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
 import '../../../../core/widgets/app_textfield.dart';
+import '../../../../core/widgets/shimmer.dart';
 import '../../domain/entities/support_category.dart';
 import '../../domain/entities/support_supervisor.dart';
 import '../../../customer/domain/entities/customer.dart';
@@ -29,6 +30,7 @@ import '../widgets/ticket_detail_content.dart';
 import 'support_view_page.dart';
 import 'create_ticket_page.dart';
 import '../../../../core/themes/app_icons.dart';
+import '../../../../core/utils/scroll_aware_fab.dart';
 
 class SupportListPage extends ConsumerStatefulWidget {
   const SupportListPage({super.key});
@@ -486,7 +488,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: ScrollAwareFab(
+          controller: _scrollController,
           onPressed: () async {
             final result = await Navigator.of(
               context,
@@ -539,7 +542,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
           icon: isDark
               ? const Icon(LucideIcons.plus, size: 20)
               : const Icon(LucideIcons.plus, size: 20, color: Colors.white),
-          label: Text('New Ticket', style: TextStyle(fontSize: 14.sp)),
+          label: 'New Ticket',
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(
@@ -903,10 +906,11 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                       vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        ticket.status?.status ?? '',
-                      ).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12.r),
+                      color: isDark ? Colors.white10 : Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.grey.shade200,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -923,7 +927,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                         Text(
                           ticket.status?.status ?? 'Unknown',
                           style: TextStyle(
-                            color: _getStatusColor(ticket.status?.status ?? ''),
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                             fontSize: 10.sp,
                           ),
@@ -1052,63 +1056,71 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
 
   Widget _TicketSkeletonCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Card(
-      margin: EdgeInsets.only(bottom: 12.h),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
-        side: BorderSide(
-          color: isDark ? Colors.white10 : Colors.grey.shade100,
-          width: 1,
+    final base = isDark ? Colors.white12 : Colors.grey.shade300;
+    final highlight = isDark ? Colors.white24 : Colors.grey.shade200;
+
+    return Shimmer(
+      baseColor: base,
+      highlightColor: highlight,
+      child: Card(
+        margin: EdgeInsets.only(bottom: 12.h),
+        elevation: 1,
+        shadowColor: Colors.black.withOpacity(0.05),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+          side: BorderSide(
+            color: isDark ? Colors.white10 : Colors.grey.shade100,
+            width: 1,
+          ),
         ),
-      ),
-      color: isDark ? const Color(0xFF151A2E) : Colors.white,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 14.h,
-              width: 120.w,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white12 : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Container(
-              height: 12.h,
-              width: 180.w,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white12 : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              children: [
-                Container(
-                  height: 10.h,
-                  width: 80.w,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white12 : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+        color: isDark ? const Color(0xFF151A2E) : Colors.white,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 14.h,
+                width: 120.w,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Container(
+              ),
+              SizedBox(height: 8.h),
+              Container(
+                height: 12.h,
+                width: 180.w,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                children: [
+                  Container(
                     height: 10.h,
+                    width: 80.w,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white12 : Colors.grey.shade200,
+                      color: isDark ? Colors.white12 : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Container(
+                      height: 10.h,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white12 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
