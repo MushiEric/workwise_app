@@ -513,7 +513,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             customers: customers,
             vehicles: vehicles,
           ),
-          showApproveReject: showApproveReject,
+          showApproveReject: showApproveReject || _isApprovableStatus(jobcard),
           showReminder: showReminder,
           onTap: () => Navigator.of(
             context,
@@ -524,6 +524,11 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         );
       },
     );
+  }
+
+  bool _isApprovableStatus(Jobcard jobcard) {
+    final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '').toString().toLowerCase();
+    return status.contains('approve') || status.contains('pending');
   }
 
   /// Resolves the display name for a jobcard's receiver using the pre-loaded
