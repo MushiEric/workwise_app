@@ -1157,119 +1157,104 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         final userId = log['user_id']?.toString() ?? '';
         final userName = userNameMap[userId] ?? 'User #$userId';
         final createdAt = _formatDate(log['created_at']?.toString());
+        final detail = log['comment']?.toString() ?? log['note']?.toString() ?? '';
+        final isLast = index == logs.length - 1;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey.shade200,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    AppIcons.historyRounded,
-                    size: 18,
-                    color: statusColor,
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      AppIcons.historyRounded,
+                      size: 10,
+                      color: statusColor,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
+                if (!isLast)
+                  Container(
+                    width: 2,
+                    height: 80,
+                    margin: const EdgeInsets.only(top: 4),
+                    color: isDark ? Colors.white10 : Colors.grey.shade300,
+                  ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF151A2E) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+                    width: 1,
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            statusName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            statusName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: statusColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      statusName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: statusColor,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(
                           AppIcons.user,
-                          size: 13,
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          size: 14,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          userName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.white54
-                                : Colors.grey.shade700,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            userName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          AppIcons.calendar,
-                          size: 13,
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
                           createdAt,
                           style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.white54
-                                : Colors.grey.shade600,
+                            fontSize: 11,
+                            color: isDark ? Colors.white38 : Colors.grey.shade500,
                           ),
                         ),
                       ],
                     ),
+                    if (detail.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        detail,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white60 : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

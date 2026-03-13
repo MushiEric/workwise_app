@@ -527,7 +527,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   }
 
   bool _isApprovableStatus(Jobcard jobcard) {
-    final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '').toString().toLowerCase();
+    final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '')
+        .toString()
+        .toLowerCase();
     return status.contains('approve') || status.contains('pending');
   }
 
