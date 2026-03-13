@@ -50,7 +50,6 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     final state = ref.watch(jobcardNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -187,7 +186,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             // ── Stats Header ──
             DashboardStatsRow(
               visible: _showStats,
-              cards: _buildStatusCards(state),
+              cards: _buildStatusCards(state, isDark),
             ),
             SizedBox(height: 16.h),
 
@@ -244,7 +243,11 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     );
   }
 
-  List<DashboardStatCard> _buildStatusCards(JobcardState state) {
+  List<Widget> _buildStatusCards(JobcardState state, bool isDark) {
+    if (state.loading) {
+      return List.generate(3, (_) => const DashboardStatCardSkeleton());
+    }
+
     final dashAsync = ref.watch(jobcardDashboardProvider);
 
     return dashAsync.when(
@@ -366,7 +369,6 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                 onPressed: () => ref
                     .read(jobcardNotifierProvider.notifier)
                     .loadJobcards(force: true),
-        
               ),
             ],
           ),
@@ -471,7 +473,6 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
                     _isSearching = false;
                   });
                 },
-               
               ),
             ],
           ],

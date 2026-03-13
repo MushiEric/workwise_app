@@ -1694,6 +1694,53 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
   }
 }
 
+class TicketDetailSkeleton extends StatelessWidget {
+  const TicketDetailSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? Colors.white12 : Colors.grey.shade200;
+
+    Widget line({required double height, double width = double.infinity}) {
+      return Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: BorderRadius.circular(10),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          line(height: 18.h, width: 140.w),
+          SizedBox(height: 12.h),
+          line(height: 14.h, width: 180.w),
+          SizedBox(height: 20.h),
+          line(height: 16.h),
+          SizedBox(height: 12.h),
+          line(height: 16.h),
+          SizedBox(height: 12.h),
+          line(height: 16.h),
+          SizedBox(height: 20.h),
+          line(height: 14.h),
+          SizedBox(height: 10.h),
+          line(height: 14.h),
+          SizedBox(height: 10.h),
+          line(height: 14.h),
+          SizedBox(height: 22.h),
+          line(height: 44.h),
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Facebook-style comment card (stateless, easy to reuse)
 // ─────────────────────────────────────────────────────────────────────────────

@@ -21,7 +21,7 @@ import 'dashboard_stat_card.dart';
 /// )
 /// ```
 class DashboardStatsRow extends StatelessWidget {
-  final List<DashboardStatCard> cards;
+  final List<Widget> cards;
   final bool visible;
 
   const DashboardStatsRow({

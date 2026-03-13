@@ -220,7 +220,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       });
     }
 
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -343,46 +342,48 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             // Stats Header
             DashboardStatsRow(
               visible: _showStats,
-              cards: [
-                DashboardStatCard(
-                  label: 'Total',
-                  count: _getTotalCount(state),
-                  icon: Icons.support_agent_rounded,
-                  borderColor: AppColors.primary,
-                ),
-                DashboardStatCard(
-                  label: 'Open',
-                  count: _getOpenCount(state),
-                  icon: Icons.lock_open_rounded,
-                  borderColor: Colors.blue,
-                ),
-                DashboardStatCard(
-                  label: 'In Progress',
-                  count: _getInProgressCount(state),
-                  icon: Icons.hourglass_top_rounded,
-                  borderColor: Colors.orange,
-                ),
-                DashboardStatCard(
-                  label: 'Resolved',
-                  count: _getResolvedCount(state),
-                  icon: Icons.check_circle_rounded,
-                  borderColor: Colors.green,
-                ),
-
-                DashboardStatCard(
-                  label: 'Awaiting Spares',
-                  count: _getAwaitingSparesCount(state),
-                  icon: Icons.build_circle_rounded,
-                  borderColor: Colors.purple,
-                ),
-
-                DashboardStatCard(
-                  label: 'Awaiting PO',
-                  count: _getAwaitingPOCount(state),
-                  icon: Icons.shopping_cart_rounded,
-                  borderColor: Colors.pink,
-                ),
-              ],
+              cards: state.maybeWhen(
+                loading: () =>
+                    List.generate(5, (_) => const DashboardStatCardSkeleton()),
+                orElse: () => [
+                  DashboardStatCard(
+                    label: 'Total',
+                    count: _getTotalCount(state),
+                    icon: Icons.support_agent_rounded,
+                    borderColor: AppColors.primary,
+                  ),
+                  DashboardStatCard(
+                    label: 'Open',
+                    count: _getOpenCount(state),
+                    icon: Icons.lock_open_rounded,
+                    borderColor: Colors.blue,
+                  ),
+                  DashboardStatCard(
+                    label: 'In Progress',
+                    count: _getInProgressCount(state),
+                    icon: Icons.hourglass_top_rounded,
+                    borderColor: Colors.orange,
+                  ),
+                  DashboardStatCard(
+                    label: 'Resolved',
+                    count: _getResolvedCount(state),
+                    icon: Icons.check_circle_rounded,
+                    borderColor: Colors.green,
+                  ),
+                  DashboardStatCard(
+                    label: 'Awaiting Spares',
+                    count: _getAwaitingSparesCount(state),
+                    icon: Icons.build_circle_rounded,
+                    borderColor: Colors.purple,
+                  ),
+                  DashboardStatCard(
+                    label: 'Awaiting PO',
+                    count: _getAwaitingPOCount(state),
+                    icon: Icons.shopping_cart_rounded,
+                    borderColor: Colors.pink,
+                  ),
+                ],
+              ),
             ),
 
             // Tab Bar
@@ -474,7 +475,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                           onPressed: () => ref
                               .read(supportNotifierProvider.notifier)
                               .loadTickets(),
-                    
                         ),
                       ],
                     ),
@@ -796,7 +796,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                     _isSearching = false;
                   });
                 },
-               
               ),
             ],
           ],

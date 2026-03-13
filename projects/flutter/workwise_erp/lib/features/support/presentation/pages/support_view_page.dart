@@ -11,17 +11,32 @@ import '../../../../core/themes/app_colors.dart';
 import 'create_ticket_page.dart';
 import '../../../../core/themes/app_icons.dart';
 
-class SupportViewPage extends ConsumerWidget {
+class SupportViewPage extends ConsumerStatefulWidget {
   final SupportTicket ticket;
   const SupportViewPage({super.key, required this.ticket});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SupportViewPage> createState() => _SupportViewPageState();
+}
+
+class _SupportViewPageState extends ConsumerState<SupportViewPage> {
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _isLoading = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Ticket #${ticket.id}",
+        title: "Ticket #${widget.ticket.id}",
         elevation: 0,
         actions: [
           IconButton(
@@ -30,10 +45,11 @@ class SupportViewPage extends ConsumerWidget {
               color: isDark ? Colors.white70 : AppColors.white,
               size: 20.r,
             ),
-            onPressed: () {              Navigator.push(
+            onPressed: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => CreateTicketPage(ticket: ticket),
+                  builder: (_) => CreateTicketPage(ticket: widget.ticket),
                 ),
               );
             },
@@ -64,7 +80,7 @@ class SupportViewPage extends ConsumerWidget {
                   break;
                 case 'more':
                 default:
-                  _showMoreOptions(context, ref, ticket);
+                  _showMoreOptions(context, ref, widget.ticket);
               }
             },
             itemBuilder: (ctx) => [
@@ -80,7 +96,6 @@ class SupportViewPage extends ConsumerWidget {
                 ),
               ),
               const PopupMenuDivider(),
-             
             ],
           ),
         ],
@@ -90,7 +105,9 @@ class SupportViewPage extends ConsumerWidget {
         length: 4,
         child: Padding(
           padding: EdgeInsets.only(top: 16.h),
-          child: TicketDetailContent(ticket: ticket),
+          child: _isLoading
+              ? const TicketDetailSkeleton()
+              : TicketDetailContent(ticket: widget.ticket),
         ),
       ),
     );
@@ -144,7 +161,7 @@ class SupportViewPage extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CreateTicketPage(ticket: ticket),
+                      builder: (_) => CreateTicketPage(ticket: widget.ticket),
                     ),
                   );
                 },

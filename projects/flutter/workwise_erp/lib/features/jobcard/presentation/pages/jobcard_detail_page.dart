@@ -121,6 +121,61 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     );
   }
 
+  Widget _buildDetailSkeleton(bool isDark) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _skeletonLine(width: 160.w, height: 18.h, isDark: isDark),
+          SizedBox(height: 12.h),
+          _skeletonLine(width: double.infinity, height: 14.h, isDark: isDark),
+          SizedBox(height: 8.h),
+          _skeletonLine(width: double.infinity, height: 14.h, isDark: isDark),
+          SizedBox(height: 20.h),
+          _skeletonLine(width: double.infinity, height: 120.h, isDark: isDark),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              Expanded(
+                child: _skeletonLine(
+                  width: double.infinity,
+                  height: 12.h,
+                  isDark: isDark,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: _skeletonLine(
+                  width: double.infinity,
+                  height: 12.h,
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          _skeletonLine(width: double.infinity, height: 12.h, isDark: isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _skeletonLine({
+    required double width,
+    required double height,
+    required bool isDark,
+  }) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white12 : Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(jobcardDetailNotifierProvider);
@@ -151,7 +206,10 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           elevation: 0,
           actions: [
             IconButton(
-              icon: Icon(AppIcons.edit, color: isDark ? Colors.white70 : AppColors.white),
+              icon: Icon(
+                AppIcons.edit,
+                color: isDark ? Colors.white70 : AppColors.white,
+              ),
               onPressed: () {
                 if (state.item != null) {
                   Navigator.of(context).push(
@@ -171,10 +229,12 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
               onSelected: (v) {
                 if (v == 'set_reminder') {
                   if (state.item != null) {
-                    //implement set reminder functionality here, e.g. show a date picker and save the reminder time to the jobcard
+                    // TODO: implement set reminder functionality (date picker, save reminder)
                   }
                 } else if (v == 'print') {
-                  // Implement print functionality here
+                  // TODO: implement print functionality
+                } else if (v == 'delete') {
+                  _deleteJobcard(context, state.item?.id);
                 }
               },
               itemBuilder: (ctx) => [
@@ -182,7 +242,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                   value: 'set_reminder',
                   child: Row(
                     children: [
-                      Icon(AppIcons.notificationsRounded, size: 16.r,color: AppColors.black,),
+                      Icon(
+                        AppIcons.notificationsRounded,
+                        size: 16.r,
+                        color: AppColors.black,
+                      ),
                       SizedBox(width: 8.w),
                       const Text('Set Reminder'),
                     ],
@@ -194,7 +258,20 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                     children: [
                       Icon(AppIcons.print, size: 16.r, color: AppColors.black),
                       SizedBox(width: 8.w),
-                      const Text('Print', style: TextStyle(color: AppColors.black)),
+                      const Text(
+                        'Print',
+                        style: TextStyle(color: AppColors.black),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(AppIcons.trash2, size: 16.r, color: Colors.red),
+                      SizedBox(width: 8.w),
+                      const Text('Delete', style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -203,7 +280,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           ],
         ),
         body: state.loading
-            ? const Center(child: CupertinoActivityIndicator())
+            ? _buildDetailSkeleton(isDark)
             : state.item == null
             ? _buildErrorState(context, state.error, isDark)
             : _buildDetailContent(context, state.item, isDark),
@@ -256,7 +333,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                   ref.read(jobcardDetailNotifierProvider.notifier).load(_id!);
                 }
               },
-          
             ),
           ],
         ),
