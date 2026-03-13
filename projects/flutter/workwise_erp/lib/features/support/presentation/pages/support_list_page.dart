@@ -15,7 +15,6 @@ import '../../domain/entities/support_location.dart';
 import '../../domain/entities/support_department.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_modal.dart';
-import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
 import '../../../../core/widgets/app_textfield.dart';
@@ -221,22 +220,6 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       });
     }
 
-    ref.listen<SupportState>(supportNotifierProvider, (prev, next) {
-      final prevLoading =
-          prev?.maybeWhen(loading: () => true, orElse: () => false) ?? false;
-      final nextLoading = next.maybeWhen(
-        loading: () => true,
-        orElse: () => false,
-      );
-
-      if (prevLoading == nextLoading) return;
-
-      if (nextLoading) {
-        showAppLoadingDialog(context, message: 'Fetching tickets...');
-      } else {
-        hideAppLoadingDialog(context);
-      }
-    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -443,7 +426,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
             Expanded(
               child: state.when(
                 initial: () => const SizedBox.shrink(),
-                loading: () => const Center(),
+                loading: () => _buildTicketSkeletons(),
                 error: (msg) => Center(
                   child: Padding(
                     padding: EdgeInsets.all(24.r),
@@ -840,6 +823,15 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     );
   }
 
+  Widget _buildTicketSkeletons() {
+    return ListView.separated(
+      padding: EdgeInsets.all(16.r),
+      itemCount: 6,
+      separatorBuilder: (_, __) => SizedBox(height: 12.h),
+      itemBuilder: (_, __) => _TicketSkeletonCard(),
+    );
+  }
+
   Widget _buildTicketCard(BuildContext context, SupportTicket ticket) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final priorityColor = ticket.priority?.color != null
@@ -1054,6 +1046,70 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _TicketSkeletonCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Card(
+      margin: EdgeInsets.only(bottom: 12.h),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
+          width: 1,
+        ),
+      ),
+      color: isDark ? const Color(0xFF151A2E) : Colors.white,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 14.h,
+              width: 120.w,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white12 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Container(
+              height: 12.h,
+              width: 180.w,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white12 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Container(
+                  height: 10.h,
+                  width: 80.w,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white12 : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Container(
+                    height: 10.h,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white12 : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

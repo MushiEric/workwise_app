@@ -50,16 +50,6 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     final state = ref.watch(jobcardNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    ref.listen<JobcardState>(jobcardNotifierProvider, (prev, next) {
-      final prevLoading = prev?.loading ?? false;
-      final nextLoading = next.loading;
-      if (prevLoading == nextLoading) return;
-      if (nextLoading) {
-        showAppLoadingDialog(context, message: 'Fetching jobcards...');
-      } else {
-        hideAppLoadingDialog(context);
-      }
-    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -323,7 +313,14 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   }
 
   Widget _buildBody(JobcardState state, bool isDark) {
-    if (state.loading) return const Center();
+    if (state.loading) {
+      return ListView.separated(
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+        itemCount: 6,
+        separatorBuilder: (_, __) => SizedBox(height: 8.h),
+        itemBuilder: (_, __) => _buildJobcardSkeleton(),
+      );
+    }
 
     if (state.error != null) {
       return Center(
@@ -583,6 +580,72 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     if (v is int) return v != 0;
     final s = v.toString().trim();
     return s == '1' || s == 'true';
+  }
+
+  Widget _buildJobcardSkeleton() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 6.h),
+      padding: EdgeInsets.all(16.h),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF151A2E)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 16.h,
+            width: 120.w,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Container(
+            height: 12.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          SizedBox(height: 14.h),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 12.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Container(
+                  height: 12.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _approveJobcard(int id) async {
