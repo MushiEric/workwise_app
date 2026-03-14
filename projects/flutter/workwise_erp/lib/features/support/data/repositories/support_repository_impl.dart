@@ -35,7 +35,6 @@ class SupportRepositoryImpl implements SupportRepository {
     int limit = 20,
   }) async {
     try {
-<<<<<<< HEAD
       final List<SupportTicketModel> models = await remote.getSupportTickets(
         page: page,
         limit: limit,
