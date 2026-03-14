@@ -4,15 +4,21 @@ import '../../domain/usecases/get_jobcards.dart';
 
 class JobcardState {
   final bool loading;
+  final bool loadingMore;
   final List<dynamic> items;
   final String? error;
   final int totalItems;
+  final int currentPage;
+  final int lastPage;
 
   const JobcardState._({
     required this.loading,
+    this.loadingMore = false,
     required this.items,
     this.error,
     this.totalItems = 0,
+    this.currentPage = 1,
+    this.lastPage = 1,
   });
 
   const JobcardState.initial()
@@ -23,17 +29,25 @@ class JobcardState {
 
   JobcardState copyWith({
     bool? loading,
+    bool? loadingMore,
     List<dynamic>? items,
     String? error,
     int? totalItems,
+    int? currentPage,
+    int? lastPage,
   }) {
     return JobcardState._(
       loading: loading ?? this.loading,
+      loadingMore: loadingMore ?? this.loadingMore,
       items: items ?? this.items,
       error: error ?? this.error,
       totalItems: totalItems ?? this.totalItems,
+      currentPage: currentPage ?? this.currentPage,
+      lastPage: lastPage ?? this.lastPage,
     );
   }
+
+  bool get hasMore => currentPage < lastPage;
 }
 
 class JobcardNotifier extends StateNotifier<JobcardState> {
@@ -43,7 +57,7 @@ class JobcardNotifier extends StateNotifier<JobcardState> {
       : super(const JobcardState.initial());
 
   Future<void> loadJobcards({
-    int perPage = 5000,
+    int perPage = 100,
     String? status,
     bool force = false,
   }) async {
@@ -68,11 +82,33 @@ class JobcardNotifier extends StateNotifier<JobcardState> {
         loading: false,
         items: r.items,
         totalItems: r.total,
+        currentPage: r.currentPage,
+        lastPage: r.lastPage,
       ),
     );
   }
 
-  // Simplified: loadMore is no longer needed since we fetch all at once, 
-  // but kept as a no-op to avoid breaking UI calls until refactored.
-  Future<void> loadMore() async {}
+  Future<void> loadMore({int perPage = 100, String? status}) async {
+    if (state.loading || state.loadingMore || !state.hasMore) return;
+
+    state = state.copyWith(loadingMore: true);
+    final nextPage = state.currentPage + 1;
+
+    final res = await getJobcards.call(
+      page: nextPage,
+      perPage: perPage,
+      status: status,
+    );
+
+    res.fold(
+      (l) => state = state.copyWith(loadingMore: false, error: '$l'),
+      (r) => state = state.copyWith(
+        loadingMore: false,
+        items: [...state.items, ...r.items],
+        totalItems: r.total,
+        currentPage: r.currentPage,
+        lastPage: r.lastPage,
+      ),
+    );
+  }
 }

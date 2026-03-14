@@ -109,7 +109,7 @@ class JobcardRemoteDataSource {
   /// GET /jobcard/getJobCard — fetches a single page.
   Future<PaginatedResponse<JobcardModel>> getJobcards({
     int page = 1,
-    int perPage = 5000,
+    int perPage = 100,
     String? status,
     bool force = false,
   }) async {
@@ -128,9 +128,7 @@ class JobcardRemoteDataSource {
           'start': (page - 1) * perPage,
           'length': perPage,
           'limit': perPage,
-          'page_size': perPage,
-          'limit_page': perPage,
-          'rows': perPage,
+          'offset': (page - 1) * perPage,
           if (status != null) 'status': status,
         },
         options: Options(extra: extra),

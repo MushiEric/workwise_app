@@ -10,7 +10,7 @@ class GetJobcards {
 
   Future<Either<dynamic, PaginatedResponse<Jobcard>>> call({
     int page = 1,
-    int perPage = 50,
+    int perPage = 100,
     String? status,
     bool force = false,
   }) {

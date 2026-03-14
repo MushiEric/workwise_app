@@ -40,7 +40,10 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   }
 
   void _onScroll() {
-    // Infinite scroll disabled as all jobcards are now loaded at once
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(jobcardNotifierProvider.notifier).loadMore();
+    }
   }
 
   @override
@@ -503,7 +506,18 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         ]);
       },
       color: AppColors.primary,
-      child: _buildJobcardList(state, filteredJobcards),
+      child: Column(
+        children: [
+          Expanded(child: _buildJobcardList(state, filteredJobcards)),
+          if (state.loadingMore)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

@@ -17,7 +17,7 @@ class JobcardRepositoryImpl implements JobcardRepository {
   @override
   Future<Either<dynamic, PaginatedResponse<domain.Jobcard>>> getJobcards({
     int page = 1,
-    int perPage = 50,
+    int perPage = 100,
     String? status,
     bool force = false,
   }) async {
