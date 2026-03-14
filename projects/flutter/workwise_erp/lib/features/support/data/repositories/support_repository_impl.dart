@@ -35,13 +35,6 @@ class SupportRepositoryImpl implements SupportRepository {
     int limit = 20,
   }) async {
     try {
-      final List<SupportTicketModel> models = await remote.getSupportTickets(
-        page: page,
-        limit: limit,
-      );
-      final list = models.map((m) => m.toDomain()).toList();
-      return Either.right(list);
-=======
       // Fetch tickets raw JSON and metadata in parallel so we can resolve IDs to names
       final results = await Future.wait([
         remote.getSupportTicketsRaw(page: page, limit: limit),
@@ -115,7 +108,6 @@ class SupportRepositoryImpl implements SupportRepository {
       }
 
       return Either.right(tickets);
->>>>>>> f3f03e6 (changes made on support tickets)
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {
