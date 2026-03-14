@@ -16,11 +16,14 @@ class AppTextField extends StatefulWidget {
   final VoidCallback? onPrefixIconPressed;
   final VoidCallback? onSuffixIconPressed;
   final VoidCallback? onDropdownTap;
+  final VoidCallback? onTap;
   final String? Function(String?)? validator;
   final int maxLines;
+  final int? minLines;
   final bool enabled;
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
+  final bool readOnly;
   final void Function(String)? onChanged;
   final void Function(String)? onSubmitted;
 
@@ -38,9 +41,12 @@ class AppTextField extends StatefulWidget {
     this.onPrefixIconPressed,
     this.onSuffixIconPressed,
     this.onDropdownTap,
+    this.onTap,
     this.validator,
     this.maxLines = 1,
+    this.minLines,
     this.enabled = true,
+    this.readOnly = false,
     this.focusNode,
     this.textInputAction,
     this.onChanged,
@@ -64,13 +70,15 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildLabel(),
         const SizedBox(height: 8),
-        _buildTextField(),
+        _buildTextField(isDark),
         const SizedBox(height: 4),
       ],
     );
@@ -92,18 +100,25 @@ class _AppTextFieldState extends State<AppTextField> {
     );
   }
 
-  Widget _buildTextField() {
+  Widget _buildTextField(bool isDark) {
+    final effectiveBg = isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill;
+        
     return GestureDetector(
-      onTap: widget.isDropdown ? widget.onDropdownTap : null,
+      onTap: widget.isDropdown
+          ? widget.onDropdownTap
+          : (widget.readOnly ? widget.onTap : null),
       child: AbsorbPointer(
-        absorbing: widget.isDropdown,
+        absorbing: widget.isDropdown || widget.readOnly,
         child: Container(
-          height: widget.maxLines > 1 ? null : 56,
+          height: (widget.maxLines == 1 && widget.minLines == null) ? 48 : null,
+          constraints: BoxConstraints(
+            minHeight: (widget.maxLines > 1 || widget.minLines != null) ? 40 : 0,
+          ),
           decoration: BoxDecoration(
-            color: widget.enabled ? AppColors.greyFill : AppColors.greyBorder,
+            color: effectiveBg,
             borderRadius: BorderRadius.circular(AppTypography.borderRadius),
             border: Border.all(
-              color: AppColors.greyBorder,
+              color: isDark ? Colors.white24 : AppColors.greyBorder,
               width: 1,
             ),
           ),
@@ -128,23 +143,30 @@ class _AppTextFieldState extends State<AppTextField> {
                   onFieldSubmitted: widget.onSubmitted,
                   decoration: InputDecoration(
                     hintText: widget.hintText,
-                    hintStyle: AppTypography.hintStyle,
+                    hintStyle: AppTypography.hintStyle.copyWith(
+                      color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      fontSize: 15,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: (widget.maxLines > 1 || widget.minLines != null) ? 8 : 12,
                     ),
                     isDense: true,
                   ),
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
               ),
               if (widget.isDropdown)
-                const Padding(
-                  padding: EdgeInsets.only(right: 12),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
                   child: Icon(
                     Icons.arrow_drop_down,
-                    color: AppColors.greyText,
+                    color: isDark ? Colors.white54 : Colors.grey.shade500,
+                    size: 22,
                   ),
                 ),
               if (widget.suffixIcon != null && !widget.isDropdown)

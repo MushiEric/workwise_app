@@ -75,6 +75,38 @@ class SupportRemoteDataSource {
     }
   }
 
+  /// GET /support/getSupportTicket — returns normalized raw JSON maps so
+  /// the repository can resolve category/department/supervisor IDs to names.
+  Future<List<Map<String, dynamic>>> getSupportTicketsRaw({int page = 1, int limit = 20}) async {
+    try {
+      final resp = await client.get('/support/getSupportTicket', queryParameters: {
+        'page': page,
+        'page_length': limit,
+        'limit_page_length': limit,
+        'limit_start': (page - 1) * limit,
+        'start': (page - 1) * limit,
+        'length': limit,
+      });
+      final list = _extractListFromRaw(resp.data);
+
+      final List<Map<String, dynamic>> results = [];
+      for (final raw in list) {
+        try {
+          final Map<String, dynamic> src = Map<String, dynamic>.from(raw);
+          results.add(_normalizeTicketJson(src));
+        } catch (err) {
+          // ignore: avoid_print
+          print('Warning: failed to normalize support ticket item: $err');
+        }
+      }
+      return results;
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
   /// GET /support/getSupportStatus
   Future<List<Map<String, dynamic>>> getSupportStatuses() async {
     try {
@@ -459,6 +491,36 @@ class SupportRemoteDataSource {
     }
     if (out.containsKey('statuses') && out['statuses'] is String) {
       out['statuses'] = {'status': out['statuses']};
+    }
+
+    // ── Customer: prefer customer_row (actual customer record) over customer_name (user record) ──
+    if (out.containsKey('customer_row') && out['customer_row'] is Map) {
+      final row = Map<String, dynamic>.from(out['customer_row'] as Map);
+      out['customer_name'] = <String, dynamic>{
+        'id': asInt(row['id']),
+        'name': asString(row['name']),
+        'email': asString(row['email']),
+        'phone': asString(row['contact']) ?? asString(row['phone']),
+      };
+    }
+
+    // ── Category: if only category_id exists, store it; if category is an object, extract name ──
+    if (out['category'] == null && out.containsKey('category_id')) {
+      // Will be resolved by repository using metadata lookup
+      // Store the id so the repository can resolve later
+      out['_category_id'] = asInt(out['category_id']);
+    }
+
+    // ── Department: same approach as category ──
+    if (out['department'] == null && out.containsKey('department_id')) {
+      out['_department_id'] = asInt(out['department_id']);
+    }
+
+    // ── Supervisor: extract from supervisor_id if ticket has one ──
+    if (out['supervisors'] == null || (out['supervisors'] is List && (out['supervisors'] as List).isEmpty)) {
+      if (out.containsKey('supervisor_id')) {
+        out['_supervisor_id'] = asInt(out['supervisor_id']);
+      }
     }
 
     return out;

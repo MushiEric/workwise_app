@@ -74,11 +74,10 @@ final jobcardReceiversForDetailProvider =
       try {
         if (type == 'vehicle') {
           return await remote.getVehicles();
-        } else if (type == 'users' || type == 'user') {
+        } else if (type == 'users' || type == 'user' || type == 'employee') {
           return await remote.getUsers();
         } else if (type == 'customer' ||
-            type == 'vendor' ||
-            type == 'employee') {
+            type == 'vendor') {
           return await remote.getReceiversByType(type);
         }
         return [];

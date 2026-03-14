@@ -1,6 +1,7 @@
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
+import 'package:workwise_erp/core/models/paginated_response.dart';
 
 import '../../domain/entities/jobcard.dart' as domain;
 import '../../domain/entities/jobcard_form_data.dart';
@@ -14,21 +15,31 @@ class JobcardRepositoryImpl implements JobcardRepository {
   JobcardRepositoryImpl(this.remote);
 
   @override
-  Future<Either<dynamic, List<domain.Jobcard>>> getJobcards({
+  Future<Either<dynamic, PaginatedResponse<domain.Jobcard>>> getJobcards({
     int page = 1,
-    int perPage = 20,
+    int perPage = 100,
     String? status,
     bool force = false,
   }) async {
     try {
-      final models = await remote.getJobcards(
+      final paginatedModels = await remote.getJobcards(
         page: page,
         perPage: perPage,
         status: status,
         force: force,
       );
-      final list = models.map((m) => m as domain.Jobcard).toList();
-      return Either.right(list);
+      
+      final domainItems = paginatedModels.items.map((m) => m as domain.Jobcard).toList();
+      
+      final paginatedDomain = PaginatedResponse<domain.Jobcard>(
+        items: domainItems,
+        total: paginatedModels.total,
+        currentPage: paginatedModels.currentPage,
+        lastPage: paginatedModels.lastPage,
+        perPage: paginatedModels.perPage,
+      );
+      
+      return Either.right(paginatedDomain);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {

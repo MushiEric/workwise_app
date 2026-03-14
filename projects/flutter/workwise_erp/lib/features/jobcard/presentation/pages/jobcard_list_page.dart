@@ -33,9 +33,17 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(jobcardNotifierProvider.notifier).loadJobcards();
     });
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(jobcardNotifierProvider.notifier).loadMore();
+    }
   }
 
   @override
@@ -262,18 +270,25 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
       error: (_, __) => [
         DashboardStatCard(
           label: 'Total',
-          count: _getJobcardCount(state),
+          count: state.items.length,
           icon: AppIcons.assignmentRounded,
           borderColor: AppColors.primary,
         ),
       ],
       data: (items) {
-        // Total = sum of all status totals from the API
-        final totalCount = items.fold<int>(0, (sum, e) {
-          final t = e['total'];
-          return sum +
-              (t is num ? t.toInt() : int.tryParse(t?.toString() ?? '') ?? 0);
-        });
+        // Total = prefer state.totalItems if available, else sum of all status totals from the API
+        int totalCount = state.totalItems > 0 ? state.totalItems : 0;
+        if (totalCount == 0) {
+          for (final item in items) {
+            final t = item['total'];
+            totalCount += (t is num ? t.toInt() : int.tryParse(t?.toString() ?? '') ?? 0);
+          }
+        }
+
+        // If totalCount is 0, fallback to the list length
+        if (totalCount == 0 && state.items.isNotEmpty) {
+          totalCount = state.items.length;
+        }
 
         return [
           DashboardStatCard(
@@ -481,14 +496,32 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: () =>
+      onRefresh: () async {
+        await Future.wait([
           ref.read(jobcardNotifierProvider.notifier).loadJobcards(force: true),
+          ref.refresh(jobcardUsersProvider.future),
+          ref.refresh(jobcardCustomersProvider.future),
+          ref.refresh(jobcardVehiclesProvider.future),
+          ref.refresh(jobcardDashboardProvider.future),
+        ]);
+      },
       color: AppColors.primary,
-      child: _buildJobcardList(filteredJobcards),
+      child: Column(
+        children: [
+          Expanded(child: _buildJobcardList(state, filteredJobcards)),
+          if (state.loadingMore)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h),
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildJobcardList(List<Jobcard> filteredJobcards) {
+  Widget _buildJobcardList(JobcardState state, List<Jobcard> filteredJobcards) {
     final config = ref.watch(jobcardConfigProvider).valueOrNull ?? {};
     final showApproveReject = _parseBoolConfig(
       config['show_approval_reject_or_completion'],
@@ -559,27 +592,47 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     final relatedTo = (jobcard.relatedTo ?? '').toLowerCase();
-    List<Map<String, dynamic>> pool;
+    
+    // Determine which pool to search in based on relatedTo
+    List<Map<String, dynamic>> primaryPool = [];
     if (relatedTo.contains('customer')) {
-      pool = customers;
-    } else if (relatedTo.contains('user')) {
-      pool = users;
+      primaryPool = customers;
+    } else if (relatedTo.contains('user') || relatedTo.contains('employee')) {
+      primaryPool = users;
     } else if (relatedTo.contains('vehicle')) {
-      pool = vehicles;
-    } else {
-      return null;
+      primaryPool = vehicles;
     }
 
-    final match = pool.firstWhere(
+    // Try to find in the primary pool
+    final matchInPrimary = primaryPool.firstWhere(
       (r) => r['id']?.toString() == receiverId,
       orElse: () => {},
     );
-    if (match.isEmpty) return null;
-    return (match['name'] ??
-            match['vehicle_name'] ??
-            match['title'] ??
-            match['username'])
-        ?.toString();
+
+    if (matchInPrimary.isNotEmpty) {
+      return (matchInPrimary['name'] ??
+              matchInPrimary['vehicle_name'] ??
+              matchInPrimary['title'] ??
+              matchInPrimary['username'])
+          ?.toString();
+    }
+
+    // Fallback: search in ALL pools if not found in primary or if relatedTo was unknown
+    final allPools = [...users, ...customers, ...vehicles];
+    final matchInAny = allPools.firstWhere(
+      (r) => r['id']?.toString() == receiverId,
+      orElse: () => {},
+    );
+
+    if (matchInAny.isNotEmpty) {
+      return (matchInAny['name'] ??
+              matchInAny['vehicle_name'] ??
+              matchInAny['title'] ??
+              matchInAny['username'])
+          ?.toString();
+    }
+
+    return null;
   }
 
   bool _parseBoolConfig(dynamic v) {

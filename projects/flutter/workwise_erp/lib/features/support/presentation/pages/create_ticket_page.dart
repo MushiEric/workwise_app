@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:workwise_erp/core/widgets/app_textfield.dart';
+import 'package:workwise_erp/core/widgets/app_textfields.dart';
+import 'package:workwise_erp/core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_smart_dropdown.dart';
 
 import '../../domain/entities/support_ticket.dart';
@@ -238,6 +239,14 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       departmentId: _selectedDepartmentId,
       statusId: _selectedStatusId,
       customerId: _selectedCustomerId,
+      customerName: _selectedCustomerId != null
+          ? _customers
+              .firstWhere(
+                (c) => c.id == _selectedCustomerId,
+                orElse: () => Customer(id: null, name: null),
+              )
+              .name
+          : null,
       contactIds: _selectedContactIds.isNotEmpty ? _selectedContactIds : null,
       files: _localFiles.isNotEmpty
           ? _localFiles.map((e) => e['path'] as String).toList()
@@ -324,124 +333,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     super.dispose();
   }
 
-  /// Shared card decoration
-  BoxDecoration _cardDecoration(bool isDark) => BoxDecoration(
-    color: isDark ? const Color(0xFF151A2E) : Colors.white,
-    borderRadius: BorderRadius.circular(16.r),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.03),
-        blurRadius: 10,
-        offset: const Offset(0, 2),
-      ),
-    ],
-  );
-
-  /// Shared selector decoration
-  InputDecoration _selectorDecoration({
-    required String label,
-    required IconData icon,
-    required Color primary,
-    required bool isDark,
-  }) => InputDecoration(
-    labelText: label,
-    labelStyle: TextStyle(
-      color: isDark ? Colors.white70 : Colors.grey.shade600,
-      fontSize: 14.sp,
-    ),
-    prefixIcon: Icon(icon, size: 20.r, color: primary),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16.r),
-      borderSide: BorderSide.none,
-    ),
-    filled: true,
-    fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
-    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-  );
-
-  Widget _selectorArrow(bool isDark) => Icon(
-    Icons.keyboard_arrow_down_rounded,
-    color: isDark ? Colors.white54 : Colors.grey.shade600,
-    size: 20.r,
-  );
-
-  Widget _buildSectionHeader({
-    required String title,
-    required IconData icon,
-    required Color primary,
-    required bool isDark,
-    Widget? trailing,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(8.r),
-          decoration: BoxDecoration(
-            color: primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-          child: Icon(icon, size: 18.r, color: primary),
-        ),
-        SizedBox(width: 12.w),
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16.sp,
-            color: isDark ? Colors.white : const Color(0xFF1A2634),
-          ),
-        ),
-        if (trailing != null) ...[const Spacer(), trailing],
-      ],
-    );
-  }
-
-  /// Reusable searchable-selector card
-  Widget _buildSelectorCard({
-    required BuildContext context,
-    required bool isDark,
-    required Color primary,
-    required String label,
-    required IconData icon,
-    required String displayText,
-    required bool hasValue,
-    required bool isDisabled,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: _cardDecoration(isDark),
-      child: InkWell(
-        onTap: isDisabled ? null : onTap,
-        borderRadius: BorderRadius.circular(16.r),
-        child: InputDecorator(
-          decoration: _selectorDecoration(
-            label: label,
-            icon: icon,
-            primary: primary,
-            isDark: isDark,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  displayText,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: !hasValue
-                        ? (isDark ? Colors.white38 : Colors.grey.shade600)
-                        : (isDark ? Colors.white : const Color(0xFF1A2634)),
-                    fontWeight: hasValue ? FontWeight.w500 : FontWeight.normal,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              _selectorArrow(isDark),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildAssigneesSection({
     required bool isDark,
@@ -449,7 +340,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     required BuildContext context,
   }) {
     final displayText = _selectedAssignees.isEmpty
-        ? 'Select assignees'
+        ? ''
         : _selectedAssignees.length == 1
         ? _users
                   .firstWhere(
@@ -460,16 +351,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               'Unknown'
         : '${_selectedAssignees.length} selected';
 
-    return _buildSelectorCard(
-      context: context,
-      isDark: isDark,
-      primary: primary,
+    return AppTextField(
+      controller: TextEditingController(text: displayText),
       label: 'Assignees',
-      icon: Icons.people_rounded,
-      displayText: displayText,
-      hasValue: _selectedAssignees.isNotEmpty,
-      isDisabled: _users.isEmpty,
-      onTap: () async {
+      hintText: 'Select assignees',
+      isDropdown: true,
+      onDropdownTap: () async {
         final initial = _users
             .where((u) => _selectedAssignees.contains(u.id))
             .toList();
@@ -501,7 +388,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     required BuildContext context,
   }) {
     final displayText = _selectedContactIds.isEmpty
-        ? 'Select contacts'
+        ? ''
         : _selectedContactIds.length == 1
         ? _contacts
                   .firstWhere(
@@ -512,16 +399,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               'Unknown'
         : '${_selectedContactIds.length} selected';
 
-    return _buildSelectorCard(
-      context: context,
-      isDark: isDark,
-      primary: primary,
+    return AppTextField(
+      controller: TextEditingController(text: displayText),
       label: 'Contacts',
-      icon: Icons.contact_phone_rounded,
-      displayText: displayText,
-      hasValue: _selectedContactIds.isNotEmpty,
-      isDisabled: _contacts.isEmpty && _selectedCustomerId == null,
-      onTap: () async {
+      hintText: 'Select contacts',
+      isDropdown: true,
+      onDropdownTap: () async {
         if (_selectedCustomerId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -557,85 +440,35 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   }
 
   Widget _buildEndDateSection({required bool isDark, required Color primary}) {
-    return Container(
-      padding: EdgeInsets.all(16.r),
-      decoration: _cardDecoration(isDark),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.r),
-            decoration: BoxDecoration(
-              color: primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Icon(Icons.event_rounded, size: 20.r, color: primary),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'End Date',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                  ),
+    final displayDate = _endDate == null ? '' : _endDate!.toLocal().toString().split(' ')[0];
+    return AppTextField(
+      controller: TextEditingController(text: displayDate),
+      label: 'End Date',
+      hintText: 'Select date',
+      readOnly: true,
+      prefixIcon: Icon(AppIcons.eventRounded, size: 18),
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _endDate ?? DateTime.now(),
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: primary,
+                  onPrimary: Colors.white,
                 ),
-                SizedBox(height: 2.h),
-                Text(
-                  _endDate == null
-                      ? 'Not set'
-                      : _endDate!.toLocal().toString().split(' ')[0],
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
-                    color: _endDate == null
-                        ? (isDark ? Colors.white38 : Colors.grey.shade500)
-                        : (isDark ? Colors.white : const Color(0xFF1A2634)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _endDate ?? DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.light(
-                        primary: primary,
-                        onPrimary: Colors.white,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (picked != null) {
-                setState(() => _endDate = picked);
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: primary,
-              backgroundColor: primary.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
               ),
-              minimumSize: Size(80.w, 36.h),
-            ),
-            child: Text(
-              _endDate == null ? 'Set Date' : 'Change',
-              style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          setState(() => _endDate = picked);
+        }
+      },
     );
   }
 
@@ -643,159 +476,175 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     required bool isDark,
     required Color primary,
   }) {
-    return Container(
-      padding: EdgeInsets.all(12.r),
-      decoration: _cardDecoration(isDark),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(
-            title: 'Attachments',
-            icon: Icons.attach_file_rounded,
-            primary: primary,
-            isDark: isDark,
-            trailing: Text(
-              '${_localFiles.length} file(s)',
-              style: TextStyle(
-                fontSize: 11.sp,
-                color: isDark ? Colors.white54 : Colors.grey.shade600,
-              ),
-            ),
-          ),
-          SizedBox(height: 10.h),
-
-          // Compact Upload area
-          InkWell(
-            onTap: _pickFiles,
-            borderRadius: BorderRadius.circular(12.r),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: primary.withOpacity(0.3),
-                  width: 1.5,
-                  style: BorderStyle.solid,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label row
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Attachments',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : const Color(0xFF374151),
+                  letterSpacing: 0.3,
                 ),
-                borderRadius: BorderRadius.circular(12.r),
-                color: primary.withOpacity(0.02),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.cloud_upload_rounded, color: primary, size: 24.r),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Tap to add files',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13.sp,
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.grey.shade700,
-                          ),
-                        ),
-                        Text(
-                          'Selected files will be uploaded',
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: isDark
-                                ? Colors.white38
-                                : Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
+              if (_localFiles.isNotEmpty)
+                Text(
+                  '${_localFiles.length} file(s)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.grey.shade600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // Items list
+        if (_localFiles.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _localFiles.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) {
+                final f = _localFiles[i];
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0x1AFFFFFF) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
                     ),
+                    boxShadow: isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      Icon(_getFileIcon(f['name']), size: 20, color: primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              f['name'] ?? 'File',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1A2634),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (f['size'] != null)
+                              Text(
+                                f['size'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.grey.shade500,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => setState(() => _localFiles.removeAt(i)),
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                          color: Colors.red.shade400,
+                        ),
+                        splashRadius: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
 
-          // File list
-          if (_localFiles.isNotEmpty) ...[
-            SizedBox(height: 16.h),
-            ..._localFiles.map(
-              (f) => Container(
-                margin: EdgeInsets.only(bottom: 8.h),
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.03)
-                      : Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.grey.shade200,
-                    width: 1,
+        // Add Button
+        InkWell(
+          onTap: _pickFiles,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Icon(
+                  Icons.attach_file_rounded,
+                  size: 18,
+                  color: isDark ? Colors.white54 : Colors.grey.shade500,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _localFiles.isEmpty ? 'Add Attachment' : 'Add another file',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white54 : Colors.grey.shade500,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(6.r),
-                      decoration: BoxDecoration(
-                        color: primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Icon(
-                        _getFileIcon(f['name']),
-                        size: 16.r,
+                const Spacer(),
+                if (_localFiles.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_localFiles.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: primary,
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            f['name'] ?? 'File',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13.sp,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1A2634),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            f['size'] ?? '',
-                            style: TextStyle(
-                              fontSize: 11.sp,
-                              color: isDark
-                                  ? Colors.white38
-                                  : Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 18.r,
-                        color: Colors.red.shade300,
-                      ),
-                      onPressed: () => setState(() => _localFiles.remove(f)),
-                      splashRadius: 20,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
             ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -854,17 +703,13 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               // ── Subject ──────────────────────────────────────────────
               AppTextField(
                 controller: _subjectController,
-                labelText: 'Subject',
-                prefixIcon: Icon(
-                  Icons.subject_rounded,
-                  size: 20.r,
-                  color: primary,
-                ),
+                label: 'Subject',
+                
                 validator: (v) =>
                     v?.trim().isEmpty == true ? 'Subject is required' : null,
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Customer ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -883,8 +728,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Customer',
                 hintText: 'Select customer',
                 enabled: _customers.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) {
                   setState(() {
@@ -897,7 +741,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 },
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Contacts ─────────────────────────────────────────────
               _buildContactsSection(
@@ -906,7 +750,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 context: context,
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Priority ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -922,13 +766,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Priority',
                 hintText: 'Select priority',
                 enabled: _priorities.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedPriorityId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Category ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -945,13 +788,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Category',
                 hintText: 'Select category',
                 enabled: _categories.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedCategoryId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Service ──────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -967,13 +809,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Service',
                 hintText: 'Select service',
                 enabled: _services.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedServiceId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Department ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -989,13 +830,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Department',
                 hintText: 'Select department',
                 enabled: _departments.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedDepartmentId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Status ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -1011,13 +851,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Status',
                 hintText: 'Select status',
                 enabled: _statuses.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedStatusId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Assignees ────────────────────────────────────────────
               _buildAssigneesSection(
@@ -1026,7 +865,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 context: context,
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Supervisor ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -1046,13 +885,12 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Supervisor',
                 hintText: 'Select supervisor',
                 enabled: _supervisors.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedSupervisorId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Location ─────────────────────────────────────────────
               AppSmartDropdown<int>(
@@ -1068,39 +906,30 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Location',
                 hintText: 'Select location',
                 enabled: _locations.isNotEmpty,
-                backgroundColor:
-                    isDark ? AppColors.white : AppColors.greyFill,
+
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedLocationId = id),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── End Date ─────────────────────────────────────────────
               _buildEndDateSection(isDark: isDark, primary: primary),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
-              // ── Description ──────────────────────────────────────────
               AppTextField(
                 controller: _descriptionController,
-                labelText: 'Description',
-                prefixIcon: Icon(
-                  Icons.description_rounded,
-                  size: 20.r,
-                  color: primary,
-                ),
-                maxLines: 6,
+                label: 'Description',
+                minLines: 1,
+                maxLines: 3,
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: 8.h),
 
               // ── Attachments ──────────────────────────────────────────
               _buildAttachmentsSection(isDark: isDark, primary: primary),
 
-              SizedBox(height: 24.h),
-
-              SizedBox(height: 20.h),
             ],
           ),
         ),

@@ -1,13 +1,14 @@
 import 'package:workwise_erp/core/errors/either.dart';
-import '../entities/jobcard.dart';
-import '../entities/jobcard_detail.dart';
-import '../entities/jobcard_form_data.dart';
-import '../entities/jobcard_status.dart';
+import 'package:workwise_erp/core/models/paginated_response.dart';
+import '../../domain/entities/jobcard.dart';
+import '../../domain/entities/jobcard_detail.dart';
+import '../../domain/entities/jobcard_form_data.dart';
+import '../../domain/entities/jobcard_status.dart';
 
 abstract class JobcardRepository {
-  Future<Either<dynamic, List<Jobcard>>> getJobcards({
+  Future<Either<dynamic, PaginatedResponse<Jobcard>>> getJobcards({
     int page = 1,
-    int perPage = 20,
+    int perPage = 50,
     String? status,
     bool force = false,
   });

@@ -305,7 +305,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       'Vendor': 'vendor',
       'Users': 'user',
       'User': 'user',
-      'Employee': 'employee',
+      'Employee': 'user',
     };
     final defaultReceiverType = _receiverTypeMap[_relatedTo];
     if (defaultReceiverType != null) {
@@ -712,9 +712,8 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         // Jobcard Number *
         AppTextField(
           controller: _jobcardNumberCtl,
-          label: 'Jobcard Number',
-          isRequired: true,
-          enabled: false,
+          label: 'Jobcard Number *',
+          readOnly: true,
           suffixIcon: _generatingNumber
               ? SizedBox(
                   width: 32,
@@ -747,6 +746,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           hintText: 'Enter subject',
           onChanged: (_) => setState(() => _subjectError = null),
         ),
+        const SizedBox(height: 8),
         if (_subjectError != null)
           Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -758,11 +758,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         // Starting On *
         AppTextField(
           controller: _reportedDateCtl,
-          label: 'Starting On',
-          isRequired: true,
+          label: 'Starting On *',
           hintText: 'Select date',
-          isDropdown: true,
-          onDropdownTap: () async {
+          readOnly: true,
+          onTap: () async {
             await _selectDate(_reportedDateCtl);
             if (_reportedDateCtl.text.isNotEmpty) {
               setState(() => _dateError = null);
@@ -778,7 +777,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
               style: TextStyle(color: Colors.red.shade400, fontSize: 12),
             ),
           ),
-        // Status *
+        const SizedBox(height: 8),
         AppSmartDropdown<int>(
           value: _statusId,
           items: _supportStatuses
@@ -794,7 +793,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           },
           label: 'Status *',
           errorText: _statusError,
-          backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
+
           borderRadius: 12,
           onChanged: (v) => setState(() {
             _statusId = v;
@@ -822,6 +821,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             _staffError = null;
           }),
         ),
+        const SizedBox(height: 8),
         // Supervisor
         FutureBuilder(
           future: _supervisorFuture,
@@ -837,13 +837,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                   return s.user?.name ?? 'Supervisor $id';
                 },
                 label: 'Supervisor',
-                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
                 borderRadius: 12,
                 onChanged: (v) => setState(() => _supervisorId = v),
               ),
             );
           },
         ),
+        const SizedBox(height: 8),
         // Department
         FutureBuilder(
           future: _departmentFuture,
@@ -859,13 +860,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                   return d.name ?? 'Department $id';
                 },
                 label: 'Department',
-                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
                 borderRadius: 12,
                 onChanged: (v) => setState(() => _departmentId = v),
               ),
             );
           },
         ),
+        const SizedBox(height: 8),
         // Location
         FutureBuilder(
           future: _locationFuture,
@@ -881,13 +883,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                   return d.name ?? 'Location $id';
                 },
                 label: 'Location',
-                backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
                 borderRadius: 12,
                 onChanged: (v) => setState(() => _locationId = v),
               ),
             );
           },
         ),
+        const SizedBox(height: 8),
         // Support Ticket
         AppSmartDropdown<int>(
           value: _supportTicketId,
@@ -903,17 +906,18 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             return t.isNotEmpty ? (t['name'] ?? 'Ticket $id') : 'Ticket $id';
           },
           label: 'Support Ticket',
-          backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
           borderRadius: 12,
           onChanged: (v) => setState(() => _supportTicketId = v),
         ),
+        const SizedBox(height: 8),
         // Related To
         AppSmartDropdown<String>(
           value: _relatedTo,
-          items: const ['Customer', 'Vehicle', 'Vendor', 'Users', 'Other'],
+          items: const ['Customer', 'Vehicle', 'Vendor', 'Employee', 'Users', 'Other'],
           itemBuilder: (item) => item,
           label: 'Related To',
-          backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
           borderRadius: 12,
           onChanged: (v) async {
             if (v == null) return;
@@ -923,18 +927,20 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
               _receiverType = null;
               _receiverName = null;
             });
-            if (v == 'Customer' || v == 'Vendor' || v == 'Users') {
+            if (v == 'Customer' || v == 'Vendor' || v == 'Users' || v == 'Employee') {
               final map = {
                 'Customer': 'customer',
                 'Vendor': 'vendor',
                 'Users': 'user',
+                'Employee': 'user',
               };
               await _loadReceiversByType(map[v] ?? v.toLowerCase());
             }
           },
         ),
         // Vehicle (conditional)
-        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty)
+        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty) ...[
+          const SizedBox(height: 8),
           AppSmartDropdown<int>(
             value: _vehicleId,
             items: _vehicles
@@ -951,14 +957,17 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                   : 'Vehicle $id';
             },
             label: 'Select Vehicle',
-            backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
             borderRadius: 12,
             onChanged: (v) => setState(() => _vehicleId = v),
           ),
+        ],
         // Receiver (conditional)
         if (_relatedTo == 'Customer' ||
             _relatedTo == 'Vendor' ||
-            _relatedTo == 'Users')
+            _relatedTo == 'Employee' ||
+            _relatedTo == 'Users') ...[
+          const SizedBox(height: 8),
           AppSmartDropdown<int>(
             value: _receiverId,
             items: _receivers
@@ -976,27 +985,32 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             },
             label: 'Select ${_relatedTo ?? 'Receiver'}',
             enabled: _receivers.isNotEmpty,
-            backgroundColor: isDark ? darkBg : Colors.grey.shade100,
+
             borderRadius: 12,
             onChanged: (v) => setState(() => _receiverId = v),
           ),
+        ],
         // Other free-text
-        if (_relatedTo == 'Other')
+        if (_relatedTo == 'Other') ...[
+          const SizedBox(height: 8),
           AppTextField(
             controller: _relatedOtherCtl,
             onChanged: (v) => _receiverName = v,
             label: 'Specify (Other)',
             hintText: 'Enter related value',
           ),
+        ],
+        const SizedBox(height: 8),
         // Completed On (dispatched date)
         AppTextField(
           controller: _dispatchedDateCtl,
           label: 'Completed On',
           hintText: 'Optional',
-          isDropdown: true,
-          onDropdownTap: () => _selectDate(_dispatchedDateCtl),
+          readOnly: true,
+          onTap: () => _selectDate(_dispatchedDateCtl),
           prefixIcon: Icon(AppIcons.eventRounded, size: 18),
         ),
+        const SizedBox(height: 8),
         // Summary of Tasks (maps to `description` in params)
         AppTextField(
           controller: _descriptionCtl,
@@ -1011,6 +1025,8 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           hintText: 'Optional',
           maxLines: 3,
         ),
+        const SizedBox(height: 16),
+        _buildStep4(context),
       ],
     );
   }
@@ -1037,21 +1053,26 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             // ── "Show more / fewer" toggle ────────────────────────────
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton.icon(
+              child: TextButton(
                 onPressed: () =>
                     setState(() => _showMoreOptional = !_showMoreOptional),
-
-                label: Text(_showMoreOptional ? 'Hide ' : 'Show more'),
-                icon: Icon(
-                  _showMoreOptional
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
-                  size: 18,
-                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   padding: EdgeInsets.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_showMoreOptional ? 'Hide' : 'Show more'),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _showMoreOptional
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      size: 18,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1064,22 +1085,21 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
                   ? _buildOptionalFields(isDark)
                   : const SizedBox(width: double.infinity),
             ),
-
             const SizedBox(height: 16),
-
-            // ── Items & Files ─────────────────────────────────────────
-            _buildStep4(context),
-            const SizedBox(height: 24),
-
-            // ── Submit ────────────────────────────────────────────────
-            AppButton(
-              text: _submitting ? 'Creating...' : 'Create Jobcard',
-              onPressed: _submitting ? null : _submit,
-              isSticky: true,
-              textColor: AppColors.white,
-            ),
-            const SizedBox(height: 24),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: AppButton.primary(
+            text: _editId != null
+                ? (_submitting ? 'Saving...' : 'Save Changes')
+                : (_submitting ? 'Creating...' : 'Create Jobcard'),
+            onPressed: _submitting ? null : _submit,
+            isLoading: _submitting,
+            isSticky: true,
+          ),
         ),
       ),
     );
