@@ -35,12 +35,88 @@ class SupportRepositoryImpl implements SupportRepository {
     int limit = 20,
   }) async {
     try {
+<<<<<<< HEAD
       final List<SupportTicketModel> models = await remote.getSupportTickets(
         page: page,
         limit: limit,
       );
       final list = models.map((m) => m.toDomain()).toList();
       return Either.right(list);
+=======
+      // Fetch tickets raw JSON and metadata in parallel so we can resolve IDs to names
+      final results = await Future.wait([
+        remote.getSupportTicketsRaw(page: page, limit: limit),
+        remote.getSupportCategories().catchError((_) => <Map<String, dynamic>>[]),
+        remote.getSupportDepartments().catchError((_) => <Map<String, dynamic>>[]),
+        remote.getSupportSupervisors().catchError((_) => <Map<String, dynamic>>[]),
+      ]);
+
+      final rawTickets = results[0] as List<Map<String, dynamic>>;
+      final categories = results[1] as List<Map<String, dynamic>>;
+      final departments = results[2] as List<Map<String, dynamic>>;
+      final supervisors = results[3] as List<Map<String, dynamic>>;
+
+      // Build lookup maps: id -> name
+      final catLookup = <int, String>{};
+      for (final c in categories) {
+        final id = c['id'] is int ? c['id'] as int : (c['id'] is String ? int.tryParse(c['id'] as String) : null);
+        final name = c['name']?.toString();
+        if (id != null && name != null) catLookup[id] = name;
+      }
+
+      final deptLookup = <int, String>{};
+      for (final d in departments) {
+        final id = d['id'] is int ? d['id'] as int : (d['id'] is String ? int.tryParse(d['id'] as String) : null);
+        final name = d['name']?.toString();
+        if (id != null && name != null) deptLookup[id] = name;
+      }
+
+      final supLookup = <int, String>{};
+      for (final s in supervisors) {
+        final id = s['id'] is int ? s['id'] as int : (s['id'] is String ? int.tryParse(s['id'] as String) : null);
+        // Supervisor name may be in nested 'user' object or directly on the record
+        String? name;
+        if (s['user'] is Map) {
+          name = (s['user'] as Map)['name']?.toString();
+        }
+        name ??= s['name']?.toString();
+        if (id != null && name != null) supLookup[id] = name;
+      }
+
+      // Resolve IDs to names in each ticket JSON, then parse into models
+      final List<domain.SupportTicket> tickets = [];
+      for (final json in rawTickets) {
+        try {
+          // Resolve category
+          if (json['category'] == null && json['_category_id'] is int) {
+            final catName = catLookup[json['_category_id'] as int];
+            if (catName != null) json['category'] = catName;
+          }
+
+          // Resolve department
+          if (json['department'] == null && json['_department_id'] is int) {
+            final deptName = deptLookup[json['_department_id'] as int];
+            if (deptName != null) json['department'] = deptName;
+          }
+
+          // Resolve supervisor
+          if (json['_supervisor_id'] is int) {
+            final supName = supLookup[json['_supervisor_id'] as int];
+            if (supName != null) {
+              json['supervisors'] = <String>[supName];
+            }
+          }
+
+          final model = SupportTicketModel.fromJson(json);
+          tickets.add(model.toDomain());
+        } catch (err) {
+          // ignore: avoid_print
+          print('Warning: failed to parse support ticket item: $err');
+        }
+      }
+
+      return Either.right(tickets);
+>>>>>>> f3f03e6 (changes made on support tickets)
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
     } catch (e) {
@@ -408,6 +484,12 @@ class SupportRepositoryImpl implements SupportRepository {
           'customer_id': params.customerId,
           'customer': params.customerId,
           'client_id': params.customerId,
+        },
+
+        // Send customer name so the backend can store it
+        if (params.customerName != null) ...{
+          'customer_name': params.customerName,
+          'name': params.customerName,
         },
 
         // Send assignees list

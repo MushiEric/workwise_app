@@ -238,6 +238,14 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       departmentId: _selectedDepartmentId,
       statusId: _selectedStatusId,
       customerId: _selectedCustomerId,
+      customerName: _selectedCustomerId != null
+          ? _customers
+              .firstWhere(
+                (c) => c.id == _selectedCustomerId,
+                orElse: () => Customer(id: null, name: null),
+              )
+              .name
+          : null,
       contactIds: _selectedContactIds.isNotEmpty ? _selectedContactIds : null,
       files: _localFiles.isNotEmpty
           ? _localFiles.map((e) => e['path'] as String).toList()
