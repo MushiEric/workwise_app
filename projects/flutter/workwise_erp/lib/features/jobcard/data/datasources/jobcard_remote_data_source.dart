@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
 
+import 'package:workwise_erp/core/models/paginated_response.dart';
+
 import '../models/jobcard_model.dart';
 import '../models/jobcard_detail_model.dart';
 
@@ -61,9 +63,9 @@ class JobcardRemoteDataSource {
         return (raw['jobcard_statuses'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      // nested data -> list (handles Laravel paginator: {data: {data: [...], last_page: N}})
-      if (raw['data'] is Map) {
-        final inner = raw['data'] as Map;
+      // nested data/payload -> list (handles Laravel paginator: {data: {data: [...], last_page: N}})
+      final inner = (raw['data'] is Map ? raw['data'] as Map : (raw['payload'] is Map ? raw['payload'] as Map : null));
+      if (inner != null) {
         if (inner['data'] is List)
           return (inner['data'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
@@ -104,10 +106,10 @@ class JobcardRemoteDataSource {
     return <Map<String, dynamic>>[];
   }
 
-  /// GET /jobcard/getJobCard — fetches ALL pages automatically.
-  Future<List<JobcardModel>> getJobcards({
+  /// GET /jobcard/getJobCard — fetches a single page.
+  Future<PaginatedResponse<JobcardModel>> getJobcards({
     int page = 1,
-    int perPage = 500,
+    int perPage = 5000,
     String? status,
     bool force = false,
   }) async {
@@ -118,8 +120,17 @@ class JobcardRemoteDataSource {
       final resp = await client.get(
         '/jobcard/getJobCard',
         queryParameters: {
-          'page': 1,
+          'page': page,
           'per_page': perPage,
+          'page_length': perPage,
+          'limit_page_length': perPage,
+          'limit_start': (page - 1) * perPage,
+          'start': (page - 1) * perPage,
+          'length': perPage,
+          'limit': perPage,
+          'page_size': perPage,
+          'limit_page': perPage,
+          'rows': perPage,
           if (status != null) 'status': status,
         },
         options: Options(extra: extra),
@@ -127,68 +138,58 @@ class JobcardRemoteDataSource {
 
       final raw = resp.data;
 
-      // Detect last_page from Laravel paginator so we can fetch remaining pages
+      // Extract items
+      final items = _extractList(raw).map((e) => JobcardModel.fromJson(e)).toList();
+
+      // Detect last_page, total, etc. from Laravel/Common paginator
+      int total = items.length;
       int lastPage = 1;
+      int currentPage = page;
+      int actualPerPage = perPage;
+
       if (raw is Map) {
-        final paginator = raw['data'] is Map ? raw['data'] as Map : raw;
+        final paginator = raw['data'] is Map 
+            ? raw['data'] as Map 
+            : (raw['payload'] is Map ? raw['payload'] as Map : raw);
+            
         final lp =
             paginator['last_page'] ??
             paginator['lastPage'] ??
             paginator['total_pages'] ??
             paginator['totalPages'];
-        if (lp is num && lp > 1) {
+        if (lp is num && lp > 0) {
           lastPage = lp.toInt();
         } else if (lp is String) {
           lastPage = int.tryParse(lp) ?? 1;
-          if (lastPage < 1) lastPage = 1;
         }
-        // Fallback: calculate from total + per_page
-        if (lastPage <= 1) {
-          final total = paginator['total'];
-          final pp = paginator['per_page'];
-          final totalInt = total is num
-              ? total.toInt()
-              : int.tryParse(total?.toString() ?? '') ?? 0;
-          final ppInt = pp is num
-              ? pp.toInt()
-              : int.tryParse(pp?.toString() ?? '') ?? 0;
-          if (totalInt > 0 && ppInt > 0) {
-            lastPage = (totalInt / ppInt).ceil();
-          }
+
+        final t = paginator['total'] ?? paginator['records_total'] ?? paginator['recordsTotal'];
+        if (t is num) {
+          total = t.toInt();
+        } else if (t is String) {
+          total = int.tryParse(t) ?? items.length;
+        }
+
+        final cp = paginator['current_page'] ?? paginator['currentPage'] ?? page;
+        currentPage = cp is num ? cp.toInt() : (int.tryParse(cp?.toString() ?? '') ?? page);
+
+        final pp = paginator['per_page'] ?? paginator['per_page_length'] ?? paginator['limit'] ?? perPage;
+        actualPerPage = pp is num ? pp.toInt() : (int.tryParse(pp?.toString() ?? '') ?? perPage);
+        if (actualPerPage <= 0) actualPerPage = perPage;
+
+        // Fallback: calculate lastPage from total + per_page
+        if (lastPage <= 1 && total > actualPerPage) {
+          lastPage = (total / actualPerPage).ceil();
         }
       }
 
-      final firstItems = _extractList(raw);
-
-      if (lastPage <= 1) {
-        return firstItems.map((e) => JobcardModel.fromJson(e)).toList();
-      }
-
-      // Backend paginates — fetch all remaining pages concurrently
-      final futures = <Future<Response>>[];
-      for (int p = 2; p <= lastPage; p++) {
-        futures.add(
-          client.get(
-            '/jobcard/getJobCard',
-            queryParameters: {
-              'page': p,
-              'per_page': perPage,
-              if (status != null) 'status': status,
-            },
-            options: Options(
-              extra: force
-                  ? <String, dynamic>{'no_cache': true}
-                  : <String, dynamic>{},
-            ),
-          ),
-        );
-      }
-      final responses = await Future.wait(futures);
-      final allItems = [...firstItems];
-      for (final r in responses) {
-        allItems.addAll(_extractList(r.data));
-      }
-      return allItems.map((e) => JobcardModel.fromJson(e)).toList();
+      return PaginatedResponse<JobcardModel>(
+        items: items,
+        total: total,
+        currentPage: currentPage,
+        lastPage: lastPage,
+        perPage: actualPerPage,
+      );
     } on DioException catch (e) {
       final respData = e.response?.data;
       if (respData is String) {
@@ -573,6 +574,7 @@ class JobcardRemoteDataSource {
       final String endpoint;
       switch (type.toLowerCase()) {
         case 'user':
+        case 'employee':
           endpoint = '/user/getUsers';
           break;
         case 'customer':

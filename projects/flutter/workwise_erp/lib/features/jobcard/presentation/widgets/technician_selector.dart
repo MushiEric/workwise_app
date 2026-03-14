@@ -25,7 +25,7 @@ class TechnicianSelector extends StatelessWidget {
     // Build display text
     String displayText;
     if (selectedIds.isEmpty) {
-      displayText = 'Tap to select staff';
+      displayText = '';
     } else {
       final names = selectedIds.map((id) {
         final u = users.firstWhere(
@@ -74,10 +74,10 @@ class TechnicianSelector extends StatelessWidget {
             if (selected != null) onChanged(selected);
           },
           child: Container(
-            height: 52,
+            height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0x1AFFFFFF) : const Color(0xFFF5F7FA),
+              color: isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: hasError
@@ -90,11 +90,11 @@ class TechnicianSelector extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    displayText,
+                    selectedIds.isEmpty ? 'Tap to select staff' : displayText,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.normal,
                       color: selectedIds.isEmpty
                           ? (isDark ? Colors.white38 : Colors.grey.shade500)
                           : (isDark ? Colors.white : Colors.black87),
@@ -102,7 +102,7 @@ class TechnicianSelector extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.keyboard_arrow_down_rounded,
+                  Icons.arrow_drop_down,
                   color: isDark ? Colors.white54 : Colors.grey.shade500,
                   size: 22,
                 ),

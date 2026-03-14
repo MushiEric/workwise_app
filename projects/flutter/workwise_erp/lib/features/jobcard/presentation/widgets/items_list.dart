@@ -552,166 +552,196 @@ class _ItemsListState extends State<ItemsList> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
-    final effectiveBg = isDark
-        ? const Color(0x1AFFFFFF)
-        : const Color(0xFFF5F7FA);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label row with inline "Add" action
-        Row(
-          children: [
-            Text(
-              'Materials',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white70 : const Color(0xFF374151),
-              ),
+        // Label row
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'Materials & Services',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : const Color(0xFF374151),
+              letterSpacing: 0.3,
             ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: _showAddItemSheet,
-              icon: Icon(Icons.add_rounded, size: 16, color: primaryColor),
-              label: Text(
-                'Add',
-                style: TextStyle(fontSize: 13, color: primaryColor),
-              ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 8),
 
-        // Items container — compact dropdown-style
-        GestureDetector(
-          onTap: widget.items.isEmpty ? _showAddItemSheet : null,
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: effectiveBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
-                width: 1,
-              ),
-            ),
-            child: widget.items.isEmpty
-                ? Row(
-                    children: [
-                      Text(
-                        'Tap to add materials',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white38 : Colors.grey.shade400,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.add_circle_outline_rounded,
-                        size: 18,
-                        color: isDark ? Colors.white24 : Colors.grey.shade400,
-                      ),
-                    ],
-                  )
-                : Column(
+        // Items list
+        if (widget.items.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (ctx, i) {
+                final item = widget.items[i];
+                final files = item['attachments'] as List? ?? const [];
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0x1AFFFFFF) : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
+                    ),
+                    boxShadow: isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: widget.items.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final item = entry.value;
-                      final files = item['attachments'] as List? ?? const [];
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: i < widget.items.length - 1 ? 10 : 0,
+                    children: [
+                      // Index badge
+                      Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                        child: Row(
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${i + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      
+                      // Item info
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Index badge
-                            Container(
-                              margin: const EdgeInsets.only(top: 2),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${i + 1}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryColor,
-                                ),
+                            Text(
+                              item['item_name'] ?? 'Item',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1A2634),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            // Item info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['item_name'] ?? 'Item',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
-                                      color: isDark
-                                          ? Colors.white
-                                          : const Color(0xFF1A2634),
-                                    ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
                                   ),
-                                  Text(
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
                                     'Qty: ${item['qty']}',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                       color: isDark
-                                          ? Colors.white54
-                                          : Colors.grey.shade600,
+                                          ? Colors.white70
+                                          : Colors.grey.shade700,
                                     ),
                                   ),
-                                  if (files.isNotEmpty)
-                                    Text(
-                                      '${files.length} file(s) attached',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: primaryColor,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            // Remove
-                            GestureDetector(
-                              onTap: () {
-                                final newList = List<Map<String, dynamic>>.from(
-                                  widget.items,
-                                )..removeAt(i);
-                                widget.onItemsChanged(newList);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  size: 16,
-                                  color: Colors.red.shade300,
                                 ),
-                              ),
+                                if (files.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.attach_file, size: 12, color: primaryColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${files.length} attached',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      
+                      // Remove Action
+                      IconButton(
+                        onPressed: () {
+                          final newList = List<Map<String, dynamic>>.from(
+                            widget.items,
+                          )..removeAt(i);
+                          widget.onItemsChanged(newList);
+                        },
+                        icon: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                          color: Colors.red.shade400,
+                        ),
+                        splashRadius: 20,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                    ],
                   ),
+                );
+              },
+            ),
+          ),
+
+        // Add Button
+        InkWell(
+          onTap: _showAddItemSheet,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: primaryColor.withOpacity(0.3),
+                style: BorderStyle.solid, // Solid but stylized border
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_circle_outline_rounded, size: 20, color: primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  widget.items.isEmpty
+                      ? 'Add Material or Service'
+                      : 'Add another item',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

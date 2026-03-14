@@ -59,19 +59,21 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasValue = widget.value != null;
     final hasError = widget.errorText != null;
-    final displayText = hasValue
-        ? widget.itemBuilder(widget.value as T)
-        : (widget.hintText ?? 'Select ${widget.label.replaceAll(' *', '')}');
-
-    final effectiveBg =
-        widget.backgroundColor ??
-        (isDark ? const Color(0x1AFFFFFF) : const Color(0xFFF5F7FA));
-
     // Strip trailing ' *' for display in label span, handle asterisk separately
     final labelBase = widget.label.endsWith(' *')
         ? widget.label.substring(0, widget.label.length - 2)
         : widget.label;
     final isRequired = widget.label.endsWith(' *');
+
+    final displayText = hasValue
+        ? widget.itemBuilder(widget.value as T)
+        : (widget.hintText ?? 'Select $labelBase');
+
+    final effectiveBg =
+        widget.backgroundColor ??
+        (isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill);
+
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,12 +108,10 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
         GestureDetector(
           onTap: widget.enabled ? _openSheet : null,
           child: Container(
-            height: 52,
+            height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: widget.enabled
-                  ? effectiveBg
-                  : (isDark ? Colors.white12 : Colors.grey.shade200),
+              color: effectiveBg,
               borderRadius: BorderRadius.circular(widget.borderRadius),
               border: Border.all(
                 color: hasError
@@ -129,7 +129,7 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: hasValue ? FontWeight.w500 : FontWeight.normal,
                       color: hasValue
                           ? (isDark ? Colors.white : Colors.black87)
                           : (isDark ? Colors.white38 : Colors.grey.shade500),
@@ -137,7 +137,7 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
                   ),
                 ),
                 Icon(
-                  AppIcons.arrowdropDown,
+                  Icons.arrow_drop_down,
                   color: isDark ? Colors.white54 : Colors.grey.shade500,
                   size: 22,
                 ),
