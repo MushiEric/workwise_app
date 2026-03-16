@@ -9,7 +9,7 @@ import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import 'package:workwise_erp/core/widgets/drawer_filter.dart';
 import 'package:workwise_erp/core/utils/scroll_aware_fab.dart';
-import 'package:workwise_erp/core/widgets/shimmer.dart';
+
 import 'package:workwise_erp/core/services/tutorial_service.dart';
 import '../notifier/jobcard_notifier.dart';
 import '../providers/jobcard_providers.dart';
@@ -561,9 +561,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
   Widget _buildBody(JobcardState state, bool isDark) {
     if (state.loading) {
       return ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+        padding: EdgeInsets.all(16.r),
         itemCount: 6,
-        separatorBuilder: (_, __) => SizedBox(height: 8.h),
+        separatorBuilder: (_, __) => SizedBox(height: 12.h),
         itemBuilder: (_, __) => _buildJobcardSkeleton(),
       );
     }
@@ -916,59 +916,58 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
   Widget _buildJobcardSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 6.h),
-        padding: EdgeInsets.all(16.h),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 12.h),
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
+          width: 1,
         ),
+      ),
+      color: isDark ? const Color(0xFF151A2E) : Colors.white,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 16.h,
+              height: 14.h,
               width: 120.w,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             Container(
               height: 12.h,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            SizedBox(height: 14.h),
+            SizedBox(height: 12.h),
             Row(
               children: [
-                Expanded(
-                  child: Container(
-                    height: 12.h,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                Container(
+                  height: 10.h,
+                  width: 80.w,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white12 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Container(
-                    height: 12.h,
+                    height: 10.h,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: isDark ? Colors.white12 : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
