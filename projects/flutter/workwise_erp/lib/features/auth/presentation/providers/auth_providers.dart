@@ -5,8 +5,9 @@ import 'package:workwise_erp/core/provider/token_provider.dart';
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
+import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/entities/user.dart';
+import '../../domain/entities/user.dart' as domain;
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/login.dart';
@@ -26,7 +27,8 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final remote = ref.watch(authRemoteDataSourceProvider);
   final tokenStorage = ref.watch(tokenLocalDataSourceProvider);
-  return AuthRepositoryImpl(remote, tokenStorage);
+  final userStorage = ref.watch(userLocalDataSourceProvider);
+  return AuthRepositoryImpl(remote, tokenStorage, userStorage);
 });
 
 /// Exposes the last technical API error (for debugging / diagnostics).
@@ -68,14 +70,35 @@ final changePasswordUsingOtpUseCaseProvider = Provider((ref) {
   return ChangePasswordUsingOtp(repo);
 });
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   final login = ref.watch(loginUseCaseProvider);
   final getUser = ref.watch(getCurrentUserUseCaseProvider);
   final updateProfile = ref.watch(updateProfileUseCaseProvider);
   final logout = ref.watch(logoutUseCaseProvider);
+  final userStorage = ref.watch(userLocalDataSourceProvider);
 
   // pass a logger callback so AuthNotifier can record technical errors
-  void recordTechnicalError(String technical) => ref.read(lastApiErrorProvider.notifier).state = technical;
+  void recordTechnicalError(String technical) =>
+      ref.read(lastApiErrorProvider.notifier).state = technical;
+
+  Future<domain.User?> readCachedUser() async {
+    try {
+      final map = await userStorage.readUser();
+      if (map == null) return null;
+      final model = UserModel.fromJson(map);
+      return model.toDomain();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearCachedUser() async {
+    try {
+      await userStorage.deleteUser();
+    } catch (_) {}
+  }
 
   return AuthNotifier(
     loginUseCase: login,
@@ -83,10 +106,14 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref
     updateProfileUseCase: updateProfile,
     logoutUseCase: logout,
     onErrorLog: recordTechnicalError,
+    readCachedUser: readCachedUser,
+    clearCachedUser: clearCachedUser,
   );
 });
 
-final currentUserProvider = FutureProvider<Either<Failure, User>>((ref) async {
+final currentUserProvider = FutureProvider<Either<Failure, domain.User>>((
+  ref,
+) async {
   final usecase = ref.watch(getCurrentUserUseCaseProvider);
   return usecase.call();
 });

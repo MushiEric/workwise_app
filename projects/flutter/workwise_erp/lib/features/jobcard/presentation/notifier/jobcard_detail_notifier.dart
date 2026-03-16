@@ -17,10 +17,16 @@ class JobcardDetailState {
   });
   const JobcardDetailState.initial() : this._(loading: false, item: null);
   const JobcardDetailState.loading() : this._(loading: true);
-  const JobcardDetailState.loaded(dynamic item) : this._(loading: false, item: item);
-  const JobcardDetailState.error(String message) : this._(loading: false, item: null, error: message);
+  const JobcardDetailState.loaded(dynamic item)
+    : this._(loading: false, item: item);
+  const JobcardDetailState.error(String message)
+    : this._(loading: false, item: null, error: message);
 
-  JobcardDetailState copyWith({bool? statusChanging, dynamic item, String? error}) {
+  JobcardDetailState copyWith({
+    bool? statusChanging,
+    dynamic item,
+    String? error,
+  }) {
     return JobcardDetailState._(
       loading: loading,
       item: item ?? this.item,
@@ -43,12 +49,14 @@ class JobcardDetailNotifier extends StateNotifier<JobcardDetailState> {
     state = const JobcardDetailState.loading();
     final res = await getJobcardById.call(id);
     res.fold(
-      (l) => state = JobcardDetailState.error(l is Exception ? l.toString() : '$l'),
+      (l) => state = JobcardDetailState.error(
+        l is Exception ? l.toString() : '$l',
+      ),
       (r) => state = JobcardDetailState.loaded(r),
     );
   }
 
-  Future<String?> changeStatus(int id, String newStatus) async {
+  Future<String?> changeStatus(int id, int newStatus) async {
     state = state.copyWith(statusChanging: true);
     final res = await repository.changeJobcardStatus(id: id, status: newStatus);
     return res.fold(

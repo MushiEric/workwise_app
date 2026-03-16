@@ -122,7 +122,12 @@ class Workwise extends ConsumerWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [Locale('en'), Locale('sw'), Locale('fr')],
+          supportedLocales: const [
+            Locale('en'),
+            Locale('sw'),
+            Locale('fr'),
+            Locale('hi'),
+          ],
           theme: ThemeData(
             primaryColor: AppColors.primary,
             colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),

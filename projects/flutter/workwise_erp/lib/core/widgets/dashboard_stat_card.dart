@@ -22,6 +22,17 @@ class DashboardStatCard extends StatelessWidget {
     required this.borderColor,
   });
 
+  Color _iconColor(Color borderColor, bool isDark) {
+    // Ensure icon is visible even when the border color is very light.
+    final luminance = borderColor.computeLuminance();
+    if (luminance > 0.8) {
+      return isDark
+          ? Colors.white.withOpacity(0.24)
+          : Colors.black.withOpacity(0.24);
+    }
+    return borderColor.withOpacity(0.48);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -74,8 +85,12 @@ class DashboardStatCard extends StatelessWidget {
           ),
           SizedBox(width: 8.w),
           Opacity(
-            opacity: 0.12,
-            child: Icon(icon, size: 40.r, color: borderColor),
+            opacity: 0.18,
+            child: Icon(
+              icon,
+              size: 40.r,
+              color: _iconColor(borderColor, isDark),
+            ),
           ),
         ],
       ),

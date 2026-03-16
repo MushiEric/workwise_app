@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:flutter/foundation.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 import '../../../../core/menu/menus.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/provider/permission_provider.dart';
+import '../../../../core/services/tutorial_service.dart';
 import '../../../../core/themes/app_colors.dart';
-import '../../../../core/constants/app_constant.dart';
 import '../../../../core/extensions/l10n_extension.dart';
+
 import '../../../../core/widgets/app_bar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../notification/presentation/providers/notification_providers.dart';
-import '../../../../l10n/app_localizations.dart';
 
 class IndexPage extends ConsumerStatefulWidget {
   const IndexPage({super.key});
@@ -30,6 +29,17 @@ class _IndexPageState extends ConsumerState<IndexPage>
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSearching = false;
+
+  // Coach mark targets
+  final _moduleKey = GlobalKey();
+  final _notificationKey = GlobalKey();
+  final _profileKey = GlobalKey();
+  final _firstModuleKey = GlobalKey();
+
+  // Tutorial retry state (keys may not be available immediately on first build)
+  bool _tutorialShown = false;
+  int _tutorialRetryCount = 0;
+
 
   @override
   void initState() {
@@ -48,8 +58,8 @@ class _IndexPageState extends ConsumerState<IndexPage>
     // load notifications on index page open (keeps unread badge up-to-date)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationsNotifierProvider.notifier).loadNotifications();
+      _maybeShowTutorial();
     });
-    // invite helper moved to class-level `_inviteFriends()`
   }
 
   @override
@@ -60,55 +70,160 @@ class _IndexPageState extends ConsumerState<IndexPage>
     super.dispose();
   }
 
-  // Opens native share sheet with a platform-aware invite message
-  void _inviteFriends() async {
-    final appName = context.l10n.appName;
-    final baseDescription =
-        'An AI-powered software built to help you and your team stay organized, automate work and streamline your operations.';
+  Future<void> _maybeShowTutorial() async {
+    final seen = await TutorialService.hasSeenTutorial();
+    if (seen) return;
 
-    final isMobile =
-        !kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS);
-    final mobileExtras =
-        '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
+    // Wait a tick so the UI is fully laid out.
+    await Future<void>.delayed(const Duration(milliseconds: 150));
 
-    final shareText = isMobile
-        ? '$appName — $baseDescription$mobileExtras\n\nLearn more: ${AppConstant.website}'
-        : '$appName — $baseDescription\n\nLearn more: ${AppConstant.website}';
+    _attemptShowTutorial();
+  }
 
-    final subject = 'Try $appName — team productivity & operations';
+  void _attemptShowTutorial() {
+    if (!mounted || _tutorialShown) return;
 
-    try {
-      await Share.share(shareText, subject: subject);
-    } catch (e) {
-      // Fallback: copy invite text to clipboard when share sheet isn't available
-      try {
-        await Clipboard.setData(ClipboardData(text: shareText));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              behavior: SnackBarBehavior.floating,
-              content: Text(
-                'Share dialog unavailable — invite text copied to clipboard',
+    final targets = _buildTutorialTargets();
+    if (targets.isEmpty) {
+      // Keys may not have mounted yet (especially the module grid).
+      // Retry a few times before giving up.
+      if (_tutorialRetryCount < 10) {
+        _tutorialRetryCount += 1;
+        Future<void>.delayed(const Duration(milliseconds: 250), _attemptShowTutorial);
+      } else {
+        // Give up and avoid retrying forever.
+        TutorialService.markTutorialSeen();
+      }
+      return;
+    }
+
+    _tutorialShown = true;
+    _showTutorial(targets);
+  }
+
+  List<TargetFocus> _buildTutorialTargets() {
+    final targets = <TargetFocus>[];
+
+    if (_firstModuleKey.currentContext != null) {
+      targets.add(
+        TargetFocus(
+          identify: "module",
+          keyTarget: _firstModuleKey,
+          alignSkip: Alignment.topRight,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select a Module',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap a module card to access features like jobcards, notifications, and more.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        }
-      } catch (_) {
-        if (mounted) {
-          final message = kDebugMode
-              ? 'Could not share or copy invite text: ${e.toString()}'
-              : 'Could not share invite. Please try again.';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              behavior: SnackBarBehavior.floating,
-              content: Text(message),
-            ),
-          );
-        }
-      }
+          ],
+        ),
+      );
     }
+
+    if (_notificationKey.currentContext != null) {
+      targets.add(
+        TargetFocus(
+          identify: "notifications",
+          keyTarget: _notificationKey,
+          alignSkip: Alignment.topRight,
+          contents: [
+            TargetContent(
+              align: ContentAlign.left,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'View Notifications',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap here to view notifications. Swipe left on an item to dismiss.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_profileKey.currentContext != null) {
+      targets.add(
+        TargetFocus(
+          identify: "profile",
+          keyTarget: _profileKey,
+          alignSkip: Alignment.topRight,
+          contents: [
+            TargetContent(
+              align: ContentAlign.left,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Profile & Settings',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap here to view your profile and access settings like language & tutorial replay.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return targets;
+  }
+
+  void _showTutorial(List<TargetFocus> targets) {
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black.withOpacity(0.8),
+      textSkip: 'Skip',
+      onFinish: () => TutorialService.markTutorialSeen(),
+      onSkip: () {
+        TutorialService.markTutorialSeen();
+        return true;
+      },
+      onClickTarget: (target) {},
+    ).show(context: context);
   }
 
   @override
@@ -150,6 +265,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
           centerTitle: false,
           leading: Builder(
             builder: (ctx) => IconButton(
+              key: _moduleKey,
               icon: Icon(
                 LucideIcons.menu,
                 color: isDark ? Colors.white : AppColors.white,
@@ -182,6 +298,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
 
             // Notification Button
             IconButton(
+              key: _notificationKey,
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -234,6 +351,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
               },
             ),
             IconButton(
+              key: _profileKey,
               onPressed: () => Navigator.pushNamed(context, '/profile'),
               icon: Icon(
                 LucideIcons.user,
@@ -271,7 +389,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       controller: _searchController,
                       autofocus: true,
                       decoration: InputDecoration(
-                        hintText: 'Search modules...',
+                        hintText: context.l10n.searchModulesHint,
                         hintStyle: TextStyle(
                           color: isDark ? Colors.white54 : Colors.grey.shade500,
                         ),
@@ -405,7 +523,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Apps${filteredMenus.isEmpty ? '' : ' (${filteredMenus.length})'}',
+                    '${context.l10n.apps}${filteredMenus.isEmpty ? '' : ' (${filteredMenus.length})'}',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -434,7 +552,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No modules found',
+                            context.l10n.noModulesFound,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -445,7 +563,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Try adjusting your search',
+                            context.l10n.tryAdjustingSearch,
                             style: TextStyle(
                               color: isDark
                                   ? Colors.white54
@@ -461,7 +579,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                               });
                             },
                             icon: const Icon(LucideIcons.x),
-                            label: const Text('Clear search'),
+                            label: Text(context.l10n.clearSearch),
                             style: TextButton.styleFrom(
                               foregroundColor: primaryColor,
                             ),
@@ -485,6 +603,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
                         itemCount: filteredMenus.length,
                         itemBuilder: (context, idx) {
                           return _ModuleTile(
+                            key: idx == 0 ? _firstModuleKey : null,
                             menu: filteredMenus[idx],
                             index: idx,
                           );
@@ -494,18 +613,6 @@ class _IndexPageState extends ConsumerState<IndexPage>
             ),
           ],
         ),
-        // Quick Action FAB
-        // floatingActionButton: ScrollAwareFab(
-        //   controller: _scrollController,
-        //   onPressed: _inviteFriends,
-        //   icon: const Icon(LucideIcons.plus),
-        //   label: 'Invite Friends',
-        //   backgroundColor: primaryColor,
-        //   foregroundColor: Colors.white,
-        //   shape: RoundedRectangleBorder(
-        //     borderRadius: BorderRadius.circular(16),
-        //   ),
-        // ),
       ),
     );
   }
@@ -574,7 +681,8 @@ class _ModuleTile extends StatefulWidget {
   final dynamic menu;
   final int index;
 
-  const _ModuleTile({required this.menu, required this.index});
+  const _ModuleTile({Key? key, required this.menu, required this.index})
+    : super(key: key);
 
   @override
   State<_ModuleTile> createState() => _ModuleTileState();
@@ -714,7 +822,7 @@ class _ModuleTileState extends State<_ModuleTile>
 
                   // Subtitle (kept as requested)
                   Text(
-                    'Manage ${menu.title.toLowerCase()}',
+                    context.l10n.manageModule(menu.title.toLowerCase()),
                     style: TextStyle(
                       fontSize: 11,
                       color: isDark ? Colors.white54 : Colors.grey.shade600,

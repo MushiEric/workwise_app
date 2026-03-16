@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:workwise_erp/core/provider/permission_provider.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/widgets/app_textfields.dart';
@@ -14,6 +15,7 @@ import '../../domain/entities/jobcard_create_params.dart';
 import '../../domain/entities/jobcard_detail.dart';
 import '../providers/jobcard_providers.dart';
 import '../../../support/presentation/providers/support_providers.dart';
+import '../../../support/domain/entities/support_ticket.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/technician_selector.dart';
 import '../widgets/items_list.dart';
@@ -23,7 +25,12 @@ class JobcardCreatePage extends ConsumerStatefulWidget {
   /// When provided the page operates in edit mode, pre-filling all fields
   /// from the existing jobcard.
   final JobcardDetail? existingJobcard;
-  const JobcardCreatePage({super.key, this.existingJobcard});
+
+  /// When provided, the page opens in "create from ticket" mode, pre-filling
+  /// subject, customer and support ticket ID from the given ticket.
+  final SupportTicket? fromTicket;
+
+  const JobcardCreatePage({super.key, this.existingJobcard, this.fromTicket});
 
   @override
   ConsumerState<JobcardCreatePage> createState() => _JobcardCreatePageState();
@@ -167,9 +174,20 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       _supervisorId = int.tryParse(existing.supervisor?.toString() ?? '');
     }
 
+    // Pre-fill from ticket (create-from-ticket mode)
+    final ticket = widget.fromTicket;
+    if (ticket != null) {
+      _subjectCtl.text = ticket.subject ?? '';
+      _relatedTo = 'Customer';
+      _receiverId = ticket.customer?.id;
+      _receiverName = ticket.customer?.name;
+      _receiverType = 'customer';
+      _supportTicketId = ticket.id;
+    }
+
     _loadAuxData();
-    // In edit mode, skip draft restore/number generation
-    if (_editId == null) {
+    // In edit mode or ticket mode, skip draft restore/number generation
+    if (_editId == null && ticket == null) {
       _loadDraft().then((restored) {
         if (!restored) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -177,6 +195,9 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           );
         }
       });
+    } else if (ticket != null) {
+      // Generate a fresh jobcard number for the new jobcard
+      WidgetsBinding.instance.addPostFrameCallback((_) => _generateNumber());
     }
   }
 
@@ -309,17 +330,26 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     };
     final defaultReceiverType = _receiverTypeMap[_relatedTo];
     if (defaultReceiverType != null) {
-      await _loadReceiversByType(defaultReceiverType);
+      // When launched from a ticket the receiver ID is already set — preserve it.
+      await _loadReceiversByType(
+        defaultReceiverType,
+        preserveReceiverId: widget.fromTicket != null,
+      );
     }
 
     setState(() {});
   }
 
   /// Load receiver names for a given receiver `type` (customer, vendor, user, employee)
-  Future<void> _loadReceiversByType(String type) async {
+  /// Pass [preserveReceiverId] = true to keep the current [_receiverId] after loading.
+  Future<void> _loadReceiversByType(
+    String type, {
+    bool preserveReceiverId = false,
+  }) async {
+    final previousReceiverId = _receiverId;
     setState(() {
       _receiverType = type;
-      _receiverId = null;
+      if (!preserveReceiverId) _receiverId = null;
       _receivers = [];
     });
 
@@ -336,7 +366,20 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         }
       },
       (list) {
-        if (mounted) setState(() => _receivers = list);
+        if (mounted) {
+          setState(() {
+            _receivers = list;
+            // Restore the pre-filled ID if it exists in the loaded list
+            if (preserveReceiverId && previousReceiverId != null) {
+              final found = list.any(
+                (r) =>
+                    int.tryParse(r['id']?.toString() ?? '') ==
+                    previousReceiverId,
+              );
+              _receiverId = found ? previousReceiverId : null;
+            }
+          });
+        }
       },
     );
   }
@@ -453,7 +496,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
               _receiverType == 'vendor' ||
               _receiverType == 'employee')) {
         // ignore: unawaited_futures
-        _loadReceiversByType(_receiverType!);
+        _loadReceiversByType(_receiverType!, preserveReceiverId: true);
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -616,22 +659,60 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     setState(() => _submitting = false);
 
     res.fold(
-      (l) {
+      (l) async {
+        final msg = l.toString();
+        // If the backend returned status 200 but no ID, we treat it as a success.
+        // The backend message is shown to the user (e.g. "Job Card entry saved successfully").
+        if (msg.toLowerCase().contains('status: 200') ||
+            msg.toLowerCase().contains('saved') ||
+            msg.toLowerCase().contains('successfully')) {
+          try {
+            ref
+                .read(jobcardNotifierProvider.notifier)
+                .loadJobcards(force: true);
+          } catch (_) {}
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(behavior: SnackBarBehavior.floating, content: Text(msg)),
+          );
+          Navigator.pushReplacementNamed(context, '/jobcards');
+          return;
+        }
+
+        // For other errors (including duplicate number), show the backend message.
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text('Create failed: ${l.toString()}'),
-          ),
+          SnackBar(behavior: SnackBarBehavior.floating, content: Text(msg)),
         );
       },
-      (id) async {
+      (resp) async {
         // clear saved draft
         await _clearDraft();
-        // navigate to detail
+
+        // If we have an ID, navigate to detail; otherwise fallback to list.
         if (!mounted) return;
-        Navigator.of(
-          context,
-        ).pushReplacementNamed('/jobcards/detail', arguments: id);
+
+        if (resp.id != null && resp.id! > 0) {
+          Navigator.of(
+            context,
+          ).pushReplacementNamed('/jobcards/detail', arguments: resp.id);
+        } else {
+          // no ID returned, just refresh list and show message if present
+          try {
+            ref
+                .read(jobcardNotifierProvider.notifier)
+                .loadJobcards(force: true);
+          } catch (_) {}
+          if (resp.message != null && resp.message!.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text(resp.message!),
+              ),
+            );
+          }
+          Navigator.pushReplacementNamed(context, '/jobcards');
+        }
       },
     );
   }
@@ -806,7 +887,6 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
 
   /// Optional fields — revealed by the "Show more" button.
   Widget _buildOptionalFields(bool isDark) {
-    const darkBg = Color(0xFF151A2E);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -914,7 +994,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         // Related To
         AppSmartDropdown<String>(
           value: _relatedTo,
-          items: const ['Customer', 'Vehicle', 'Vendor', 'Employee', 'Users', 'Other'],
+          items: const [
+            'Customer',
+            'Vehicle',
+            'Vendor',
+            'Employee',
+            'Users',
+            'Other',
+          ],
           itemBuilder: (item) => item,
           label: 'Related To',
 
@@ -927,7 +1014,10 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
               _receiverType = null;
               _receiverName = null;
             });
-            if (v == 'Customer' || v == 'Vendor' || v == 'Users' || v == 'Employee') {
+            if (v == 'Customer' ||
+                v == 'Vendor' ||
+                v == 'Users' ||
+                v == 'Employee') {
               final map = {
                 'Customer': 'customer',
                 'Vendor': 'vendor',
@@ -1034,6 +1124,11 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final checker = ref.watch(permissionCheckerProvider);
+    // In create mode, the user must have the 'create job_card' permission.
+    // Edit mode uses a different permission scope, so it's always allowed here.
+    final canCreate =
+        _editId != null || checker.hasPermission('create job_card');
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
@@ -1092,13 +1187,44 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: AppButton.primary(
-            text: _editId != null
-                ? (_submitting ? 'Saving...' : 'Save Changes')
-                : (_submitting ? 'Creating...' : 'Create Jobcard'),
-            onPressed: _submitting ? null : _submit,
-            isLoading: _submitting,
-            isSticky: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!canCreate)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 14,
+                        color: isDark
+                            ? Colors.red.shade300
+                            : Colors.red.shade600,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'You don\'t have permission to create a jobcard.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? Colors.red.shade300
+                              : Colors.red.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              AppButton.primary(
+                text: _editId != null
+                    ? (_submitting ? 'Saving...' : 'Save Changes')
+                    : (_submitting ? 'Creating...' : 'Create Jobcard'),
+                onPressed: (_submitting || !canCreate) ? null : _submit,
+                isLoading: _submitting,
+                isSticky: true,
+              ),
+            ],
           ),
         ),
       ),

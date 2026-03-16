@@ -4,6 +4,7 @@ import '../../domain/entities/jobcard.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/color_utils.dart';
 import '../../../../core/themes/app_icons.dart';
+import '../../../../core/widgets/app_textfield.dart';
 
 class JobcardTile extends StatelessWidget {
   final Jobcard jobcard;
@@ -17,7 +18,7 @@ class JobcardTile extends StatelessWidget {
   final bool showReminder;
 
   /// Callbacks fired after confirmation dialogs
-  final Future<void> Function(int jobcardId)? onApprove;
+  final Future<void> Function(int jobcardId, String? comment)? onApprove;
   final Future<void> Function(int jobcardId, String? reason)? onReject;
   final VoidCallback? onSetReminder;
 
@@ -169,47 +170,89 @@ class JobcardTile extends StatelessWidget {
   }
 
   Future<bool> _showApproveDialog(BuildContext context, bool isDark) async {
+    final commentCtl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(AppIcons.checkCircleRounded, color: Colors.green, size: 24),
-            const SizedBox(width: 8),
-            const Text('Approve Jobcard'),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to approve jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
-          style: TextStyle(
-            color: isDark ? Colors.white70 : Colors.grey.shade700,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      AppIcons.checkCircleRounded,
+                      color: Colors.green.shade600,
+                      size: 24.r,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'JOB CARD APPROVAL',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.black,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Approve'),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: AppTextField(
+                  controller: commentCtl,
+                  labelText: 'Comment',
+                  hintText: 'Enter Comment here',
+                  maxLines: 5,
+                  minLines: 3,
+                  textInputAction: TextInputAction.newline,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Approve'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
     if (confirm == true && onApprove != null) {
-      await onApprove!(jobcard.id!);
+      await onApprove!(
+        jobcard.id!,
+        commentCtl.text.trim().isEmpty ? null : commentCtl.text.trim(),
+      );
     }
+    commentCtl.dispose();
     return false; // Don't dismiss the tile
   }
 
@@ -217,60 +260,85 @@ class JobcardTile extends StatelessWidget {
     final reasonCtl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(AppIcons.cancelRounded, color: Colors.red.shade600, size: 24),
-            const SizedBox(width: 8),
-            const Text('Reject Jobcard'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Reject jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
-              style: TextStyle(
-                color: isDark ? Colors.white70 : Colors.grey.shade700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonCtl,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: 'Reason (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      AppIcons.cancelRounded,
+                      color: Colors.red.shade600,
+                      size: 24.r,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'JOB CARD REJECTION',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.black,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              //   child: Text(
+              //     'Reject jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
+              //     style: TextStyle(
+              //       color: isDark ? Colors.white70 : Colors.grey.shade700,
+              //     ),
+              //   ),
+              // ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: AppTextField(
+                  controller: reasonCtl,
+                  labelText: 'Comment',
+                  hintText: 'Enter Comment here',
+                  maxLines: 5,
+                  minLines: 3,
+                  textInputAction: TextInputAction.newline,
+                ),
               ),
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Reject'),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Reject'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -472,7 +540,7 @@ class JobcardTile extends StatelessWidget {
                   if (_receiverLabel.isNotEmpty)
                     _metaChip(
                       isDark: isDark,
-                      icon: AppIcons.personRounded,
+                      icon: _receiverIcon,
                       label: _receiverLabel,
                     ),
                   // Location
@@ -519,6 +587,14 @@ class JobcardTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData get _receiverIcon {
+    final relatedTo = jobcard.relatedTo?.toLowerCase() ?? '';
+    if (relatedTo.contains('vehicle')) {
+      return AppIcons.truck;
+    }
+    return AppIcons.personRounded;
   }
 
   String get _receiverLabel {

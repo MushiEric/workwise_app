@@ -457,321 +457,310 @@ class _DrawerFilterState extends State<DrawerFilter> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC);
-    final cardColor = isDark ? const Color(0xFF151A2E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF1A2634);
+    final bgColor = isDark ? const Color(0xFF151A2E) : Colors.white;
+    final cardColor = bgColor;
     final labelColor = isDark ? Colors.white60 : Colors.grey.shade600;
 
     return Drawer(
       width: 0.85.sw,
       backgroundColor: bgColor,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ───────────────────────────────────────────────
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                color: cardColor,
-                border: Border(
-                  bottom: BorderSide(
-                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+      child: Column(
+        children: [
+          // ── Header (match support drawer style exactly) ──
+          Container(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16.h,
+              bottom: 16.h,
+              left: 20.w,
+              right: 12.w,
+            ),
+            color: isDark ? const Color(0xFF0A0E21) : AppColors.primary,
+            child: Row(
+              children: [
+                Icon(LucideIcons.filter, size: 18.r, color: Colors.white70),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Text(
+                    'Filter Jobcards',
+                    style: TextStyle(
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    LucideIcons.slidersHorizontal,
-                    color: AppColors.primary,
-                    size: 20.r,
-                  ),
-                  SizedBox(width: 10.w),
-                  Expanded(
-                    child: Text(
-                      'Filter Jobcards',
-                      style: TextStyle(
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      LucideIcons.x,
-                      size: 20.r,
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Scrollable body ───────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Date Range Presets ────────────────────────────
-                    _sectionLabel('Date Range', labelColor),
-                    SizedBox(height: 10.h),
-                    Wrap(
-                      spacing: 8.w,
-                      runSpacing: 8.h,
-                      children: const ['Daily', 'Weekly', 'Monthly', 'Annually']
-                          .map((label) {
-                            final key = label.toLowerCase();
-                            final active = _dateRangeType == key;
-                            return GestureDetector(
-                              onTap: () => _selectPreset(key),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 8.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? AppColors.primary.withOpacity(0.12)
-                                      : (isDark
-                                            ? Colors.white.withOpacity(0.05)
-                                            : Colors.grey.shade100),
-                                  borderRadius: BorderRadius.circular(20.r),
-                                  border: Border.all(
-                                    color: active
-                                        ? AppColors.primary
-                                        : (isDark
-                                              ? Colors.white24
-                                              : Colors.grey.shade300),
-                                    width: active ? 1.5 : 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    fontWeight: active
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                    color: active
-                                        ? AppColors.primary
-                                        : (isDark
-                                              ? Colors.white70
-                                              : Colors.grey.shade700),
-                                  ),
-                                ),
-                              ),
-                            );
-                          })
-                          .toList(),
-                    ),
-                    SizedBox(height: 20.h),
-
-                    // ── Date From ─────────────────────────────────────
-                    _sectionLabel('Date From', labelColor),
-                    SizedBox(height: 8.h),
-                    AppTextField(
-                      controller: _dateFromCtrl,
-                      hintText: 'Select start date',
-                      readOnly: true,
-                      onTap: () => _pickDate(true),
-                      prefixIcon: Icon(
-                        LucideIcons.calendar,
-                        size: 16.r,
-                        color: AppColors.primary.withOpacity(0.7),
-                      ),
-                      suffixIcon: _dateFrom != null
-                          ? IconButton(
-                              icon: Icon(
-                                LucideIcons.x,
-                                size: 14.r,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(() {
-                                _dateFrom = null;
-                                _dateFromCtrl.clear();
-                                _dateRangeType = null;
-                              }),
-                            )
-                          : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    SizedBox(height: 16.h),
-
-                    // ── Date To ───────────────────────────────────────
-                    _sectionLabel('Date To', labelColor),
-                    SizedBox(height: 8.h),
-                    AppTextField(
-                      controller: _dateToCtrl,
-                      hintText: 'Select end date',
-                      readOnly: true,
-                      onTap: () => _pickDate(false),
-                      prefixIcon: Icon(
-                        LucideIcons.calendar,
-                        size: 16.r,
-                        color: AppColors.primary.withOpacity(0.7),
-                      ),
-                      suffixIcon: _dateTo != null
-                          ? IconButton(
-                              icon: Icon(
-                                LucideIcons.x,
-                                size: 14.r,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(() {
-                                _dateTo = null;
-                                _dateToCtrl.clear();
-                                _dateRangeType = null;
-                              }),
-                            )
-                          : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    SizedBox(height: 16.h),
-
-                    // ── Staff ─────────────────────────────────────────
-                    _sectionLabel('Staff', labelColor),
-                    SizedBox(height: 8.h),
-                    AppTextField(
-                      controller: _staffCtrl,
-                      hintText: widget.users.isEmpty
-                          ? 'Loading staff...'
-                          : 'Select staff member',
-                      readOnly: true,
-                      enabled: widget.users.isNotEmpty,
-                      onTap: _pickStaff,
-                      prefixIcon: Icon(
-                        LucideIcons.user,
-                        size: 16.r,
-                        color: AppColors.primary.withOpacity(0.7),
-                      ),
-                      suffixIcon: _staffId != null
-                          ? IconButton(
-                              icon: Icon(
-                                LucideIcons.x,
-                                size: 14.r,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(() {
-                                _staffId = null;
-                                _staffName = null;
-                                _staffCtrl.clear();
-                              }),
-                            )
-                          : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    SizedBox(height: 16.h),
-
-                    // ── Status ────────────────────────────────────────
-                    _sectionLabel('Status', labelColor),
-                    SizedBox(height: 8.h),
-                    AppTextField(
-                      controller: _statusCtrl,
-                      hintText: widget.statuses.isEmpty
-                          ? 'Loading statuses...'
-                          : 'Select status',
-                      readOnly: true,
-                      enabled: widget.statuses.isNotEmpty,
-                      onTap: _pickStatus,
-                      prefixIcon: Icon(
-                        LucideIcons.tag,
-                        size: 16.r,
-                        color: AppColors.primary.withOpacity(0.7),
-                      ),
-                      suffixIcon: _statusId != null
-                          ? IconButton(
-                              icon: Icon(
-                                LucideIcons.x,
-                                size: 14.r,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(() {
-                                _statusId = null;
-                                _statusName = null;
-                                _statusCtrl.clear();
-                              }),
-                            )
-                          : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    SizedBox(height: 24.h),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-              ),
+              ],
             ),
+          ),
 
-            // ── Footer buttons ────────────────────────────────────────
-            Container(
+          // ── Scrollable body ───────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
               padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: cardColor,
-                border: Border(
-                  top: BorderSide(
-                    color: isDark ? Colors.white10 : Colors.grey.shade200,
-                  ),
-                ),
-              ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _reset,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey.shade600,
-                        side: BorderSide(color: Colors.grey.shade400),
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                      ),
-                      child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
-                    ),
+                  // ── Date Range Presets ────────────────────────────
+                  _sectionLabel('Date Range', labelColor),
+                  SizedBox(height: 10.h),
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
+                    children: const ['Daily', 'Weekly', 'Monthly', 'Annually']
+                        .map((label) {
+                          final key = label.toLowerCase();
+                          final active = _dateRangeType == key;
+                          return GestureDetector(
+                            onTap: () => _selectPreset(key),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 8.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? AppColors.primary.withOpacity(0.12)
+                                    : (isDark
+                                          ? Colors.white.withOpacity(0.05)
+                                          : Colors.grey.shade100),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: active
+                                      ? AppColors.primary
+                                      : (isDark
+                                            ? Colors.white24
+                                            : Colors.grey.shade300),
+                                  width: active ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: active
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: active
+                                      ? AppColors.primary
+                                      : (isDark
+                                            ? Colors.white70
+                                            : Colors.grey.shade700),
+                                ),
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _apply,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Apply Filters',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  SizedBox(height: 20.h),
+
+                  // ── Date From ─────────────────────────────────────
+                  _sectionLabel('Date From', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _dateFromCtrl,
+                    hintText: 'Select start date',
+                    readOnly: true,
+                    onTap: () => _pickDate(true),
+                    prefixIcon: Icon(
+                      LucideIcons.calendar,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
                     ),
+                    suffixIcon: _dateFrom != null
+                        ? IconButton(
+                            icon: Icon(
+                              LucideIcons.x,
+                              size: 14.r,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() {
+                              _dateFrom = null;
+                              _dateFromCtrl.clear();
+                              _dateRangeType = null;
+                            }),
+                          )
+                        : Icon(
+                            LucideIcons.chevronDown,
+                            size: 16.r,
+                            color: Colors.grey,
+                          ),
                   ),
+                  SizedBox(height: 16.h),
+
+                  // ── Date To ───────────────────────────────────────
+                  _sectionLabel('Date To', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _dateToCtrl,
+                    hintText: 'Select end date',
+                    readOnly: true,
+                    onTap: () => _pickDate(false),
+                    prefixIcon: Icon(
+                      LucideIcons.calendar,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
+                    suffixIcon: _dateTo != null
+                        ? IconButton(
+                            icon: Icon(
+                              LucideIcons.x,
+                              size: 14.r,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() {
+                              _dateTo = null;
+                              _dateToCtrl.clear();
+                              _dateRangeType = null;
+                            }),
+                          )
+                        : Icon(
+                            LucideIcons.chevronDown,
+                            size: 16.r,
+                            color: Colors.grey,
+                          ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Staff ─────────────────────────────────────────
+                  _sectionLabel('Staff', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _staffCtrl,
+                    hintText: widget.users.isEmpty
+                        ? 'Loading staff...'
+                        : 'Select staff member',
+                    readOnly: true,
+                    enabled: widget.users.isNotEmpty,
+                    onTap: _pickStaff,
+                    prefixIcon: Icon(
+                      LucideIcons.user,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
+                    suffixIcon: _staffId != null
+                        ? IconButton(
+                            icon: Icon(
+                              LucideIcons.x,
+                              size: 14.r,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() {
+                              _staffId = null;
+                              _staffName = null;
+                              _staffCtrl.clear();
+                            }),
+                          )
+                        : Icon(
+                            LucideIcons.chevronDown,
+                            size: 16.r,
+                            color: Colors.grey,
+                          ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Status ────────────────────────────────────────
+                  _sectionLabel('Status', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _statusCtrl,
+                    hintText: widget.statuses.isEmpty
+                        ? 'Loading statuses...'
+                        : 'Select status',
+                    readOnly: true,
+                    enabled: widget.statuses.isNotEmpty,
+                    onTap: _pickStatus,
+                    prefixIcon: Icon(
+                      LucideIcons.tag,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
+                    suffixIcon: _statusId != null
+                        ? IconButton(
+                            icon: Icon(
+                              LucideIcons.x,
+                              size: 14.r,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () => setState(() {
+                              _statusId = null;
+                              _statusName = null;
+                              _statusCtrl.clear();
+                            }),
+                          )
+                        : Icon(
+                            LucideIcons.chevronDown,
+                            size: 16.r,
+                            color: Colors.grey,
+                          ),
+                  ),
+                  SizedBox(height: 24.h),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // ── Footer buttons ────────────────────────────────────────
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: cardColor,
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _reset,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey.shade600,
+                      side: BorderSide(color: Colors.grey.shade400),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                    ),
+                    child: Text('Reset', style: TextStyle(fontSize: 14.sp)),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _apply,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Apply Filters',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

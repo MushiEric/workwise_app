@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
 import 'create_ticket_page.dart';
 import '../../../../core/themes/app_icons.dart';
+import '../../../jobcard/presentation/pages/jobcard_create_page.dart';
 
 class SupportViewPage extends ConsumerStatefulWidget {
   final SupportTicket ticket;
@@ -71,10 +72,11 @@ class _SupportViewPageState extends ConsumerState<SupportViewPage> {
                   );
                   break;
                 case 'create_jobcard':
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      behavior: SnackBarBehavior.floating,
-                      content: Text('Create JobCard — not implemented'),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          JobcardCreatePage(fromTicket: widget.ticket),
                     ),
                   );
                   break;

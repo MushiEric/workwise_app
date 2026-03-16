@@ -1,6 +1,7 @@
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/models/paginated_response.dart';
 import '../../domain/entities/jobcard.dart';
+import '../../domain/entities/jobcard_create_response.dart';
 import '../../domain/entities/jobcard_detail.dart';
 import '../../domain/entities/jobcard_form_data.dart';
 import '../../domain/entities/jobcard_status.dart';
@@ -23,15 +24,20 @@ abstract class JobcardRepository {
   // Delete a jobcard by id
   Future<Either<dynamic, void>> deleteJobcard({required int id});
 
-  // placeholder for status change (implement when endpoint provided)
+  // Change jobcard status (uses status ID).
   Future<Either<dynamic, void>> changeJobcardStatus({
     required int id,
-    required String status,
+    required int status,
     String? note,
   });
 
-  /// Create a jobcard. Returns created jobcard id on success.
-  Future<Either<dynamic, int>> createJobcard({required dynamic params});
+  /// Create a jobcard.
+  ///
+  /// The backend may or may not return the newly-created jobcard ID.
+  /// In such cases the response message will still be returned.
+  Future<Either<dynamic, JobcardCreateResponse>> createJobcard({
+    required dynamic params,
+  });
 
   /// Request the server to generate a unique jobcard number.
   Future<Either<dynamic, String>> generateUniqueNumber();
@@ -53,7 +59,12 @@ abstract class JobcardRepository {
   );
 
   /// Approve a jobcard.
-  Future<Either<dynamic, void>> approveJobcard(int jobcardId);
+  ///
+  /// Some backends allow passing an optional comment for audit trails.
+  Future<Either<dynamic, void>> approveJobcard(
+    int jobcardId, {
+    String? comment,
+  });
 
   /// Reject a jobcard with an optional reason.
   Future<Either<dynamic, void>> rejectJobcard(int jobcardId, {String? reason});

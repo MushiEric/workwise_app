@@ -5,6 +5,7 @@ import '../../domain/usecases/get_current_user.dart';
 import '../../domain/usecases/update_profile.dart';
 import '../../domain/usecases/logout.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
+import '../../domain/entities/user.dart' as domain;
 import '../../domain/entities/role.dart';
 import '../state/auth_state.dart';
 
@@ -14,41 +15,71 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final UpdateProfile? updateProfileUseCase;
   final Logout? logoutUseCase;
   final void Function(String technical)? onErrorLog;
+  final Future<domain.User?> Function() _readCachedUser;
+  final Future<void> Function() _clearCachedUser;
 
-  AuthNotifier({required this.loginUseCase, required this.getCurrentUserUseCase, this.updateProfileUseCase, this.logoutUseCase, this.onErrorLog}) : super(const AuthState.initial());
+  AuthNotifier({
+    required this.loginUseCase,
+    required this.getCurrentUserUseCase,
+    this.updateProfileUseCase,
+    this.logoutUseCase,
+    this.onErrorLog,
+    required Future<domain.User?> Function() readCachedUser,
+    required Future<void> Function() clearCachedUser,
+  }) : _readCachedUser = readCachedUser,
+       _clearCachedUser = clearCachedUser,
+       super(const AuthState.initial());
 
   Future<void> login({required String email, required String password}) async {
     state = const AuthState.loading('Signing in...');
 
-    final res = await loginUseCase.call(LoginParams(email: email, password: password));
-    res.fold(
-      (failure) {
-        // Log technical details for developers/monitoring and record last technical error
-        final tech = failure.message;
-        // console log
-        // ignore: avoid_print
-        print('Login failed (technical): $tech');
-        // persist to provider for diagnostics (if callback provided)
-        onErrorLog?.call(tech);
-        state = AuthState.error(_friendlyMessageForFailure(failure));
-      },
-      (user) => state = AuthState.authenticated(user),
+    final res = await loginUseCase.call(
+      LoginParams(email: email, password: password),
     );
+    res.fold((failure) {
+      // Log technical details for developers/monitoring and record last technical error
+      final tech = failure.message;
+      // console log
+      // ignore: avoid_print
+      print('Login failed (technical): $tech');
+      // persist to provider for diagnostics (if callback provided)
+      onErrorLog?.call(tech);
+      state = AuthState.error(_friendlyMessageForFailure(failure));
+    }, (user) => state = AuthState.authenticated(user));
   }
 
   Future<void> loadCurrentUser() async {
     state = const AuthState.loading('Loading user...');
+
+    // Load cached user immediately so permissions / UI are restored quickly.
+    final cached = await _readCachedUser();
+    if (cached != null) {
+      state = AuthState.authenticated(cached);
+    }
+
     final res = await getCurrentUserUseCase.call();
     res.fold(
-      (f) {
+      (f) async {
         // Log technical detail and record it for diagnostics
         final tech = f.message;
         // ignore: avoid_print
         print('Load current user failed (technical): $tech');
         onErrorLog?.call(tech);
+
+        // If we already have a cached user, keep it rather than forcing logout.
+        if (cached != null) return;
+
         state = AuthState.error(_friendlyMessageForFailure(f));
       },
-      (u) => state = AuthState.authenticated(u),
+      (u) async {
+        // Merge permissions from cached user if the fresh user lacks roles.
+        var effective = u;
+        if ((u.roles == null || u.roles!.isEmpty) && cached?.roles != null) {
+          effective = u.copyWith(roles: cached!.roles);
+        }
+
+        state = AuthState.authenticated(effective);
+      },
     );
   }
 
@@ -88,20 +119,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
           final newRoles = u.roles ?? [];
 
           // If newRoles is empty but oldRoles was not, keep oldRoles.
-          // If newRoles is NOT empty, but elements are missing permissions, 
+          // If newRoles is NOT empty, but elements are missing permissions,
           // merge permissions from matching oldRoles.
           final List<Role> effectiveRoles = [];
           if (newRoles.isEmpty && oldRoles.isNotEmpty) {
             effectiveRoles.addAll(oldRoles);
           } else {
             for (var nr in newRoles) {
-              final hasPerms = nr.permissions != null && nr.permissions!.isNotEmpty;
+              final hasPerms =
+                  nr.permissions != null && nr.permissions!.isNotEmpty;
               if (!hasPerms) {
-                final matches = oldRoles.where((or) => or.id == nr.id || or.name == nr.name);
+                final matches = oldRoles.where(
+                  (or) => or.id == nr.id || or.name == nr.name,
+                );
                 final match = matches.isEmpty ? null : matches.first;
-                effectiveRoles.add(match != null && match.permissions != null
-                    ? nr.copyWith(permissions: match.permissions)
-                    : nr);
+                effectiveRoles.add(
+                  match != null && match.permissions != null
+                      ? nr.copyWith(permissions: match.permissions)
+                      : nr,
+                );
               } else {
                 effectiveRoles.add(nr);
               }
@@ -131,8 +167,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         onErrorLog?.call(tech);
         state = AuthState.error('Failed to logout.');
       },
-      (_) {
-        // Clear auth state
+      (_) async {
+        // Clear auth state and cached user data.
+        await _clearCachedUser();
         state = const AuthState.initial();
       },
     );

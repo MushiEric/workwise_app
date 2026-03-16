@@ -62,6 +62,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get passwordRequired => 'Le mot de passe est requis';
 
   @override
+  String get passwordHint => 'Entrez votre mot de passe';
+
+  @override
   String get forgotPassword => 'Mot de passe oublié?';
 
   @override
@@ -298,6 +301,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Êtes-vous sûr de vouloir vous déconnecter de votre compte?';
 
   @override
+  String get shareApp => 'Partager Workwise';
+
+  @override
   String get changePassword => 'Changer le Mot de Passe';
 
   @override
@@ -334,4 +340,84 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get removeSelectedPhoto => 'Supprimer la Photo Sélectionnée';
+
+  @override
+  String get searchModulesHint => 'Rechercher des modules...';
+
+  @override
+  String get apps => 'Applications';
+
+  @override
+  String get noModulesFound => 'Aucun module trouvé';
+
+  @override
+  String get tryAdjustingSearch => 'Essayez de modifier votre recherche';
+
+  @override
+  String get clearSearch => 'Effacer la recherche';
+
+  @override
+  String manageModule(String module) {
+    return 'Gérer $module';
+  }
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get markAllRead => 'Tout marquer comme lu';
+
+  @override
+  String get failedToLoad => 'Échec du chargement';
+
+  @override
+  String get retry => 'Réessayer';
+
+  @override
+  String get noNotificationsToShow => 'Aucune notification à afficher.';
+
+  @override
+  String get delete => 'Supprimer';
+
+  @override
+  String get viewDetails => 'Voir les détails';
+
+  @override
+  String get justNow => 'À l\'instant';
+
+  @override
+  String minutesAgo(int count) {
+    return 'il y a ${count}min';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return 'il y a ${count}h';
+  }
+
+  @override
+  String get yesterday => 'Hier';
+
+  @override
+  String daysAgo(int count) {
+    return 'il y a ${count}j';
+  }
+
+  @override
+  String get timeJustNow => 'maintenant';
+
+  @override
+  String timeMinutes(int count) {
+    return '${count}min';
+  }
+
+  @override
+  String timeHours(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String timeDays(int count) {
+    return '${count}j';
+  }
 }

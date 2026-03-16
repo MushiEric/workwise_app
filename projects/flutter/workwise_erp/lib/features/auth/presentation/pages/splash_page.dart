@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/provider/token_provider.dart';
+import '../../../../core/provider/permission_provider.dart';
+import '../../../../core/themes/app_colors.dart';
 import '../providers/auth_providers.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -33,9 +35,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
     );
 
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnim = Tween<double>(begin: 0.82, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 0.82,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
 
@@ -55,21 +58,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 
   /// Determines the correct initial route:
-  ///  - No tenant configured  → `/workspace`
-  ///  - No stored token       → `/` (login)
-  ///  - Token + API success   → `/index` (home)
-  ///  - Token + API failure   → `/` (login; repository already cleared the
+  ///  - No stored token → `/` (login)
+  ///  - Token + API success → `/index` (home)
+  ///  - Token + API failure → `/` (login; repository already cleared the
   ///                            stale token on any server-side error)
   Future<void> _resolveRoute() async {
     try {
-      // 1. Tenant must be configured before any API calls.
-      final tenant = ref.read(tenantProvider);
-      if (tenant == null) {
-        _targetRoute = '/workspace';
-        return;
-      }
-
-      // 2. No stored token → go straight to login.
+      // 1. No stored token → go straight to login.
       final token = await ref.read(tokenLocalDataSourceProvider).readToken();
       if (token == null || token.isEmpty) {
         _targetRoute = '/';
@@ -79,16 +74,35 @@ class _SplashPageState extends ConsumerState<SplashPage>
       // 3. Token found — silently try to restore the session.
       // The spinner on the splash screen acts as the loading indicator;
       // no extra dialog is needed.
-      await ref.read(authNotifierProvider.notifier).loadCurrentUser();
+      try {
+        await ref
+            .read(authNotifierProvider.notifier)
+            .loadCurrentUser()
+            .timeout(const Duration(seconds: 6));
+      } on TimeoutException {
+        // Prevent the app from hanging at the splash screen if the server
+        // is unreachable or the request stalls.
+        _targetRoute = '/';
+        return;
+      }
       if (!mounted) return;
 
       final s = ref.read(authNotifierProvider);
-      s.maybeWhen(
-        authenticated: (_) => _targetRoute = '/index',
-        // Any failure (network, server, etc.) → send to login.
-        // The repository already wiped the token for server errors.
-        orElse: () => _targetRoute = '/',
-      );
+      bool authenticated = false;
+      s.maybeWhen(authenticated: (_) => authenticated = true, orElse: () {});
+
+      if (authenticated) {
+        // Ensure permissions are loaded before showing the main UI.
+        // This keeps the home screen from flashing with missing modules.
+        try {
+          await ref.read(permissionsNotifierProvider.notifier).fetch();
+        } catch (_) {
+          // ignore failures; permissions will fallback to cached/empty
+        }
+        _targetRoute = '/index';
+      } else {
+        _targetRoute = '/';
+      }
     } catch (_) {
       // Safety net: never leave the user on a blank screen.
       _targetRoute = '/';
@@ -103,35 +117,41 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: ScaleTransition(
-            scale: _scaleAnim,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    width: 240,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 48),
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CupertinoActivityIndicator(
-                      radius: 15.r,
-                      
-                  )
-                  ),
-                ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primary, AppColors.purple],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 48),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/logo.png',
+                      width: 240,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 48),
+                    const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CupertinoActivityIndicator(
+                        radius: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

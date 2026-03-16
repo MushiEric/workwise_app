@@ -32,6 +32,8 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
                   isOpened: true,
                   isClicked: n.isClicked,
                   redirectLink: n.redirectLink,
+                  jobcardId: n.jobcardId,
+                  ticketId: n.ticketId,
                 )
               : n,
         )
@@ -51,6 +53,8 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
             isOpened: true,
             isClicked: n.isClicked,
             redirectLink: n.redirectLink,
+            jobcardId: n.jobcardId,
+            ticketId: n.ticketId,
           ),
         )
         .toList();

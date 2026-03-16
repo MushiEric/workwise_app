@@ -4,6 +4,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:workwise_erp/core/constants/api_constant.dart';
 
@@ -27,6 +28,19 @@ ImageProvider? imageProviderFromUrl(String? src) {
     }
   }
 
+  // Support explicit file URIs (e.g. file:///path/to/image.jpg or file://somefile.jpg)
+  if (s.toLowerCase().startsWith('file://')) {
+    // On web, FileImage is not supported and the file path is meaningless.
+    // Fall back to showing a placeholder (null) so the UI can render initials.
+    if (kIsWeb) return null;
+
+    // Strip the scheme. The remaining string may be a valid file path or a
+    // host-like string (e.g. "file://123.jpg").
+    final raw = s.substring(7);
+    if (raw.isEmpty || raw == '/') return null;
+    return FileImage(File(raw));
+  }
+
   // parse as URI when possible
   Uri? uri;
   try {
@@ -38,10 +52,14 @@ ImageProvider? imageProviderFromUrl(String? src) {
   if (uri != null) {
     if (uri.scheme == 'http' || uri.scheme == 'https') return NetworkImage(s);
     if (uri.scheme == 'file') {
+      // Some servers may return file:// URIs without a host (e.g. "file:///1234.jpg").
+      // Uri.toFilePath can throw in such cases, so fall back to using the raw path.
       try {
         final path = uri.toFilePath();
         return FileImage(File(path));
       } catch (_) {
+        final path = uri.path;
+        if (path.isNotEmpty) return FileImage(File(path));
         return null;
       }
     }
@@ -58,6 +76,12 @@ ImageProvider? imageProviderFromUrl(String? src) {
     final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     return NetworkImage('$base/$s');
   }
+
+  // Bare filename with no scheme and no path separator (e.g. "1773479095.jpg").
+  // Passing such a string to NetworkImage causes HttpClient to resolve it against
+  // the app's base URI (file:///), producing "No host specified in URI file:///..."
+  // errors. Return null so the UI can show initials instead.
+  if (!s.contains('://') && !s.contains('/')) return null;
 
   // fallback: attempt network image (this may still fail but is last-resort)
   return NetworkImage(s);

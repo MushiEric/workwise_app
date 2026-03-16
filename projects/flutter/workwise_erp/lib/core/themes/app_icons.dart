@@ -14,7 +14,7 @@ class AppIcons {
   static const IconData x = LucideIcons.x;
   static const IconData moreHorizontal = LucideIcons.moreHorizontal;
   static const IconData chatBUbble = LucideIcons.messageSquare;
-  static const IconData  delete = LucideIcons.trash;
+  static const IconData delete = LucideIcons.trash;
   static const IconData print = LucideIcons.printer;
   static const IconData refreshCcwRounded = LucideIcons.refreshCcw;
   static const IconData uploadFileRounded = LucideIcons.uploadCloud;
@@ -30,6 +30,7 @@ class AppIcons {
   static const IconData chevronRight = LucideIcons.chevronRight;
   static const IconData filter = LucideIcons.filter;
   static const IconData arrowdropDown = LucideIcons.chevronDown;
+  static const IconData loginError = LucideIcons.alertCircle;
 
   // additional icons used by auth/profile pages
   static const IconData image = LucideIcons.image;
@@ -41,6 +42,7 @@ class AppIcons {
   static const IconData logOut = LucideIcons.logOut;
   static const IconData check = LucideIcons.check;
   static const IconData personRounded = LucideIcons.userCircle2;
+  static const IconData truck = LucideIcons.truck;
   // jobcard feature icons
   static const IconData eye = LucideIcons.eye;
   static const IconData eyeOff = LucideIcons.eyeOff;

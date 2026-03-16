@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -12,13 +13,15 @@ import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
 import '../../../../core/provider/tenant_provider.dart';
-import '../../../../core/storage/tenant_local_data_source.dart';
 import '../../../../core/widgets/app_bar.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
+import 'package:workwise_erp/core/services/tutorial_service.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -43,6 +46,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool _isLoading = false;
   bool _isEditing = false;
   File? _pickedAvatarFile;
+  String? _avatarCacheBuster;
   domain.User? _cachedUser; // persists user across loading transitions
   bool _hasPopulated = false; // ensure controllers are populated only once
 
@@ -96,6 +100,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
+  void _showSnackBar({required String message, required bool success}) {
+    final bg = success ? Colors.green.shade600 : Colors.red.shade600;
+    final icon = success ? LucideIcons.checkCircle2 : LucideIcons.alertCircle;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: bg,
+          content: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+  }
+
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -105,9 +136,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       'name': _nameController.text.trim(),
       'email': _emailController.text.trim(),
       'phone': _phoneController.text.trim(),
-      'bio': _bioController.text.trim(),
     };
     if (_pickedAvatarFile != null) {
+      const maxBytes = 2048 * 1024; // 2 MB
+      final fileSize = await _pickedAvatarFile!.length();
+      if (fileSize > maxBytes) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          _showSnackBar(
+            message:
+                'Selected image is too large. Please pick an image smaller than 2 MB.',
+            success: false,
+          );
+        }
+        return;
+      }
+
       payload['avatar'] = await MultipartFile.fromFile(
         _pickedAvatarFile!.path,
         filename: _pickedAvatarFile!.path.split('/').last,
@@ -116,14 +160,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     try {
       await ref.read(authNotifierProvider.notifier).updateProfile(payload);
-      
+
       // Invalidate the profile provider so it re-fetches from server
       ref.invalidate(currentUserProvider);
-      
+
       // Force Flutter to re-fetch the updated avatar image by clearing the memory cache
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
-      
+
       // Only reached on success (notifier throws on failure after restoring state).
       // Re-populate controllers with the server-confirmed user data.
       final updatedUser = ref
@@ -133,24 +177,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       setState(() {
         _isLoading = false;
         _isEditing = false;
+        // Retain the selected avatar file so the UI shows the new image immediately
+        // even if the server returns the same URL. The cache-buster will force
+        // a refetch of the remote image once it becomes available.
+        _avatarCacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
         _pickedAvatarFile = null;
       });
       if (mounted) {
-        context.showSuccessModal(
-          title: context.l10n.success,
+        _showSnackBar(
           message: context.l10n.profileUpdatedSuccess,
-          buttonText: context.l10n.done,
+          success: true,
         );
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        context.showInfoModal(
-          title: context.l10n.updateFailed,
-          message: e.toString().replaceFirst('Exception: ', ''),
-          buttonText: context.l10n.tryAgain,
-        );
+      if (!mounted) return;
+
+      String message = e.toString();
+      if (e is DioException) {
+        message = e.response?.data is Map<String, dynamic>
+            ? (e.response?.data['message']?.toString() ??
+                  e.message ??
+                  e.toString())
+            : (e.message ?? e.toString());
       }
+
+      _showSnackBar(
+        message: message.replaceFirst('Exception: ', ''),
+        success: false,
+      );
     }
   }
 
@@ -176,10 +231,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         ),
         onSubmit: () {
           Navigator.pop(context);
-          context.showSuccessModal(
-            title: context.l10n.passwordUpdated,
+          _showSnackBar(
             message: context.l10n.passwordUpdatedMessage,
-            buttonText: context.l10n.done,
+            success: true,
           );
         },
         submitText: context.l10n.saveChanges,
@@ -219,11 +273,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     if (user != null) _cachedUser = user;
     final displayUser = _cachedUser;
 
-    // Resolved avatar: prefer AuthNotifier's confirmed user (which merges local 
+    // Resolved avatar: prefer AuthNotifier's confirmed user (which merges local
     // changes immediately) over the background profile provider if it's stale.
-    final resolvedAvatar =
-        (displayUser?.avatar?.isNotEmpty == true ? displayUser!.avatar : null) ??
+    String? resolvedAvatar =
+        (displayUser?.avatar?.isNotEmpty == true
+            ? displayUser!.avatar
+            : null) ??
         backendAvatar;
+
+    // If we recently updated the avatar, append a cache-busting query param
+    // so NetworkImage fetches the newest version even if the URL does not change.
+    if (resolvedAvatar != null && _avatarCacheBuster != null) {
+      final separator = resolvedAvatar.contains('?') ? '&' : '?';
+      resolvedAvatar = '$resolvedAvatar${separator}cb=${_avatarCacheBuster!}';
+    }
 
     // Populate form controllers exactly once (when user first becomes available).
     if (!_hasPopulated && displayUser != null) {
@@ -363,7 +426,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                       : imageProviderFromUrl(effectiveAvatar),
                   child:
                       (_pickedAvatarFile == null &&
-                          (effectiveAvatar == null || effectiveAvatar.isEmpty))
+                          imageProviderFromUrl(effectiveAvatar) == null)
                       ? Text(
                           initials,
                           style: TextStyle(
@@ -784,9 +847,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: const CupertinoActivityIndicator(
+                  radius: 12,
+                  color: AppColors.muted,
                 ),
               )
             : Text(
@@ -902,7 +965,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    setState(() => _pickedAvatarFile = null);
+                    setState(() {
+                      _pickedAvatarFile = null;
+                      _avatarCacheBuster = null;
+                    });
                   },
                 ),
               const SizedBox(height: 24),
@@ -926,9 +992,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       setState(() => _pickedAvatarFile = File(path));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, content: Text('Failed to pick image: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to pick image: $e'),
+          ),
+        );
       }
     }
   }
@@ -983,8 +1052,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   return _buildMenuTile(
                     icon: AppIcons.globe,
                     label: context.l10n.language,
-                    // subtitle: languageLabel(code),
+                    subtitle: languageLabel(code),
                     onTap: _showLanguageSelection,
+                  );
+                },
+              ),
+              _buildMenuTile(
+                icon: LucideIcons.helpCircle,
+                label: 'Show Tutorial',
+                onTap: () async {
+                  Navigator.pop(context);
+                  await TutorialService.resetAll();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Tutorial will run next time you open the app.',
+                      ),
+                    ),
                   );
                 },
               ),
@@ -1033,8 +1117,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         builder: (context, ref, _) {
           final selected = ref.watch(appLocaleProvider);
 
-          Widget langTile(String code, String label) {
+          Widget langTile(String code, String label, String flag) {
             return ListTile(
+              leading: Text(flag, style: const TextStyle(fontSize: 20)),
               title: Text(label),
               trailing: selected == code
                   ? Icon(AppIcons.check, color: AppColors.primary)
@@ -1046,8 +1131,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 final currentLang = ref.read(appLocaleProvider);
                 if (currentLang == code) return;
 
-                // Update provider
-                ref.read(appLocaleProvider.notifier).setLocale(code);
+                // Update provider (and persist in shared preferences).
+                await ref.read(appLocaleProvider.notifier).setLocale(code);
 
                 // Show confirmation
                 if (mounted) {
@@ -1055,14 +1140,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     SnackBar(
                       content: Row(
                         children: [
-                          const Icon(LucideIcons.checkCircle, color: Colors.white, size: 18),
+                          const Icon(
+                            LucideIcons.checkCircle,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           const SizedBox(width: 10),
                           Text(context.l10n.languageUpdatedSuccess),
                         ],
                       ),
                       backgroundColor: Colors.green.shade600,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       duration: const Duration(seconds: 3),
                     ),
                   );
@@ -1106,9 +1197,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ),
                   const SizedBox(height: 8),
                   // Language options
-                  langTile('en', 'English'),
-                  langTile('sw', 'Swahili'),
-                  langTile('fr', 'Français'),
+                  for (final code in AppLocalizations.supportedLocales)
+                    langTile(
+                      code.languageCode,
+                      languageLabel(code.languageCode),
+                      languageFlag(code.languageCode) ?? '',
+                    ),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -1165,10 +1259,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       message: context.l10n.signOutMessage,
       confirmText: context.l10n.signOut,
       onConfirm: () async {
-        await ref.read(authNotifierProvider.notifier).logout();
-        if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        showAppLoadingDialog(context, message: 'Signing out...');
+        try {
+          await ref.read(authNotifierProvider.notifier).logout();
+        } finally {
+          hideAppLoadingDialog(context);
         }
+
+        if (!mounted) return;
+
+        // Always navigate back after attempting logout; if logout failed, show a message.
+        final state = ref.read(authNotifierProvider);
+        state.maybeWhen(
+          error: (message) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          },
+          orElse: () {
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamedAndRemoveUntil('/', (route) => false);
+          },
+        );
       },
       icon: AppIcons.logOut,
       confirmColor: Colors.red,
@@ -1208,18 +1325,5 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     } catch (e) {
       return 'Unknown';
     }
-  }
-}
-
-String languageLabel(String code) {
-  switch (code) {
-    case 'en':
-      return 'English';
-    case 'sw':
-      return 'Swahili';
-    case 'fr':
-      return 'French';
-    default:
-      return 'English';
   }
 }

@@ -22,6 +22,7 @@
   "emailRequired": "L'e-mail est requis",
   "password": "Mot de passe",
   "passwordRequired": "Le mot de passe est requis",
+  "passwordHint": "Entrez votre mot de passe",
   "forgotPassword": "Mot de passe oublié?",
   "signIn": "Se connecter",
   "signingIn": "Connexion en cours...",
@@ -109,6 +110,7 @@
   "switchButton": "Changer",
   "signOut": "Se Déconnecter",
   "signOutMessage": "Êtes-vous sûr de vouloir vous déconnecter de votre compte?",
+  "shareApp": "Partager Workwise",
   "changePassword": "Changer le Mot de Passe",
   "changePasswordSubtitle": "Mettez à jour votre mot de passe régulièrement",
   "confirmNewPassword": "Confirmer le Nouveau Mot de Passe",
@@ -120,5 +122,64 @@
   "choosePhotoFromDevice": "Choisir une photo de votre appareil",
   "chooseFromGallery": "Choisir depuis la Galerie",
   "pickImageFromPhotos": "Sélectionnez une image de vos photos",
-  "removeSelectedPhoto": "Supprimer la Photo Sélectionnée"
+  "removeSelectedPhoto": "Supprimer la Photo Sélectionnée",
+
+  "searchModulesHint": "Rechercher des modules...",
+  "apps": "Applications",
+  "noModulesFound": "Aucun module trouvé",
+  "tryAdjustingSearch": "Essayez de modifier votre recherche",
+  "clearSearch": "Effacer la recherche",
+  "manageModule": "Gérer {module}",
+  "@manageModule": {
+    "placeholders": {
+      "module": { "type": "String" }
+    }
+  },
+
+  "notifications": "Notifications",
+  "markAllRead": "Tout marquer comme lu",
+  "failedToLoad": "Échec du chargement",
+  "retry": "Réessayer",
+  "noNotificationsToShow": "Aucune notification à afficher.",
+  "delete": "Supprimer",
+  "viewDetails": "Voir les détails",
+  "justNow": "À l'instant",
+  "minutesAgo": "il y a {count}min",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "hoursAgo": "il y a {count}h",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "yesterday": "Hier",
+  "daysAgo": "il y a {count}j",
+  "@daysAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeJustNow": "maintenant",
+  "timeMinutes": "{count}min",
+  "@timeMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeHours": "{count}h",
+  "@timeHours": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeDays": "{count}j",
+  "@timeDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

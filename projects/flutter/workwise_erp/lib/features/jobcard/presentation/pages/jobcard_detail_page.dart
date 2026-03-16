@@ -1,13 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
+import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/jobcard_detail_providers.dart';
 import '../notifier/jobcard_detail_notifier.dart';
 import 'package:workwise_erp/features/support/domain/entities/support_department.dart';
+import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_tab_bar.dart';
 import '../../../../core/themes/app_icons.dart';
@@ -29,6 +30,10 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   int? _id;
   String? _selectedStatusName;
   bool _isChangingStatus = false;
+  bool _isApproving = false;
+  bool _isRejecting = false;
+
+  bool? _isApprovalEligible;
 
   @override
   void didChangeDependencies() {
@@ -36,8 +41,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     final arg = ModalRoute.of(context)?.settings.arguments;
     if (arg is int) {
       _id = arg;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         ref.read(jobcardDetailNotifierProvider.notifier).load(_id!);
+        await _refreshApprovalEligibility();
       });
     }
     _tabController ??= TabController(length: 6, vsync: this);
@@ -49,7 +55,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     super.dispose();
   }
 
-  Future<void> _updateJobcardStatus(String newName, String newId) async {
+  Future<void> _updateJobcardStatus(String newName, int newId) async {
     final previous = _selectedStatusName;
     setState(() {
       _selectedStatusName = newName;
@@ -79,6 +85,200 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         context,
       ).showSnackBar(SnackBar(content: Text('Status updated to $newName')));
     }
+  }
+
+  bool _isApprovableStatus(dynamic jobcard) {
+    final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '')
+        .toString()
+        .toLowerCase();
+    return status.contains('approve') || status.contains('pending');
+  }
+
+  Future<bool> _checkApprovalEligibility(int id) async {
+    final checkUc = ref.read(checkApprovalEligibilityUseCaseProvider);
+    final result = await checkUc.call(id);
+    return result.fold((_) => false, (data) {
+      // Backend returns { status: 200, eligible: true, ... }
+      final eligible = data['eligible'];
+      if (eligible is bool) return eligible;
+      final eligibleStr = eligible?.toString().trim().toLowerCase();
+      if (eligibleStr == '1' || eligibleStr == 'true' || eligibleStr == 'yes') {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  Future<void> _refreshApprovalEligibility() async {
+    if (_id == null) return;
+    final eligible = await _checkApprovalEligibility(_id!);
+    if (!mounted) return;
+    setState(() => _isApprovalEligible = eligible);
+  }
+
+  Future<void> _approveJobcard(int id) async {
+    if (_isApproving) return;
+    setState(() => _isApproving = true);
+
+    final eligible = await _checkApprovalEligibility(id);
+    if (!eligible) {
+      if (!mounted) return;
+      setState(() => _isApproving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: const Text('Not eligible to approve this jobcard'),
+        ),
+      );
+      return;
+    }
+
+    final comment = await _askApprovalComment();
+    if (!mounted) return;
+    if (comment == null) {
+      setState(() => _isApproving = false);
+      return;
+    }
+
+    showAppLoadingDialog(context, message: 'Approving...');
+    final approveUc = ref.read(approveJobcardUseCaseProvider);
+    final res = await approveUc.call(id, comment: comment);
+    if (!mounted) return;
+    hideAppLoadingDialog(context);
+
+    setState(() => _isApproving = false);
+
+    res.fold(
+      (l) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: Text('Approval failed: $l'),
+        ),
+      ),
+      (_) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+            content: Text('Jobcard approved successfully'),
+          ),
+        );
+        if (_id != null) {
+          await ref.read(jobcardDetailNotifierProvider.notifier).load(_id!);
+          await _refreshApprovalEligibility();
+        }
+      },
+    );
+  }
+
+  Future<String?> _askRejectionReason() async {
+    String? reason;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Reject Jobcard'),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(hintText: 'Optional reason'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                reason = controller.text.trim();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Reject'),
+            ),
+          ],
+        );
+      },
+    );
+    return reason;
+  }
+
+  Future<String?> _askApprovalComment() async {
+    String? comment;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('JOB CARD APPROVAL'),
+          content: AppTextField(
+            controller: controller,
+            maxLines: 5,
+            minLines: 3,
+            labelText: 'Comment',
+            hintText: 'Enter Comment here',
+            textInputAction: TextInputAction.newline,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                comment = controller.text.trim();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Approve'),
+            ),
+          ],
+        );
+      },
+    );
+    return comment;
+  }
+
+  Future<void> _rejectJobcard(int id) async {
+    if (_isRejecting) return;
+    final reason = await _askRejectionReason();
+    if (!mounted) return;
+
+    setState(() => _isRejecting = true);
+    showAppLoadingDialog(context, message: 'Rejecting...');
+    final rejectUc = ref.read(rejectJobcardUseCaseProvider);
+    final res = await rejectUc.call(id, reason: reason);
+    if (!mounted) return;
+    hideAppLoadingDialog(context);
+
+    setState(() => _isRejecting = false);
+
+    res.fold(
+      (l) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: Text('Rejection failed: $l'),
+        ),
+      ),
+      (_) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Jobcard rejected'),
+          ),
+        );
+        if (_id != null) {
+          await ref.read(jobcardDetailNotifierProvider.notifier).load(_id!);
+          await _refreshApprovalEligibility();
+        }
+      },
+    );
   }
 
   Future<void> _deleteJobcard(BuildContext context, int? id) async {
@@ -390,6 +590,11 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         ? ref.watch(jobcardReceiversForDetailProvider(relatedTo))
         : const AsyncData(<Map<String, dynamic>>[]);
 
+    final permissionChecker = ref.watch(permissionCheckerProvider);
+    final canManageStatus = permissionChecker.hasPermission(
+      'manage jobcard status',
+    );
+
     final users = usersAsync.valueOrNull ?? [];
     final receivers = receiversAsync.valueOrNull ?? [];
 
@@ -594,96 +799,172 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                     ),
                     data: (statusList) {
                       if (statusList.isEmpty) {
-                        return _buildStatusBadge(
-                          currentStatusName,
-                          currentStatusColor,
+                        // If status options aren't available, allow retry and show current status.
+                        return GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                content: Text('Reloading status options...'),
+                              ),
+                            );
+                            ref.invalidate(jobcardStatusesForDetailProvider);
+                          },
+                          child: Row(
+                            children: [
+                              _buildStatusBadge(
+                                currentStatusName,
+                                currentStatusColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.refresh_rounded,
+                                size: 18,
+                                color: currentStatusColor.withOpacity(0.8),
+                              ),
+                            ],
+                          ),
                         );
                       }
+
                       final effectiveName =
                           _selectedStatusName ?? currentStatusName;
-                      final validNames = statusList
+                      final availableNames = statusList
                           .map((s) => s.name ?? '')
-                          .toSet();
-                      final dropdownValue = validNames.contains(effectiveName)
+                          .where((n) => n.isNotEmpty)
+                          .toList();
+                      final currentValue =
+                          availableNames.contains(effectiveName)
                           ? effectiveName
-                          : (validNames.isNotEmpty ? validNames.first : null);
+                          : (availableNames.isNotEmpty
+                                ? availableNames.first
+                                : effectiveName);
 
-                      return DropdownButtonFormField<String>(
-                        value: dropdownValue,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        dropdownColor: isDark
-                            ? const Color(0xFF1E2540)
-                            : Colors.white,
-                        icon: _isChangingStatus
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    currentStatusColor,
-                                  ),
-                                ),
+                      final displayColor = (() {
+                        final match = statusList.firstWhere(
+                          (s) => s.name == currentValue,
+                          orElse: () => statusList.first,
+                        );
+                        if (match.color != null) {
+                          return _hexColor(match.color!);
+                        }
+                        return _getStatusColor(currentValue);
+                      })();
+
+                      final canChangeStatus =
+                          canManageStatus && !_isChangingStatus;
+
+                      return GestureDetector(
+                        onTap: canChangeStatus
+                            ? () => _showStatusPickerDialog(
+                                context: context,
+                                label: 'Status',
+                                value: currentValue,
+                                options: availableNames,
+                                colorOf: (name) {
+                                  final match = statusList.firstWhere(
+                                    (s) => s.name == name,
+                                    orElse: () => statusList.first,
+                                  );
+                                  return match.color != null
+                                      ? _hexColor(match.color!)
+                                      : _getStatusColor(name);
+                                },
+                                onChanged: (selected) {
+                                  if (selected == currentValue ||
+                                      jobcard.id == null)
+                                    return;
+                                  final matchedStatus = statusList.firstWhere(
+                                    (s) => s.name == selected,
+                                    orElse: () => statusList.first,
+                                  );
+                                  if (matchedStatus.id == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        behavior: SnackBarBehavior.floating,
+                                        content: Text(
+                                          'Cannot update status (missing status ID)',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  _updateJobcardStatus(
+                                    selected,
+                                    matchedStatus.id!,
+                                  );
+                                },
                               )
-                            : Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: isDark
-                                    ? Colors.white54
-                                    : Colors.grey.shade600,
-                                size: 20,
-                              ),
-                        style: TextStyle(
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1A2634),
-                          fontWeight: FontWeight.w600,
-                        ),
-                        items: statusList.map((s) {
-                          final color = s.color != null
-                              ? _hexColor(s.color!)
-                              : _getStatusColor(s.name ?? '');
-                          return DropdownMenuItem<String>(
-                            value: s.name ?? '',
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    s.name ?? '',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            : null,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: displayColor.withOpacity(0.35),
+                              width: 1,
                             ),
-                          );
-                        }).toList(),
-                        onChanged: _isChangingStatus
-                            ? null
-                            : (selectedName) {
-                                if (selectedName == null || jobcard.id == null)
-                                  return;
-                                if (selectedName == effectiveName) return;
-                                final matchedStatus = statusList.firstWhere(
-                                  (s) => s.name == selectedName,
-                                  orElse: () => statusList.first,
-                                );
-                                if (matchedStatus.id == null) return;
-                                _updateJobcardStatus(
-                                  selectedName,
-                                  matchedStatus.id!.toString(),
-                                );
-                              },
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 9,
+                                height: 9,
+                                decoration: BoxDecoration(
+                                  color: displayColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  currentValue,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF1A2634),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              if (!canManageStatus)
+                                Icon(
+                                  Icons.lock_outline,
+                                  size: 18,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.grey.shade500,
+                                )
+                              else if (_isChangingStatus)
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      displayColor,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 20,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.grey.shade600,
+                                ),
+                            ],
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -794,6 +1075,78 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         style: TextStyle(color: color, fontWeight: FontWeight.w600),
       ),
     );
+  }
+
+  Future<void> _showStatusPickerDialog({
+    required BuildContext context,
+    required String label,
+    required String value,
+    required List<String> options,
+    required Color Function(String) colorOf,
+    required Function(String) onChanged,
+  }) async {
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: isDark ? const Color(0xFF1A2234) : Colors.white,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Text(
+                  'Select $label',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1A2634),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ...options.map((opt) {
+                final isSelected = opt.toLowerCase() == value.toLowerCase();
+                final optColor = colorOf(opt);
+                return ListTile(
+                  leading: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: optColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  title: Text(
+                    opt,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                      color: isSelected
+                          ? optColor
+                          : (isDark ? Colors.white70 : Colors.grey.shade800),
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check_rounded, color: optColor, size: 18)
+                      : null,
+                  onTap: () => Navigator.of(ctx).pop(opt),
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null && picked != value) onChanged(picked);
   }
 
   Color _hexColor(String hex) {
@@ -1157,7 +1510,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         final userId = log['user_id']?.toString() ?? '';
         final userName = userNameMap[userId] ?? 'User #$userId';
         final createdAt = _formatDate(log['created_at']?.toString());
-        final detail = log['comment']?.toString() ?? log['note']?.toString() ?? '';
+        final detail =
+            log['comment']?.toString() ?? log['note']?.toString() ?? '';
         final isLast = index == logs.length - 1;
 
         return Row(
@@ -1227,7 +1581,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                             userName,
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.white54 : Colors.grey.shade600,
+                              color: isDark
+                                  ? Colors.white54
+                                  : Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -1235,7 +1591,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                           createdAt,
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark ? Colors.white38 : Colors.grey.shade500,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
                           ),
                         ),
                       ],
@@ -1266,6 +1624,43 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     bool isDark,
   ) {
     final approvals = (jobcard.approvals ?? <dynamic>[]) as List;
+    // Only show approve/reject actions if the server explicitly confirms eligibility.
+    // This prevents showing buttons based purely on status string heuristics.
+    final canAct = _isApprovalEligible == true;
+
+    Widget buildActionButtons() {
+      if (!canAct || _id == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                text: 'Approve',
+                onPressed: _isApproving || _isRejecting
+                    ? null
+                    : () => _approveJobcard(_id!),
+                isLoading: _isApproving,
+                backgroundColor: Colors.green.shade700,
+                textColor: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppButton(
+                text: 'Reject',
+                onPressed: _isApproving || _isRejecting
+                    ? null
+                    : () => _rejectJobcard(_id!),
+                isLoading: _isRejecting,
+                backgroundColor: Colors.red.shade700,
+                textColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     if (approvals.isEmpty) {
       return Center(
@@ -1298,265 +1693,231 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: approvals.length,
-      itemBuilder: (context, index) {
-        final approval = approvals[index] as Map<String, dynamic>;
-        final dependent = approval['dependent'] as Map<String, dynamic>?;
-        final roleName = dependent?['name']?.toString();
-        final userId = approval['user_id']?.toString();
-        final displayName = roleName != null
-            ? roleName
-            : (userId != null ? 'User #$userId' : 'Unknown');
-        final statusVal = approval['status'];
-        final isApproved = statusVal == 1 || statusVal == '1';
-        final comment = approval['comment']?.toString();
-        final hasComment = comment != null && comment.isNotEmpty;
-        final createdAt = _formatDate(approval['created_at']?.toString());
-        final isNewRound =
-            approval['is_new_round'] == '1' || approval['is_new_round'] == 1;
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: approvals.length,
+            itemBuilder: (context, index) {
+              final approval = approvals[index] as Map<String, dynamic>;
+              final dependent = approval['dependent'] as Map<String, dynamic>?;
+              final roleName = dependent?['name']?.toString();
+              final userId = approval['user_id']?.toString();
+              final displayName = roleName != null
+                  ? roleName
+                  : (userId != null ? 'User #$userId' : 'Unknown');
+              final statusVal = approval['status'];
+              final isApproved = statusVal == 1 || statusVal == '1';
+              final comment = approval['comment']?.toString();
+              final hasComment = comment != null && comment.isNotEmpty;
+              final createdAt = _formatDate(approval['created_at']?.toString());
+              final isNewRound =
+                  approval['is_new_round'] == '1' ||
+                  approval['is_new_round'] == 1;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey.shade200,
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF151A2E) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+                    width: 1,
+                  ),
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header row: name + badge
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                          child: Text(
-                            displayName.isNotEmpty
-                                ? displayName[0].toUpperCase()
-                                : '?',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header row: name + badge
+                          Row(
                             children: [
-                              Text(
-                                displayName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.white
-                                      : const Color(0xFF1A2634),
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: AppColors.primary.withOpacity(
+                                  0.1,
+                                ),
+                                child: Text(
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  Icon(
-                                    AppIcons.calendar,
-                                    size: 12,
-                                    color: isDark
-                                        ? Colors.white38
-                                        : Colors.grey.shade500,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    createdAt,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark
-                                          ? Colors.white54
-                                          : Colors.grey.shade600,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1A2634),
+                                      ),
                                     ),
-                                  ),
-                                  if (isNewRound) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: Colors.orange.withOpacity(0.3),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          AppIcons.calendar,
+                                          size: 12,
+                                          color: isDark
+                                              ? Colors.white38
+                                              : Colors.grey.shade500,
                                         ),
-                                      ),
-                                      child: Text(
-                                        'New Round',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.orange.shade700,
-                                          fontWeight: FontWeight.w500,
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          createdAt,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark
+                                                ? Colors.white54
+                                                : Colors.grey.shade600,
+                                          ),
                                         ),
-                                      ),
+                                        if (isNewRound) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.withOpacity(
+                                                0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: Colors.orange
+                                                    .withOpacity(0.3),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'New Round',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.orange.shade700,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ],
-                                ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isApproved
+                                      ? Colors.green.withOpacity(0.1)
+                                      : Colors.grey.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isApproved
+                                        ? Colors.green.withOpacity(0.3)
+                                        : Colors.grey.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  isApproved ? 'Approved' : 'Pending',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isApproved
+                                        ? Colors.green.shade700
+                                        : Colors.grey.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isApproved
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isApproved
-                                  ? Colors.green.withOpacity(0.3)
-                                  : Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Text(
-                            isApproved ? 'Approved' : 'Pending',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isApproved
-                                  ? Colors.green.shade700
-                                  : Colors.grey.shade700,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
 
-                    // Comment section
-                    if (hasComment) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.04)
-                              : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white10
-                                : Colors.grey.shade200,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Comment',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                          // Comment section
+                          if (hasComment) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
                                 color: isDark
-                                    ? Colors.white38
-                                    : Colors.grey.shade500,
+                                    ? Colors.white.withOpacity(0.04)
+                                    : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white10
+                                      : Colors.grey.shade200,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              comment,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? Colors.white70
-                                    : Colors.grey.shade800,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Comment',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? Colors.white38
+                                          : Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    comment,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ],
-                    if (!hasComment) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'No comment',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          color: isDark ? Colors.white38 : Colors.grey.shade400,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              // Approve / Reject action buttons
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: isDark ? Colors.white10 : Colors.grey.shade200,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.check_circle_outline, size: 16),
-                        label: const Text('Approve'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green.shade700,
-                          side: BorderSide(color: Colors.green.shade300),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('Reject'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade700,
-                          side: BorderSide(color: Colors.red.shade300),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
+                          if (!hasComment) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'No comment',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
+        ),
+        buildActionButtons(),
+      ],
     );
   }
 

@@ -22,6 +22,7 @@
   "emailRequired": "Email is required",
   "password": "Password",
   "passwordRequired": "Password is required",
+  "passwordHint": "Enter your password",
   "forgotPassword": "Forgot Password?",
   "signIn": "Sign In",
   "signingIn": "Signing in...",
@@ -109,6 +110,7 @@
   "switchButton": "Switch",
   "signOut": "Sign Out",
   "signOutMessage": "Are you sure you want to sign out of your account?",
+  "shareApp": "Share Workwise",
   "changePassword": "Change Password",
   "changePasswordSubtitle": "Update your password regularly",
   "confirmNewPassword": "Confirm New Password",
@@ -120,5 +122,64 @@
   "choosePhotoFromDevice": "Choose a photo from your device",
   "chooseFromGallery": "Choose from Gallery",
   "pickImageFromPhotos": "Pick an image from your photos",
-  "removeSelectedPhoto": "Remove Selected Photo"
+  "removeSelectedPhoto": "Remove Selected Photo",
+
+  "searchModulesHint": "Search modules...",
+  "apps": "Apps",
+  "noModulesFound": "No modules found",
+  "tryAdjustingSearch": "Try adjusting your search",
+  "clearSearch": "Clear search",
+  "manageModule": "Manage {module}",
+  "@manageModule": {
+    "placeholders": {
+      "module": { "type": "String" }
+    }
+  },
+
+  "notifications": "Notifications",
+  "markAllRead": "Mark all read",
+  "failedToLoad": "Failed to load",
+  "retry": "Retry",
+  "noNotificationsToShow": "No notifications to show.",
+  "delete": "Delete",
+  "viewDetails": "View Details",
+  "justNow": "Just now",
+  "minutesAgo": "{count}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "hoursAgo": "{count}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "yesterday": "Yesterday",
+  "daysAgo": "{count}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeJustNow": "now",
+  "timeMinutes": "{count}m",
+  "@timeMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeHours": "{count}h",
+  "@timeHours": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeDays": "{count}d",
+  "@timeDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

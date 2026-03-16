@@ -64,7 +64,9 @@ class JobcardRemoteDataSource {
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
       // nested data/payload -> list (handles Laravel paginator: {data: {data: [...], last_page: N}})
-      final inner = (raw['data'] is Map ? raw['data'] as Map : (raw['payload'] is Map ? raw['payload'] as Map : null));
+      final inner = (raw['data'] is Map
+          ? raw['data'] as Map
+          : (raw['payload'] is Map ? raw['payload'] as Map : null));
       if (inner != null) {
         if (inner['data'] is List)
           return (inner['data'] as List)
@@ -137,7 +139,9 @@ class JobcardRemoteDataSource {
       final raw = resp.data;
 
       // Extract items
-      final items = _extractList(raw).map((e) => JobcardModel.fromJson(e)).toList();
+      final items = _extractList(
+        raw,
+      ).map((e) => JobcardModel.fromJson(e)).toList();
 
       // Detect last_page, total, etc. from Laravel/Common paginator
       int total = items.length;
@@ -146,10 +150,10 @@ class JobcardRemoteDataSource {
       int actualPerPage = perPage;
 
       if (raw is Map) {
-        final paginator = raw['data'] is Map 
-            ? raw['data'] as Map 
+        final paginator = raw['data'] is Map
+            ? raw['data'] as Map
             : (raw['payload'] is Map ? raw['payload'] as Map : raw);
-            
+
         final lp =
             paginator['last_page'] ??
             paginator['lastPage'] ??
@@ -161,18 +165,30 @@ class JobcardRemoteDataSource {
           lastPage = int.tryParse(lp) ?? 1;
         }
 
-        final t = paginator['total'] ?? paginator['records_total'] ?? paginator['recordsTotal'];
+        final t =
+            paginator['total'] ??
+            paginator['records_total'] ??
+            paginator['recordsTotal'];
         if (t is num) {
           total = t.toInt();
         } else if (t is String) {
           total = int.tryParse(t) ?? items.length;
         }
 
-        final cp = paginator['current_page'] ?? paginator['currentPage'] ?? page;
-        currentPage = cp is num ? cp.toInt() : (int.tryParse(cp?.toString() ?? '') ?? page);
+        final cp =
+            paginator['current_page'] ?? paginator['currentPage'] ?? page;
+        currentPage = cp is num
+            ? cp.toInt()
+            : (int.tryParse(cp?.toString() ?? '') ?? page);
 
-        final pp = paginator['per_page'] ?? paginator['per_page_length'] ?? paginator['limit'] ?? perPage;
-        actualPerPage = pp is num ? pp.toInt() : (int.tryParse(pp?.toString() ?? '') ?? perPage);
+        final pp =
+            paginator['per_page'] ??
+            paginator['per_page_length'] ??
+            paginator['limit'] ??
+            perPage;
+        actualPerPage = pp is num
+            ? pp.toInt()
+            : (int.tryParse(pp?.toString() ?? '') ?? perPage);
         if (actualPerPage <= 0) actualPerPage = perPage;
 
         // Fallback: calculate lastPage from total + per_page
@@ -195,7 +211,7 @@ class JobcardRemoteDataSource {
         if (s.startsWith('<'))
           throw ServerException('Server returned HTML for /jobcard/getJobCard');
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -239,7 +255,7 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /jobcard/getJobCardRow/$id',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -316,7 +332,7 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /jobcard/getJobCardSetting',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -328,18 +344,35 @@ class JobcardRemoteDataSource {
       final resp = await client.get('/jobcard/getJobCardSetting');
       final raw = resp.data;
 
+      Map<String, dynamic>? result;
+
       // If API returned { data: { ...settings... } }, return that map
       if (raw is Map) {
-        if (raw['data'] is Map)
-          return Map<String, dynamic>.from(raw['data'] as Map);
-        // if payload itself is a settings map
-        if (raw.containsKey('jobcard_prefix') ||
-            raw.containsKey('enable_reminder'))
-          return Map<String, dynamic>.from(raw);
+        if (raw['data'] is Map) {
+          result = Map<String, dynamic>.from(raw['data'] as Map);
+        } else if (raw.containsKey('jobcard_prefix') ||
+            raw.containsKey('enable_reminder')) {
+          // payload itself is a settings map
+          result = Map<String, dynamic>.from(raw);
+        }
       }
 
-      // If we reach here the response didn't contain a config map
-      throw ServerException('Unexpected format for jobcard config');
+      if (result == null) {
+        // If we reach here the response didn't contain a config map
+        throw ServerException('Unexpected format for jobcard config');
+      }
+
+      // Debug: dump all keys so we can verify the actual field names
+      debugPrint('[JobcardConfig] keys: ${result.keys.toList()}');
+      debugPrint(
+        '[JobcardConfig] after_reject_status=${result['after_reject_status']} '
+        'next_status_after_approval=${result['next_status_after_approval']} '
+        'next_status_after_jobcard_completion=${result['next_status_after_jobcard_completion']} '
+        'remind_on_status=${result['remind_on_status']} '
+        'notification_on_status=${result['notification_on_status']}',
+      );
+
+      return result;
     } on DioException catch (e) {
       final respData = e.response?.data;
       if (respData is String) {
@@ -349,7 +382,7 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /jobcard/getJobCardSetting',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -369,7 +402,7 @@ class JobcardRemoteDataSource {
       }
       return _extractList(raw);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -397,18 +430,14 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /jobcard/deleteJobCard/$id',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
   }
 
   /// POST /jobcard/changeJobCardStatus
-  Future<void> changeJobcardStatus(
-    int id,
-    String status, {
-    String? note,
-  }) async {
+  Future<void> changeJobcardStatus(int id, int status, {String? note}) async {
     try {
       final payload = <String, dynamic>{
         'id': id,
@@ -432,7 +461,7 @@ class JobcardRemoteDataSource {
           'Server returned HTML for /jobcard/changeJobCardStatus',
         );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -459,25 +488,30 @@ class JobcardRemoteDataSource {
       }
       return <String, dynamic>{'status': 200};
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
   }
 
   /// POST /jobcard/approveJobCard
-  Future<void> approveJobcard(int jobcardId) async {
+  ///
+  /// Some backends accept an optional `reason`/`comment` for auditing.
+  Future<void> approveJobcard(int jobcardId, {String? comment}) async {
     try {
       final resp = await client.post(
         '/jobcard/approveJobCard',
-        data: {'jobcard_id': jobcardId},
+        data: {
+          'jobcard_id': jobcardId,
+          if (comment != null && comment.isNotEmpty) 'reason': comment,
+        },
       );
       final raw = resp.data;
       if (raw is String && raw.trim().startsWith('<')) {
         throw ServerException('Server returned HTML for approveJobCard');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -498,7 +532,7 @@ class JobcardRemoteDataSource {
         throw ServerException('Server returned HTML for rejectJobCard');
       }
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -514,7 +548,7 @@ class JobcardRemoteDataSource {
       final resp = await client.get('/vehicle/getVehicle');
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error fetching vehicles');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -526,7 +560,7 @@ class JobcardRemoteDataSource {
       final resp = await client.get('/user/getUsers');
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error fetching users');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -541,7 +575,7 @@ class JobcardRemoteDataSource {
       );
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error fetching products');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -556,9 +590,7 @@ class JobcardRemoteDataSource {
       );
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(
-        e.message ?? 'Network error fetching product units',
-      );
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -584,7 +616,7 @@ class JobcardRemoteDataSource {
       final resp = await client.get(endpoint);
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error fetching receivers');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -596,7 +628,7 @@ class JobcardRemoteDataSource {
       final resp = await client.get('/customer/getCustomers');
       return _extractList(resp.data);
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error fetching customers');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -620,9 +652,7 @@ class JobcardRemoteDataSource {
       }
       return {};
     } on DioException catch (e) {
-      throw ServerException(
-        e.message ?? 'Network error fetching receiver details',
-      );
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -720,7 +750,7 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /jobcard/saveJobCard',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -834,7 +864,7 @@ class JobcardRemoteDataSource {
             'Server returned HTML for /generateUniqueNumber',
           );
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }

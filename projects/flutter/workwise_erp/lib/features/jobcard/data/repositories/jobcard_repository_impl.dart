@@ -4,6 +4,7 @@ import 'package:workwise_erp/core/errors/failure.dart';
 import 'package:workwise_erp/core/models/paginated_response.dart';
 
 import '../../domain/entities/jobcard.dart' as domain;
+import '../../domain/entities/jobcard_create_response.dart';
 import '../../domain/entities/jobcard_form_data.dart';
 import '../../domain/repositories/jobcard_repository.dart';
 import '../datasources/jobcard_remote_data_source.dart';
@@ -28,9 +29,11 @@ class JobcardRepositoryImpl implements JobcardRepository {
         status: status,
         force: force,
       );
-      
-      final domainItems = paginatedModels.items.map((m) => m as domain.Jobcard).toList();
-      
+
+      final domainItems = paginatedModels.items
+          .map((m) => m as domain.Jobcard)
+          .toList();
+
       final paginatedDomain = PaginatedResponse<domain.Jobcard>(
         items: domainItems,
         total: paginatedModels.total,
@@ -38,7 +41,7 @@ class JobcardRepositoryImpl implements JobcardRepository {
         lastPage: paginatedModels.lastPage,
         perPage: paginatedModels.perPage,
       );
-      
+
       return Either.right(paginatedDomain);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -149,7 +152,7 @@ class JobcardRepositoryImpl implements JobcardRepository {
   @override
   Future<Either<dynamic, void>> changeJobcardStatus({
     required int id,
-    required String status,
+    required int status,
     String? note,
   }) async {
     try {
@@ -163,7 +166,9 @@ class JobcardRepositoryImpl implements JobcardRepository {
   }
 
   @override
-  Future<Either<dynamic, int>> createJobcard({required params}) async {
+  Future<Either<dynamic, JobcardCreateResponse>> createJobcard({
+    required params,
+  }) async {
     try {
       // params expected to be a Map or an object with toJson/toMap
       Map<String, dynamic> payload;
@@ -190,31 +195,136 @@ class JobcardRepositoryImpl implements JobcardRepository {
 
       final resp = await remote.saveJobcard(payload);
 
+      // Special-case: some backends return only {status: 200, message: '...'}
+      // without providing an ID. Treat that as success and use the message.
+      final statusValue = resp['status'];
+      final messageValue = resp['message']?.toString();
+      if ((statusValue == 200 || statusValue == '200') &&
+          messageValue != null &&
+          messageValue.isNotEmpty) {
+        return Either.right(
+          JobcardCreateResponse(id: null, message: messageValue, success: true),
+        );
+      }
+
       // try to extract id in common shapes
       // 1. data: { id: ... } or data: '123' or data: 123
       if (resp.containsKey('data')) {
         final d = resp['data'];
+        // Try to extract an ID if present.
         if (d is Map && d['id'] != null)
-          return Either.right(int.tryParse(d['id'].toString()) ?? 0);
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.tryParse(d['id'].toString()),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
         if (d is Map && d['jobcard_id'] != null)
-          return Either.right(int.tryParse(d['jobcard_id'].toString()) ?? 0);
-        if (d is num) return Either.right(d.toInt());
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.tryParse(d['jobcard_id'].toString()),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
+        if (d is num)
+          return Either.right(
+            JobcardCreateResponse(
+              id: d.toInt(),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
         if (d is String && int.tryParse(d) != null)
-          return Either.right(int.parse(d));
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.parse(d),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
+        if (d is List && d.isNotEmpty && d.first is Map) {
+          final first = d.first as Map;
+          if (first['id'] != null)
+            return Either.right(
+              JobcardCreateResponse(
+                id: int.tryParse(first['id'].toString()),
+                message: resp['message']?.toString(),
+                success: (resp['status']?.toString() ?? '').contains('200'),
+              ),
+            );
+          if (first['jobcard_id'] != null)
+            return Either.right(
+              JobcardCreateResponse(
+                id: int.tryParse(first['jobcard_id'].toString()),
+                message: resp['message']?.toString(),
+                success: (resp['status']?.toString() ?? '').contains('200'),
+              ),
+            );
+        }
       }
 
       // 2. top-level id variants
+      final msg = resp['message']?.toString();
+      final success = (resp['status']?.toString() ?? '').contains('200');
+
       if (resp['id'] != null) {
         final v = resp['id'];
-        if (v is num) return Either.right(v.toInt());
+        if (v is num)
+          return Either.right(
+            JobcardCreateResponse(
+              id: v.toInt(),
+              message: msg,
+              success: success,
+            ),
+          );
         if (v is String && int.tryParse(v) != null)
-          return Either.right(int.parse(v));
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.parse(v),
+              message: msg,
+              success: success,
+            ),
+          );
       }
       if (resp['jobcard_id'] != null) {
         final v = resp['jobcard_id'];
-        if (v is num) return Either.right(v.toInt());
+        if (v is num)
+          return Either.right(
+            JobcardCreateResponse(
+              id: v.toInt(),
+              message: msg,
+              success: success,
+            ),
+          );
         if (v is String && int.tryParse(v) != null)
-          return Either.right(int.parse(v));
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.parse(v),
+              message: msg,
+              success: success,
+            ),
+          );
+      }
+      if (resp['jobcardid'] != null) {
+        final v = resp['jobcardid'];
+        if (v is num)
+          return Either.right(
+            JobcardCreateResponse(
+              id: v.toInt(),
+              message: msg,
+              success: success,
+            ),
+          );
+        if (v is String && int.tryParse(v) != null)
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.parse(v),
+              message: msg,
+              success: success,
+            ),
+          );
       }
 
       // 3. jobcard: { id: ... }
@@ -222,7 +332,11 @@ class JobcardRepositoryImpl implements JobcardRepository {
           resp['jobcard'] is Map &&
           resp['jobcard']['id'] != null) {
         return Either.right(
-          int.tryParse(resp['jobcard']['id'].toString()) ?? 0,
+          JobcardCreateResponse(
+            id: int.tryParse(resp['jobcard']['id'].toString()),
+            message: resp['message']?.toString(),
+            success: (resp['status']?.toString() ?? '').contains('200'),
+          ),
         );
       }
 
@@ -230,16 +344,50 @@ class JobcardRepositoryImpl implements JobcardRepository {
       if (resp.containsKey('payload') && resp['payload'] is Map) {
         final p = resp['payload'] as Map;
         if (p['id'] != null)
-          return Either.right(int.tryParse(p['id'].toString()) ?? 0);
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.tryParse(p['id'].toString()),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
         if (p['jobcard_id'] != null)
-          return Either.right(int.tryParse(p['jobcard_id'].toString()) ?? 0);
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.tryParse(p['jobcard_id'].toString()),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
       }
 
       // 5. fallback: try to find the first numeric-like value in the response
-      for (final v in resp.values) {
-        if (v is num) return Either.right(v.toInt());
+      // but ignore common HTTP response fields (status/code/message)
+      for (final entry in resp.entries) {
+        final key = entry.key.toString().toLowerCase();
+        if (key == 'status' ||
+            key == 'code' ||
+            key == 'message' ||
+            key == 'success')
+          continue;
+        final v = entry.value;
+        if (v is num) {
+          return Either.right(
+            JobcardCreateResponse(
+              id: v.toInt(),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
+        }
         if (v is String && int.tryParse(v) != null)
-          return Either.right(int.parse(v));
+          return Either.right(
+            JobcardCreateResponse(
+              id: int.parse(v),
+              message: resp['message']?.toString(),
+              success: (resp['status']?.toString() ?? '').contains('200'),
+            ),
+          );
       }
 
       // Debug: include the raw response in logs (only in debug/assert builds)
@@ -250,6 +398,40 @@ class JobcardRepositoryImpl implements JobcardRepository {
         );
         return true;
       }());
+
+      // Try a deep search for an ID inside the response to avoid failures when
+      // the server returns an unusual structure.
+      int? deepId;
+      int? findId(dynamic node) {
+        if (node is Map) {
+          for (final entry in node.entries) {
+            final key = entry.key.toString().toLowerCase();
+            if (key == 'id' || key == 'jobcard_id' || key == 'jobcardid') {
+              final v = entry.value;
+              if (v is num) return v.toInt();
+              if (v is String && int.tryParse(v) != null) return int.parse(v);
+            }
+            final found = findId(entry.value);
+            if (found != null) return found;
+          }
+        } else if (node is List) {
+          for (final e in node) {
+            final found = findId(e);
+            if (found != null) return found;
+          }
+        }
+        return null;
+      }
+
+      deepId = findId(resp);
+      if (deepId != null)
+        return Either.right(
+          JobcardCreateResponse(
+            id: deepId,
+            message: resp['message']?.toString(),
+            success: (resp['status']?.toString() ?? '').contains('200'),
+          ),
+        );
 
       return Either.left(ServerFailure('Failed to parse create response'));
     } on ServerException catch (e) {
@@ -326,9 +508,12 @@ class JobcardRepositoryImpl implements JobcardRepository {
   }
 
   @override
-  Future<Either<dynamic, void>> approveJobcard(int jobcardId) async {
+  Future<Either<dynamic, void>> approveJobcard(
+    int jobcardId, {
+    String? comment,
+  }) async {
     try {
-      await remote.approveJobcard(jobcardId);
+      await remote.approveJobcard(jobcardId, comment: comment);
       return Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));

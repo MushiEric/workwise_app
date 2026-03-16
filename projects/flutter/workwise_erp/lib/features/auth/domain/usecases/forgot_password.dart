@@ -13,7 +13,9 @@ class ForgotPassword {
   final AuthRepository repository;
   ForgotPassword(this.repository);
 
-  Future<Either<Failure, void>> call(ForgotPasswordParams params) async {
+  /// Returns the backend message (e.g. "Password reset initiated..."), or a
+  /// generic success message if none is returned.
+  Future<Either<Failure, String>> call(ForgotPasswordParams params) async {
     return repository.forgotPassword(emailOrPhone: params.emailOrPhone);
   }
 }

@@ -43,12 +43,9 @@ class EnvConfig {
   /// for developers to point the app at a different endpoint without modifying
   /// the production configuration or adding extra files.
   static final AppEnvironment currentEnv = _envFromString(
-    const String.fromEnvironment(
+    String.fromEnvironment(
       'RUNTIME_ENV',
-      defaultValue: const String.fromEnvironment(
-        'APP_ENV',
-        defaultValue: 'staging',
-      ),
+      defaultValue: String.fromEnvironment('APP_ENV', defaultValue: 'staging'),
     ),
   );
 
@@ -75,14 +72,22 @@ class EnvConfig {
   /// Parse a string into an [AppEnvironment] (public wrapper for tests/usage).
   static AppEnvironment parseEnv(String s) => _envFromString(s);
 
+  // For local/dev testing we allow overriding the host at build-time with
+  // `--dart-define=DEV_API_HOST=192.168.0.10` (or similar). The default is
+  // the Android emulator localhost alias (10.0.2.2).
+  static final String _devApiHost = String.fromEnvironment(
+    'DEV_API_HOST',
+    defaultValue: '10.0.2.2',
+  );
+
   static EnvConfig get current {
     final activeEnv = _runtimeOverride ?? currentEnv;
 
     switch (activeEnv) {
       case AppEnvironment.dev:
-        return const EnvConfig._(
+        return EnvConfig._(
           env: AppEnvironment.dev,
-          baseUrl: 'http://10.26.154.239:8000/api',
+          baseUrl: 'http://$_devApiHost:8000/api',
           connectTimeout: Duration(seconds: 15),
           receiveTimeout: Duration(seconds: 15),
           sendTimeout: Duration(seconds: 15),
@@ -94,7 +99,7 @@ class EnvConfig {
       case AppEnvironment.prod:
         return const EnvConfig._(
           env: AppEnvironment.prod,
-          baseUrl: 'https://getcore.workwise.africa/api',
+          baseUrl: 'https://app.workwise.africa/api',
           connectTimeout: Duration(seconds: 30),
           receiveTimeout: Duration(seconds: 30),
           sendTimeout: Duration(seconds: 30),

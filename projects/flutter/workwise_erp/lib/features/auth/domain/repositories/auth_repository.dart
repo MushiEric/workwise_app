@@ -7,10 +7,17 @@ abstract class AuthRepository {
   Future<Either<Failure, User>> fetchCurrentUser();
 
   /// Login with email/password and return Either<Failure, User>
-  Future<Either<Failure, User>> login({required String email, required String password});
+  Future<Either<Failure, User>> login({
+    required String email,
+    required String password,
+  });
 
   /// Request password reset (accepts email or phone). Sends OTP to email/SMS.
-  Future<Either<Failure, void>> forgotPassword({required String emailOrPhone});
+  ///
+  /// Returns the backend message after requesting a reset (e.g. "Password reset initiated...").
+  Future<Either<Failure, String>> forgotPassword({
+    required String emailOrPhone,
+  });
 
   /// Update user profile
   Future<Either<Failure, User>> updateProfile(Map<String, dynamic> payload);
@@ -19,9 +26,15 @@ abstract class AuthRepository {
   Future<Either<Failure, void>> logout();
 
   /// Verify OTP sent for forgot-password flow
-  Future<Either<Failure, void>> verifyForgotPasswordOtp({required String emailOrPhone, required String otp});
+  Future<Either<Failure, void>> verifyForgotPasswordOtp({
+    required String emailOrPhone,
+    required String otp,
+  });
 
   /// Change password using OTP (forgot-password flow)
-  Future<Either<Failure, void>> changePasswordUsingOtp({required String emailOrPhone, required String otp, required String newPassword});
+  Future<Either<Failure, void>> changePasswordUsingOtp({
+    required String emailOrPhone,
+    required String otp,
+    required String newPassword,
+  });
 }
-

@@ -9,7 +9,7 @@ class AppLocalizationsSw extends AppLocalizations {
   AppLocalizationsSw([String locale = 'sw']) : super(locale);
 
   @override
-  String get appName => 'Moduli';
+  String get appName => 'Workwise';
 
   @override
   String get goodMorning => 'Habari za asubuhi';
@@ -60,6 +60,9 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get passwordRequired => 'Nywila inahitajika';
+
+  @override
+  String get passwordHint => 'Ingiza Nywila yako';
 
   @override
   String get forgotPassword => 'Umesahau Nywila?';
@@ -292,6 +295,9 @@ class AppLocalizationsSw extends AppLocalizations {
       'Je, una uhakika unataka kutoka kwenye akaunti yako?';
 
   @override
+  String get shareApp => 'Shiriki Workwise';
+
+  @override
   String get changePassword => 'Badilisha Nenosiri';
 
   @override
@@ -327,4 +333,84 @@ class AppLocalizationsSw extends AppLocalizations {
 
   @override
   String get removeSelectedPhoto => 'Ondoa Picha Iliyochaguliwa';
+
+  @override
+  String get searchModulesHint => 'Tafuta moduli...';
+
+  @override
+  String get apps => 'Programu';
+
+  @override
+  String get noModulesFound => 'Hakuna moduli iliyopatikana';
+
+  @override
+  String get tryAdjustingSearch => 'Jaribu kurekebisha utafutaji wako';
+
+  @override
+  String get clearSearch => 'Futa utafutaji';
+
+  @override
+  String manageModule(String module) {
+    return 'Simamia $module';
+  }
+
+  @override
+  String get notifications => 'Taarifa';
+
+  @override
+  String get markAllRead => 'Weka alama zote kama zilizosomwa';
+
+  @override
+  String get failedToLoad => 'Imeshindwa kupakia';
+
+  @override
+  String get retry => 'Jaribu tena';
+
+  @override
+  String get noNotificationsToShow => 'Hakuna arifa za kuonyesha.';
+
+  @override
+  String get delete => 'Futa';
+
+  @override
+  String get viewDetails => 'Tazama maelezo';
+
+  @override
+  String get justNow => 'Sasa hivi';
+
+  @override
+  String minutesAgo(int count) {
+    return 'dakika $count zilizopita';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return 'masaa $count yaliyopita';
+  }
+
+  @override
+  String get yesterday => 'Jana';
+
+  @override
+  String daysAgo(int count) {
+    return 'siku $count zilizopita';
+  }
+
+  @override
+  String get timeJustNow => 'sasa';
+
+  @override
+  String timeMinutes(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String timeHours(int count) {
+    return '${count}s';
+  }
+
+  @override
+  String timeDays(int count) {
+    return 'siku $count';
+  }
 }

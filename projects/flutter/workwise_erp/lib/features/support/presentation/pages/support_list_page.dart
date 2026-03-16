@@ -104,17 +104,50 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
     try {
       final getStatuses = ref.read(getSupportStatusesUseCaseProvider);
       final res = await getStatuses.call();
-      res.fold((_) => null, (list) {
-        final newController = TabController(length: list.length, vsync: this);
-        newController.addListener(_handleTabSelection);
-        setState(() {
-          availableStatuses = list;
-          final old = _tabController;
-          _tabController = newController;
-          old.dispose();
-        });
+      res.fold(
+        (_) {
+          // Even if we fail to load statuses, still show an "All" tab so the UI
+          // doesn't disappear in debug mode or during backend outages.
+          final newController = TabController(length: 1, vsync: this);
+          newController.addListener(_handleTabSelection);
+          setState(() {
+            availableStatuses = const [SupportStatus(id: -1, status: 'All')];
+            final old = _tabController;
+            _tabController = newController;
+            old.dispose();
+          });
+        },
+        (list) {
+          // Add an "All" tab at the beginning so users can see all tickets.
+          final allStatuses = <SupportStatus>[
+            const SupportStatus(id: -1, status: 'All'),
+          ];
+          allStatuses.addAll(list);
+
+          final newController = TabController(
+            length: allStatuses.length,
+            vsync: this,
+          );
+          newController.addListener(_handleTabSelection);
+          setState(() {
+            availableStatuses = allStatuses;
+            final old = _tabController;
+            _tabController = newController;
+            old.dispose();
+          });
+        },
+      );
+    } catch (_) {
+      // If fetching fails entirely (network, parsing, etc), still show the "All" tab.
+      final newController = TabController(length: 1, vsync: this);
+      newController.addListener(_handleTabSelection);
+      setState(() {
+        availableStatuses = const [SupportStatus(id: -1, status: 'All')];
+        final old = _tabController;
+        _tabController = newController;
+        old.dispose();
       });
-    } catch (_) {}
+    }
   }
 
   /// load lists needed for dropdown filters
@@ -275,71 +308,88 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
         body: Column(
           children: [
             // Search Bar (when active)
-            if (_isSearching)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 70.h,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search tickets...',
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
-                          fontSize: 14.sp,
-                        ),
-                        prefixIcon: Icon(
-                          LucideIcons.search,
-                          color: isDark ? Colors.white54 : AppColors.primary,
-                          size: 18.r,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            LucideIcons.x,
-                            color: isDark ? Colors.white54 : AppColors.primary,
-                            size: 18.r,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _isSearching = false;
-                            });
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
-                        ),
-                      ),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1A2634),
-                        fontSize: 14.sp,
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOut,
                 ),
+                axisAlignment: -1,
+                child: FadeTransition(opacity: animation, child: child),
               ),
+              child: _isSearching
+                  ? Padding(
+                      key: const ValueKey('search-visible'),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Search tickets...',
+                            hintStyle: TextStyle(
+                              color: isDark
+                                  ? Colors.white38
+                                  : Colors.grey.shade500,
+                              fontSize: 14.sp,
+                            ),
+                            prefixIcon: Icon(
+                              LucideIcons.search,
+                              color: isDark
+                                  ? Colors.white54
+                                  : AppColors.primary,
+                              size: 18.r,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                LucideIcons.x,
+                                color: isDark
+                                    ? Colors.white54
+                                    : AppColors.primary,
+                                size: 18.r,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _isSearching = false;
+                                });
+                              },
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 12.h,
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
+                            fontSize: 14.sp,
+                          ),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('search-hidden')),
+            ),
 
             // Stats Header
             DashboardStatsRow(
@@ -390,7 +440,7 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
 
             // Tab Bar
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 16.w),
+              margin: EdgeInsets.symmetric(horizontal: 8.w),
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withOpacity(0.05)
@@ -641,10 +691,13 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       if (idx >= 0 && idx < availableStatuses.length) {
         final selectedStatusTab =
             availableStatuses[idx].status?.toLowerCase() ?? '';
-        filteredTickets = filteredTickets.where((t) {
-          final ticketStatus = t.status?.status?.toLowerCase() ?? '';
-          return ticketStatus == selectedStatusTab;
-        }).toList();
+        // The first tab is "All" which should disable filtering.
+        if (selectedStatusTab != 'all') {
+          filteredTickets = filteredTickets.where((t) {
+            final ticketStatus = t.status?.status?.toLowerCase() ?? '';
+            return ticketStatus == selectedStatusTab;
+          }).toList();
+        }
       }
     }
 
@@ -1070,53 +1123,53 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
       ),
       color: isDark ? const Color(0xFF151A2E) : Colors.white,
       child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 14.h,
-                width: 120.w,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white12 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 14.h,
+              width: 120.w,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8),
               ),
-              SizedBox(height: 8.h),
-              Container(
-                height: 12.h,
-                width: 180.w,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white12 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            ),
+            SizedBox(height: 8.h),
+            Container(
+              height: 12.h,
+              width: 180.w,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8),
               ),
-              SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Container(
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Container(
+                  height: 10.h,
+                  width: 80.w,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white12 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Container(
                     height: 10.h,
-                    width: 80.w,
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white12 : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Container(
-                      height: 10.h,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white12 : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
     );
   }
 

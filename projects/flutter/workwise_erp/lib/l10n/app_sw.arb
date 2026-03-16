@@ -1,7 +1,7 @@
 {
   "@@locale": "sw",
 
-  "appName": "Moduli",
+  "appName": "Workwise",
   "goodMorning": "Habari za asubuhi",
   "goodAfternoon": "Habari za mchana",
   "goodEvening": "Habari za jioni",
@@ -24,6 +24,7 @@
   "emailRequired": "Barua pepe inahitajika",
   "password": "Nywila",
   "passwordRequired": "Nywila inahitajika",
+  "passwordHint": "Ingiza Nywila yako",
   "forgotPassword": "Umesahau Nywila?",
   "signIn": "Ingia",
   "signingIn": "Ingia...",
@@ -111,6 +112,7 @@
   "switchButton": "Badilisha",
   "signOut": "Toka",
   "signOutMessage": "Je, una uhakika unataka kutoka kwenye akaunti yako?",
+  "shareApp": "Shiriki Workwise",
   "changePassword": "Badilisha Nenosiri",
   "changePasswordSubtitle": "Sasisha nenosiri lako mara kwa mara",
   "confirmNewPassword": "Thibitisha Nenosiri Jipya",
@@ -122,5 +124,64 @@
   "choosePhotoFromDevice": "Chagua picha kutoka kwa kifaa chako",
   "chooseFromGallery": "Chagua kutoka Galari",
   "pickImageFromPhotos": "Chagua picha kutoka kwa picha zako",
-  "removeSelectedPhoto": "Ondoa Picha Iliyochaguliwa"
+  "removeSelectedPhoto": "Ondoa Picha Iliyochaguliwa",
+
+  "searchModulesHint": "Tafuta moduli...",
+  "apps": "Programu",
+  "noModulesFound": "Hakuna moduli iliyopatikana",
+  "tryAdjustingSearch": "Jaribu kurekebisha utafutaji wako",
+  "clearSearch": "Futa utafutaji",
+  "manageModule": "Simamia {module}",
+  "@manageModule": {
+    "placeholders": {
+      "module": { "type": "String" }
+    }
+  },
+
+  "notifications": "Taarifa",
+  "markAllRead": "Weka alama zote kama zilizosomwa",
+  "failedToLoad": "Imeshindwa kupakia",
+  "retry": "Jaribu tena",
+  "noNotificationsToShow": "Hakuna arifa za kuonyesha.",
+  "delete": "Futa",
+  "viewDetails": "Tazama maelezo",
+  "justNow": "Sasa hivi",
+  "minutesAgo": "dakika {count} zilizopita",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "hoursAgo": "masaa {count} yaliyopita",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "yesterday": "Jana",
+  "daysAgo": "siku {count} zilizopita",
+  "@daysAgo": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeJustNow": "sasa",
+  "timeMinutes": "{count}d",
+  "@timeMinutes": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeHours": "{count}s",
+  "@timeHours": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeDays": "siku {count}",
+  "@timeDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

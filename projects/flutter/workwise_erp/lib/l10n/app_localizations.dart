@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
 import 'app_localizations_sw.dart';
 
 // ignore_for_file: type=lint
@@ -97,6 +98,7 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('fr'),
+    Locale('hi'),
     Locale('sw'),
   ];
 
@@ -201,6 +203,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password is required'**
   String get passwordRequired;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get passwordHint;
 
   /// No description provided for @forgotPassword.
   ///
@@ -634,6 +642,12 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to sign out of your account?'**
   String get signOutMessage;
 
+  /// No description provided for @shareApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Workwise'**
+  String get shareApp;
+
   /// No description provided for @changePassword.
   ///
   /// In en, this message translates to:
@@ -705,6 +719,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove Selected Photo'**
   String get removeSelectedPhoto;
+
+  /// No description provided for @searchModulesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search modules...'**
+  String get searchModulesHint;
+
+  /// No description provided for @apps.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get apps;
+
+  /// No description provided for @noModulesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No modules found'**
+  String get noModulesFound;
+
+  /// No description provided for @tryAdjustingSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your search'**
+  String get tryAdjustingSearch;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
+
+  /// No description provided for @manageModule.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage {module}'**
+  String manageModule(String module);
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @markAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get markAllRead;
+
+  /// No description provided for @failedToLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get failedToLoad;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @noNotificationsToShow.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications to show.'**
+  String get noNotificationsToShow;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String minutesAgo(int count);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String hoursAgo(int count);
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String daysAgo(int count);
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String timeMinutes(int count);
+
+  /// No description provided for @timeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String timeHours(int count);
+
+  /// No description provided for @timeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String timeDays(int count);
 }
 
 class _AppLocalizationsDelegate
@@ -718,7 +864,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'fr', 'sw'].contains(locale.languageCode);
+      <String>['en', 'fr', 'hi', 'sw'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -731,6 +877,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'fr':
       return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
     case 'sw':
       return AppLocalizationsSw();
   }

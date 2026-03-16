@@ -5,7 +5,7 @@ class ApproveJobcard {
   final JobcardRepository repository;
   ApproveJobcard(this.repository);
 
-  Future<Either<dynamic, void>> call(int jobcardId) {
-    return repository.approveJobcard(jobcardId);
+  Future<Either<dynamic, void>> call(int jobcardId, {String? comment}) {
+    return repository.approveJobcard(jobcardId, comment: comment);
   }
 }

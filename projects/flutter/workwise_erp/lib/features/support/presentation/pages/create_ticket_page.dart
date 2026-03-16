@@ -687,9 +687,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     final primary = AppColors.primary;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0A0E21)
-          : AppColors.white,
+      backgroundColor: isDark ? const Color(0xFF0A0E21) : AppColors.white,
       appBar: CustomAppBar(
         title: _editId != null ? 'Edit Ticket' : 'Create Ticket',
       ),
@@ -714,10 +712,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               // ── Customer ─────────────────────────────────────────────
               AppSmartDropdown<int>(
                 value: _selectedCustomerId,
-                items: _customers
-                    .map((c) => c.id)
-                    .whereType<int>()
-                    .toList(),
+                items: _customers.map((c) => c.id).whereType<int>().toList(),
                 itemBuilder: (id) {
                   final c = _customers.firstWhere(
                     (c) => c.id == id,
@@ -728,7 +723,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Customer',
                 hintText: 'Select customer',
                 enabled: _customers.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) {
                   setState(() {
@@ -766,7 +761,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Priority',
                 hintText: 'Select priority',
                 enabled: _priorities.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedPriorityId = id),
               ),
@@ -780,15 +775,14 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 itemBuilder: (id) {
                   final c = _categories.firstWhere(
                     (c) => c.id == id,
-                    orElse: () =>
-                        SupportCategory(id: id, name: 'Category $id'),
+                    orElse: () => SupportCategory(id: id, name: 'Category $id'),
                   );
                   return c.name ?? 'Category $id';
                 },
                 label: 'Category',
                 hintText: 'Select category',
                 enabled: _categories.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedCategoryId = id),
               ),
@@ -809,7 +803,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Service',
                 hintText: 'Select service',
                 enabled: _services.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedServiceId = id),
               ),
@@ -823,14 +817,15 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 itemBuilder: (id) {
                   final d = _departments.firstWhere(
                     (d) => d.id == id,
-                    orElse: () => SupportDepartment(id: id, name: 'Department $id'),
+                    orElse: () =>
+                        SupportDepartment(id: id, name: 'Department $id'),
                   );
                   return d.name ?? 'Department $id';
                 },
                 label: 'Department',
                 hintText: 'Select department',
                 enabled: _departments.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedDepartmentId = id),
               ),
@@ -851,7 +846,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Status',
                 hintText: 'Select status',
                 enabled: _statuses.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedStatusId = id),
               ),
@@ -877,15 +872,16 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 itemBuilder: (id) {
                   final s = _supervisors.firstWhere(
                     (s) => s.user?.id == id,
-                    orElse: () =>
-                        SupportSupervisor(user: AssignedUser(id: id, name: 'Supervisor $id')),
+                    orElse: () => SupportSupervisor(
+                      user: AssignedUser(id: id, name: 'Supervisor $id'),
+                    ),
                   );
                   return s.user?.name ?? 'Supervisor $id';
                 },
                 label: 'Supervisor',
                 hintText: 'Select supervisor',
                 enabled: _supervisors.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedSupervisorId = id),
               ),
@@ -906,7 +902,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Location',
                 hintText: 'Select location',
                 enabled: _locations.isNotEmpty,
-
+                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedLocationId = id),
               ),

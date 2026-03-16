@@ -1,11 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../../../core/themes/app_icons.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import 'package:workwise_erp/core/widgets/drawer_filter.dart';
+import 'package:workwise_erp/core/utils/scroll_aware_fab.dart';
+import 'package:workwise_erp/core/widgets/shimmer.dart';
+import 'package:workwise_erp/core/services/tutorial_service.dart';
 import '../notifier/jobcard_notifier.dart';
 import '../providers/jobcard_providers.dart';
 import '../widgets/jobcard_tile.dart';
@@ -13,7 +18,9 @@ import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
+import '../../../../core/widgets/google_nav_bar.dart';
 import '../../domain/entities/jobcard.dart';
+import '../../domain/entities/jobcard_status.dart';
 
 class JobcardListPage extends ConsumerStatefulWidget {
   const JobcardListPage({super.key});
@@ -22,21 +29,199 @@ class JobcardListPage extends ConsumerStatefulWidget {
   ConsumerState<JobcardListPage> createState() => _JobcardListPageState();
 }
 
-class _JobcardListPageState extends ConsumerState<JobcardListPage> {
+class _JobcardListPageState extends ConsumerState<JobcardListPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  List<JobcardStatus> _availableStatuses = [];
+
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isSearching = false;
   bool _showStats = true;
+  int _bottomNavIndex = 0;
   DrawerFilterValue? _activeFilter;
+
+  // Coach mark targets
+  final _jobcardTileKey = GlobalKey();
+  final _filterButtonKey = GlobalKey();
+
+  // Tutorial retry state (keys may not be available immediately on first build)
+  bool _jobcardTutorialShown = false;
+  int _jobcardTutorialRetryCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 1, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(jobcardNotifierProvider.notifier).loadJobcards();
+      _loadStatuses();
+      _maybeShowJobcardTutorial();
     });
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _maybeShowJobcardTutorial() async {
+    final seen = await TutorialService.hasSeenJobcardTutorial();
+    if (seen) return;
+
+    // Wait a tick so the UI is fully laid out.
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    _attemptShowJobcardTutorial();
+  }
+
+  void _attemptShowJobcardTutorial() {
+    if (!mounted || _jobcardTutorialShown) return;
+
+    final targets = <TargetFocus>[];
+
+    if (_jobcardTileKey.currentContext != null) {
+      targets.add(
+        TargetFocus(
+          identify: 'jobcard-tile',
+          keyTarget: _jobcardTileKey,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Jobcard Actions',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Swipe left to reject or swipe right to approve a jobcard.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_filterButtonKey.currentContext != null) {
+      targets.add(
+        TargetFocus(
+          identify: 'jobcard-filter',
+          keyTarget: _filterButtonKey,
+          contents: [
+            TargetContent(
+              align: ContentAlign.left,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Jobcard Settings',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Use the filter button to change which jobcards you see (status, assignee, etc.).',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (targets.isEmpty) {
+      if (_jobcardTutorialRetryCount < 10) {
+        _jobcardTutorialRetryCount += 1;
+        Future<void>.delayed(const Duration(milliseconds: 250), _attemptShowJobcardTutorial);
+      } else {
+        TutorialService.markJobcardTutorialSeen();
+      }
+      return;
+    }
+
+    _jobcardTutorialShown = true;
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black.withOpacity(0.75),
+      textSkip: 'Skip',
+      onFinish: () => TutorialService.markJobcardTutorialSeen(),
+      onSkip: () {
+        TutorialService.markJobcardTutorialSeen();
+        return true;
+      },
+      onClickTarget: (target) {},
+    ).show(context: context);
+  }
+
+  Future<void> _loadStatuses() async {
+    try {
+      final uc = ref.read(getJobcardSettingsUseCaseProvider);
+      final res = await uc.call();
+      res.fold(
+        (_) {
+          // Ensure we always show at least the "All" tab.
+          final newController = TabController(length: 1, vsync: this);
+          newController.addListener(_handleTabSelection);
+          setState(() {
+            _availableStatuses = const [
+              JobcardStatus(id: -1, name: 'All', color: null),
+            ];
+            final old = _tabController;
+            _tabController = newController;
+            old.dispose();
+          });
+        },
+        (list) {
+          final all = <JobcardStatus>[
+            const JobcardStatus(id: -1, name: 'All', color: null),
+            ...list,
+          ];
+          final newController = TabController(length: all.length, vsync: this);
+          newController.addListener(_handleTabSelection);
+          setState(() {
+            _availableStatuses = all;
+            final old = _tabController;
+            _tabController = newController;
+            old.dispose();
+          });
+        },
+      );
+    } catch (_) {
+      final newController = TabController(length: 1, vsync: this);
+      newController.addListener(_handleTabSelection);
+      setState(() {
+        _availableStatuses = const [
+          JobcardStatus(id: -1, name: 'All', color: null),
+        ];
+        final old = _tabController;
+        _tabController = newController;
+        old.dispose();
+      });
+    }
   }
 
   void _onScroll() {
@@ -50,6 +235,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -63,188 +249,233 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: isDark
-            ? const Color(0xFF0A0E21)
-            : const Color(0xFFF8F9FC),
-        endDrawer: DrawerFilter(
-          users: ref.watch(jobcardUsersProvider).valueOrNull ?? [],
-          statuses: (ref.watch(jobcardStatusesProvider).valueOrNull ?? [])
-              .map(
-                (s) => {
-                  'id': s.id?.toString() ?? '',
-                  'name': s.name ?? '',
-                  'color': s.color ?? '',
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          snackBarTheme: const SnackBarThemeData(
+            behavior: SnackBarBehavior.fixed,
+          ),
+        ),
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: isDark
+              ? const Color(0xFF0A0E21)
+              : const Color(0xFFF8F9FC),
+          endDrawer: DrawerFilter(
+            users: ref.watch(jobcardUsersProvider).valueOrNull ?? [],
+            statuses: (ref.watch(jobcardStatusesProvider).valueOrNull ?? [])
+                .map(
+                  (s) => {
+                    'id': s.id?.toString() ?? '',
+                    'name': s.name ?? '',
+                    'color': s.color ?? '',
+                  },
+                )
+                .toList(),
+            initialValue: _activeFilter,
+            onApply: (value) => setState(() => _activeFilter = value),
+            onReset: () => setState(() => _activeFilter = null),
+          ),
+          appBar: CustomAppBar(
+            title: 'Jobcards',
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _isSearching ? AppIcons.x : AppIcons.search,
+                  size: 20.r,
+                ),
+                color: AppColors.white,
+                onPressed: () {
+                  setState(() {
+                    if (_isSearching) _searchController.clear();
+                    _isSearching = !_isSearching;
+                  });
                 },
-              )
-              .toList(),
-          initialValue: _activeFilter,
-          onApply: (value) => setState(() => _activeFilter = value),
-          onReset: () => setState(() => _activeFilter = null),
-        ),
-        appBar: CustomAppBar(
-          title: 'Jobcards',
-          actions: [
-            IconButton(
-              icon: Icon(
-                _isSearching ? AppIcons.x : AppIcons.search,
-                size: 20.r,
               ),
-              color: AppColors.white,
-              onPressed: () {
-                setState(() {
-                  if (_isSearching) _searchController.clear();
-                  _isSearching = !_isSearching;
-                });
-              },
-            ),
-            IconButton(
-              icon: Icon(
-                _showStats ? AppIcons.eye : AppIcons.eyeOff,
-                size: 20.r,
-              ),
-              color: AppColors.white,
-              onPressed: () => setState(() => _showStats = !_showStats),
-              tooltip: _showStats ? 'Hide stats' : 'Show stats',
-            ),
-            Row(
-              children: [
-                SizedBox(width: 4.w),
-                IconButton(
-                  icon: Icon(AppIcons.filter, size: 20.r),
-                  color: _activeFilter != null && !_activeFilter!.isEmpty
-                      ? Colors.yellow
-                      : AppColors.white,
-                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+              IconButton(
+                icon: Icon(
+                  _showStats ? AppIcons.eye : AppIcons.eyeOff,
+                  size: 20.r,
                 ),
-              ],
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // ── Search Bar ──
-            if (_isSearching)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 70.h,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
+                color: AppColors.white,
+                onPressed: () => setState(() => _showStats = !_showStats),
+                tooltip: _showStats ? 'Hide stats' : 'Show stats',
+              ),
+              Row(
+                children: [
+                  SizedBox(width: 4.w),
+                  IconButton(
+                    key: _filterButtonKey,
+                    icon: Icon(AppIcons.filter, size: 20.r),
+                    color: _activeFilter != null && !_activeFilter!.isEmpty
+                        ? Colors.yellow
+                        : AppColors.white,
+                    onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
                   ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Search jobcards...',
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
-                          fontSize: 14.sp,
-                        ),
-                        prefixIcon: Icon(
-                          AppIcons.search,
-                          color: isDark ? Colors.white54 : AppColors.primary,
-                          size: 18.r,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            AppIcons.x,
-                            color: isDark ? Colors.white54 : AppColors.primary,
-                            size: 18.r,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _isSearching = false;
-                            });
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                ],
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              // ── Search Bar ──
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (child, animation) => SizeTransition(
+                  sizeFactor: animation,
+                  axisAlignment: -1,
+                  child: FadeTransition(opacity: animation, child: child),
+                ),
+                child: _isSearching
+                    ? Padding(
+                        key: const ValueKey('search-visible'),
+                        padding: EdgeInsets.symmetric(
                           horizontal: 16.w,
-                          vertical: 12.h,
+                          vertical: 8.h,
                         ),
-                      ),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1A2634),
-                        fontSize: 14.sp,
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Search jobcards...',
+                              hintStyle: TextStyle(
+                                color: isDark
+                                    ? Colors.white38
+                                    : Colors.grey.shade500,
+                                fontSize: 14.sp,
+                              ),
+                              prefixIcon: Icon(
+                                AppIcons.search,
+                                color: isDark
+                                    ? Colors.white54
+                                    : AppColors.primary,
+                                size: 18.r,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  AppIcons.x,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : AppColors.primary,
+                                  size: 18.r,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _isSearching = false;
+                                  });
+                                },
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16.w,
+                                vertical: 12.h,
+                              ),
+                            ),
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
+                              fontSize: 14.sp,
+                            ),
+                            onChanged: (value) => setState(() {}),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('search-hidden')),
+              ),
+
+              // ── Stats Header ──
+              DashboardStatsRow(
+                visible: _showStats,
+                cards: _buildStatusCards(state, isDark),
+              ),
+              SizedBox(height: 16.h),
+
+              // ── Status Tabs ──
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 8.w),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
+                child: _availableStatuses.isNotEmpty
+                    ? TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        tabs: _availableStatuses
+                            .map((s) => Tab(text: s.name ?? 'Unknown'))
+                            .toList(),
+                        labelColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        unselectedLabelStyle: TextStyle(fontSize: 13.sp),
+                        unselectedLabelColor: isDark
+                            ? Colors.white54
+                            : Colors.grey.shade600,
+                        indicator: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.r),
+                          color: AppColors.primary.withOpacity(0.15),
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        splashFactory: NoSplash.splashFactory,
+                      )
+                    : const SizedBox.shrink(),
               ),
+              SizedBox(height: 12.h),
 
-            // ── Stats Header ──
-            DashboardStatsRow(
-              visible: _showStats,
-              cards: _buildStatusCards(state, isDark),
+              // ── Main Content ──
+              Expanded(child: _buildBody(state, isDark)),
+            ],
+          ),
+          floatingActionButton: ScrollAwareFab(
+            controller: _scrollController,
+            onPressed: () =>
+                Navigator.of(context).pushNamed('/jobcards/create'),
+            icon: Icon(AppIcons.addRounded, size: 20.r),
+            label: 'New Jobcard',
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.r),
             ),
-            SizedBox(height: 16.h),
-
-            // ── Main Content ──
-            Expanded(child: _buildBody(state, isDark)),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => Navigator.of(context).pushNamed('/jobcards/create'),
-          icon: Icon(AppIcons.addRounded, size: 20.r),
-          label: Text('New Jobcard', style: TextStyle(fontSize: 14.sp)),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
           ),
-        ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF151A2E) : Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 12,
-                offset: const Offset(0, -3),
-              ),
-            ],
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            currentIndex: 0,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: isDark ? Colors.white60 : Colors.grey.shade600,
-            showUnselectedLabels: false,
-            selectedFontSize: 12,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(AppIcons.file), label: 'List'),
-              BottomNavigationBarItem(
-                icon: Icon(AppIcons.settings),
-                label: 'Settings',
-              ),
-            ],
-            onTap: (idx) {
+          bottomNavigationBar: AppGoogleNavBar(
+            selectedIndex: _bottomNavIndex,
+            onTabChange: (idx) {
+              setState(() => _bottomNavIndex = idx);
               if (idx == 1) {
                 Navigator.pushReplacementNamed(context, '/jobcards/settings');
               }
             },
+            items: const [
+              AppGoogleNavBarItem(label: 'Jorbcards', icon: AppIcons.file),
+              AppGoogleNavBarItem(label: 'Settings', icon: AppIcons.settings),
+            ],
+            backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+            activeTabBackgroundColor: isDark
+                ? Colors.white12
+                : AppColors.primary.withOpacity(0.15),
+            activeColor: AppColors.primary,
+            color: isDark ? Colors.white60 : Colors.grey.shade600,
           ),
         ),
       ),
@@ -281,7 +512,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
         if (totalCount == 0) {
           for (final item in items) {
             final t = item['total'];
-            totalCount += (t is num ? t.toInt() : int.tryParse(t?.toString() ?? '') ?? 0);
+            totalCount += (t is num
+                ? t.toInt()
+                : int.tryParse(t?.toString() ?? '') ?? 0);
           }
         }
 
@@ -323,11 +556,6 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     } catch (_) {
       return AppColors.primary;
     }
-  }
-
-  int _getJobcardCount(JobcardState state) {
-    if (state.loading || state.error != null) return 0;
-    return state.items.length;
   }
 
   Widget _buildBody(JobcardState state, bool isDark) {
@@ -400,6 +628,22 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             return (j.jobcardNumber?.toLowerCase().contains(q) ?? false) ||
                 (j.service?.toLowerCase().contains(q) ?? false);
           }).toList();
+
+    // ── Status tab filter (always applied) ──
+    if (_availableStatuses.isNotEmpty) {
+      final idx = _tabController.index;
+      if (idx >= 0 && idx < _availableStatuses.length) {
+        final selected = (_availableStatuses[idx].name ?? '').toLowerCase();
+        if (selected != 'all') {
+          filteredJobcards = filteredJobcards.where((j) {
+            final statusName =
+                (j.statusRow?['name']?.toString() ?? j.status?.toString() ?? '')
+                    .toLowerCase();
+            return statusName == selected;
+          }).toList();
+        }
+      }
+    }
 
     // Apply drawer filter
     if (_activeFilter != null && !_activeFilter!.isEmpty) {
@@ -523,10 +767,23 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
 
   Widget _buildJobcardList(JobcardState state, List<Jobcard> filteredJobcards) {
     final config = ref.watch(jobcardConfigProvider).valueOrNull ?? {};
-    final showApproveReject = _parseBoolConfig(
-      config['show_approval_reject_or_completion'],
-    );
+
+    // Some backend responses contain typos in the keys (e.g. "show_aproval_reject_or_complition").
+    // For backwards compatibility, check both the correct and misspelled keys.
+    final rawShowApproval =
+        config['show_approval_reject_or_completion'] ??
+        config['show_aproval_reject_or_complition'];
+    final showApproveReject = _parseBoolConfig(rawShowApproval);
     final showReminder = _parseBoolConfig(config['enable_reminder']);
+
+    // Debug: log config state to help diagnose why approval/reject isn't showing.
+    // Remove or disable in production.
+    if (kDebugMode) {
+      debugPrint('Jobcard config keys: ${config.keys.toList()}');
+      debugPrint(
+        'Jobcard config show_approval_reject_or_completion=$rawShowApproval -> showApproveReject=$showApproveReject',
+      );
+    }
 
     final users = ref.watch(jobcardUsersProvider).valueOrNull ?? [];
     final customers = ref.watch(jobcardCustomersProvider).valueOrNull ?? [];
@@ -539,6 +796,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
       itemBuilder: (context, idx) {
         final jobcard = filteredJobcards[idx];
         return JobcardTile(
+          key: idx == 0 ? _jobcardTileKey : null,
           jobcard: jobcard,
           resolvedReceiverName: _resolveReceiverName(
             jobcard,
@@ -552,7 +810,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
             context,
           ).pushNamed('/jobcards/detail', arguments: jobcard.id),
           onDelete: () => _confirmDelete(jobcard),
-          onApprove: (id) => _approveJobcard(id),
+          onApprove: (id, comment) => _approveJobcard(id, comment),
           onReject: (id, reason) => _rejectJobcard(id, reason),
         );
       },
@@ -592,7 +850,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     final relatedTo = (jobcard.relatedTo ?? '').toLowerCase();
-    
+
     // Determine which pool to search in based on relatedTo
     List<Map<String, dynamic>> primaryPool = [];
     if (relatedTo.contains('customer')) {
@@ -639,77 +897,91 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     if (v == null) return false;
     if (v is bool) return v;
     if (v is int) return v != 0;
-    final s = v.toString().trim();
-    return s == '1' || s == 'true';
+
+    final s = v.toString().trim().toLowerCase();
+    if (s.isEmpty) return false;
+
+    const truthy = {'1', 'true', 'yes', 'y', 'on', 'enabled'};
+    const falsy = {'0', 'false', 'no', 'n', 'off', 'disabled'};
+
+    if (truthy.contains(s)) return true;
+    if (falsy.contains(s)) return false;
+
+    // Fallback: numeric check (e.g. '123' considered true)
+    final numValue = int.tryParse(s);
+    if (numValue != null) return numValue != 0;
+
+    return false;
   }
 
   Widget _buildJobcardSkeleton() {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 6.h),
-      padding: EdgeInsets.all(16.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF151A2E)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 16.h,
-            width: 120.w,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(8),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 6.h),
+        padding: EdgeInsets.all(16.h),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF151A2E) : Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          SizedBox(height: 12.h),
-          Container(
-            height: 12.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(8),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 16.h,
+              width: 120.w,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-          ),
-          SizedBox(height: 14.h),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 12.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(8),
+            SizedBox(height: 12.h),
+            Container(
+              height: 12.h,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            SizedBox(height: 14.h),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 12.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Container(
-                  height: 12.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(8),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Container(
+                    height: 12.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _approveJobcard(int id) async {
+  Future<void> _approveJobcard(int id, String? comment) async {
     final checkUc = ref.read(checkApprovalEligibilityUseCaseProvider);
     final approveUc = ref.read(approveJobcardUseCaseProvider);
 
@@ -739,7 +1011,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage> {
     }
 
     showAppLoadingDialog(context, message: 'Approving...');
-    final res = await approveUc.call(id);
+    final res = await approveUc.call(id, comment: comment);
     hideAppLoadingDialog(context);
 
     if (!mounted) return;

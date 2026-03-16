@@ -62,6 +62,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordRequired => 'Password is required';
 
   @override
+  String get passwordHint => 'Enter your password';
+
+  @override
   String get forgotPassword => 'Forgot Password?';
 
   @override
@@ -295,6 +298,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to sign out of your account?';
 
   @override
+  String get shareApp => 'Share Workwise';
+
+  @override
   String get changePassword => 'Change Password';
 
   @override
@@ -330,4 +336,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get removeSelectedPhoto => 'Remove Selected Photo';
+
+  @override
+  String get searchModulesHint => 'Search modules...';
+
+  @override
+  String get apps => 'Apps';
+
+  @override
+  String get noModulesFound => 'No modules found';
+
+  @override
+  String get tryAdjustingSearch => 'Try adjusting your search';
+
+  @override
+  String get clearSearch => 'Clear search';
+
+  @override
+  String manageModule(String module) {
+    return 'Manage $module';
+  }
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get markAllRead => 'Mark all read';
+
+  @override
+  String get failedToLoad => 'Failed to load';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get noNotificationsToShow => 'No notifications to show.';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String daysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String get timeJustNow => 'now';
+
+  @override
+  String timeMinutes(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String timeHours(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String timeDays(int count) {
+    return '${count}d';
+  }
 }

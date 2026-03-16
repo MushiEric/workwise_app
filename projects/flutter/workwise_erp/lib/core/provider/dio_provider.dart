@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../config/environment.dart';
-import '../errors/exceptions.dart';
 import 'tenant_provider.dart';
 import 'token_provider.dart';
 import 'cache_interceptor.dart';
@@ -26,40 +25,51 @@ final dioProvider = Provider<Dio>((ref) {
     }
     // ensure we have a valid uri
     final uri = Uri.tryParse(s);
-    if (uri == null || uri.scheme.isEmpty)
+    if (uri == null || uri.scheme.isEmpty) {
       throw ArgumentError('Invalid baseUrl: $raw');
+    }
     return s;
   }
 
   // environment-aware config (timeouts, retries, logging remain in EnvConfig)
   final env = EnvConfig.current;
 
-  // tenant-aware baseUrl (runtime). Tenant must be set at app bootstrap.
+  // tenant-aware baseUrl (runtime). Historically the app asked users to enter a
+  // workspace subdomain which would determine the backend URL. That behavior is
+  // currently disabled, but the old logic is preserved in commented form below
+  // so it can be re-enabled in the future.
   final tenant = ref.watch(tenantProvider);
-  if (tenant == null) {
-    // When the workspace is being switched the provider tree will re-evaluate
-    // while the tenant is temporarily null. We don't want that to trigger an
-    // uncaught exception during widget rebuilds; instead return a lightweight
-    // Dio instance that will throw on any network call. This mirrors the
-    // previous behaviour but defers the failure until the first request.
-    final stub = Dio();
-    stub.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (opts, handler) {
-          handler.reject(
-            DioException(
-              requestOptions: opts,
-              error: UninitializedTenantException(),
-            ),
-          );
-        },
-      ),
-    );
-    return stub;
-  }
+
+  // --- legacy workspace-based URL logic (currently disabled) ---
+  // if (tenant == null) {
+  //   // When the workspace is being switched the provider tree will re-evaluate
+  //   // while the tenant is temporarily null. We don't want that to trigger an
+  //   // uncaught exception during widget rebuilds; instead return a lightweight
+  //   // Dio instance that will throw on any network call. This mirrors the
+  //   // previous behaviour but defers the failure until the first request.
+  //   final stub = Dio();
+  //   stub.interceptors.add(
+  //     InterceptorsWrapper(
+  //       onRequest: (opts, handler) {
+  //         handler.reject(
+  //           DioException(
+  //             requestOptions: opts,
+  //             error: UninitializedTenantException(),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  //   return stub;
+  // }
+  // -------------------------------------------------------------
+
+  // For now, we use the environment config baseUrl (app.workwise.africa /
+  // staging.workwise.africa / dev IP:8000) and ignore the tenant value.
+  final baseUrl = tenant?.baseUrl ?? env.baseUrl;
 
   final options = BaseOptions(
-    baseUrl: normalizeBaseUrl(tenant.baseUrl),
+    baseUrl: normalizeBaseUrl(baseUrl),
     connectTimeout: env.connectTimeout,
     receiveTimeout: env.receiveTimeout,
     sendTimeout: env.sendTimeout,
@@ -147,8 +157,9 @@ final dioProvider = Provider<Dio>((ref) {
         }
 
         final status = err.response?.statusCode ?? 0;
-        if (status == 429 || (status >= 500 && status < 600))
+        if (status == 429 || (status >= 500 && status < 600)) {
           shouldRetry = true;
+        }
 
         if (shouldRetry && retries < maxRetries) {
           final delayMs =

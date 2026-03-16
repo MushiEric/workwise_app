@@ -69,7 +69,7 @@ class SupportRemoteDataSource {
 
       return models;
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -101,7 +101,7 @@ class SupportRemoteDataSource {
       }
       return results;
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -114,7 +114,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -127,7 +127,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -140,7 +140,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -153,7 +153,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -166,7 +166,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -179,7 +179,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -192,7 +192,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -205,7 +205,7 @@ class SupportRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
       return list.map((e) => Map<String, dynamic>.from(e)).toList();
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -243,7 +243,7 @@ class SupportRemoteDataSource {
           if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -279,7 +279,7 @@ class SupportRemoteDataSource {
           if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -313,7 +313,7 @@ class SupportRemoteDataSource {
           if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -404,7 +404,7 @@ class SupportRemoteDataSource {
           if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
-      throw ServerException(e.message ?? 'Network error');
+      throw ServerException(friendlyDioError(e));
     } catch (e) {
       throw ServerException(e.toString());
     }

@@ -6,6 +6,16 @@ import 'package:workwise_erp/core/errors/exceptions.dart';
 import 'package:workwise_erp/core/errors/exceptions_extended.dart';
 import '../models/user_model.dart';
 
+/// Returns true when [url] is the server's built-in default avatar placeholder
+/// (e.g. "/storage/avatar.png"). That file does not exist on the staging/production
+/// server, so we treat it as "no avatar" and let the UI fall back to initials.
+bool _isDefaultAvatarPlaceholder(String url) {
+  // Match both the bare filename and any full URL ending with the default path.
+  return url == 'avatar.png' ||
+      url.endsWith('/avatar.png') ||
+      url.endsWith('/storage/avatar.png');
+}
+
 class AuthRemoteDataSource {
   final Dio client;
   AuthRemoteDataSource(this.client);
@@ -44,9 +54,18 @@ class AuthRemoteDataSource {
       // /getProfile returns a full avatar URL in the `profile` field.
       // Promote it into `avatar` so the rest of the app can use it without
       // any model changes — imageProviderFromUrl already handles full URLs.
+      // Skip the server's default placeholder (avatar.png) which returns 404.
       final profileUrl = dataMap['profile'];
-      if (profileUrl is String && profileUrl.isNotEmpty) {
+      if (profileUrl is String &&
+          profileUrl.isNotEmpty &&
+          !_isDefaultAvatarPlaceholder(profileUrl)) {
         dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = profileUrl;
+      } else {
+        // Clear the bare filename from `avatar` too so we don't hit the same 404.
+        final avatarVal = dataMap['avatar'];
+        if (avatarVal is String && _isDefaultAvatarPlaceholder(avatarVal)) {
+          dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = null;
+        }
       }
 
       // normalize older backend responses that use `type` (string/number)
@@ -277,16 +296,36 @@ class AuthRemoteDataSource {
   }
 
   /// POST /forgotPassword
-  Future<void> forgotPassword({
+  ///
+  /// Returns the `message` field from the backend response (if available).
+  Future<String> forgotPassword({
     required String emailOrPhone,
     String? redirectUrl,
   }) async {
     try {
       final payload = <String, dynamic>{'email': emailOrPhone};
-      if (redirectUrl != null && redirectUrl.isNotEmpty)
+      if (redirectUrl != null && redirectUrl.isNotEmpty) {
         payload['redirect_url'] = redirectUrl;
-      await client.post('/forgotPassword', data: payload);
-      return;
+      }
+
+      final response = await client.post('/forgotPassword', data: payload);
+
+      // Some backends return a JSON payload with a `status` field even when the
+      // HTTP status code is 200. Treat non-200 `status` codes as errors.
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        final status = data['status'];
+        final message = data['message']?.toString();
+
+        if (status is int && status != 200) {
+          throw ServerException(message ?? 'Server error');
+        }
+
+        // Prefer the returned message, fall back to a reasonable default.
+        return message ?? 'Password reset initiated.';
+      }
+
+      return 'Password reset initiated.';
     } on DioException catch (e) {
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
@@ -316,7 +355,20 @@ class AuthRemoteDataSource {
   }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp};
-      await client.post('/verifyForgotPasswordOtp', data: payload);
+      final response = await client.post('/verifyForgotPasswordOtp', data: payload);
+
+      // Some backends return a JSON payload with a `status` field even when the
+      // HTTP status code is 200. Treat non-200 `status` codes as errors.
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        final status = data['status'];
+        final message = data['message']?.toString();
+
+        if (status is int && status != 200) {
+          throw ServerException(message ?? 'OTP verification failed');
+        }
+      }
+
       return;
     } on DioException catch (e) {
       switch (e.type) {
@@ -348,7 +400,21 @@ class AuthRemoteDataSource {
   }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp, 'password': password};
-      await client.post('/changePasswordUsingOtp', data: payload);
+      final response =
+          await client.post('/changePasswordUsingOtp', data: payload);
+
+      // Some backends return a JSON payload with a `status` field even when the
+      // HTTP status code is 200. Treat non-200 `status` codes as errors.
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        final status = data['status'];
+        final message = data['message']?.toString();
+
+        if (status is int && status != 200) {
+          throw ServerException(message ?? 'Password reset failed');
+        }
+      }
+
       return;
     } on DioException catch (e) {
       switch (e.type) {
@@ -369,6 +435,19 @@ class AuthRemoteDataSource {
       }
     } catch (e) {
       throw ServerException('Unknown error: ${e.toString()}');
+    }
+  }
+
+  /// POST /logout
+  Future<void> logout() async {
+    try {
+      await client.post('/logout');
+    } on DioException catch (e) {
+      // We still want to clear local session even if server call fails.
+      // But propagate an error so the app can log/track it.
+      throw ServerException(e.message ?? 'Logout failed');
+    } catch (e) {
+      throw ServerException('Logout failed: ${e.toString()}');
     }
   }
 
@@ -407,6 +486,23 @@ class AuthRemoteDataSource {
         userMap = Map<String, dynamic>.from(data['data'] as Map);
       } else {
         userMap = Map<String, dynamic>.from(data);
+      }
+
+      // Promote `profile` field (full URL) into `avatar`, mirroring the
+      // fetchCurrentUser behaviour. The backend stores the avatar as a bare
+      // filename in the `avatar` column but exposes the fully-qualified URL
+      // in `profile`.
+      // Skip the server's default placeholder (avatar.png) which returns 404.
+      final profileUrl = userMap['profile'];
+      if (profileUrl is String &&
+          profileUrl.isNotEmpty &&
+          !_isDefaultAvatarPlaceholder(profileUrl)) {
+        userMap['avatar'] = profileUrl;
+      } else {
+        final avatarVal = userMap['avatar'];
+        if (avatarVal is String && _isDefaultAvatarPlaceholder(avatarVal)) {
+          userMap['avatar'] = null;
+        }
       }
 
       // Normalize `type` -> `roles` when backend returns a single `type` field
@@ -467,6 +563,49 @@ class AuthRemoteDataSource {
           e is TimeoutException)
         rethrow;
       throw ServerException('Unknown error');
+    }
+  }
+
+  /// GET /user/getPermission — returns the flat list of permission names for
+  /// the currently authenticated user.
+  ///
+  /// Accepted response shapes:
+  ///   • `[{id, name}, ...]`                — array of objects
+  ///   • `{data: [{id, name}, ...], ...}`   — wrapped in a data key
+  ///   • `{data: ["name1", "name2"], ...}`  — wrapped array of strings
+  ///   • `["name1", "name2"]`               — bare array of strings
+  ///
+  /// Returns an empty list if the request fails so the app degrades gracefully.
+  Future<List<String>> fetchPermissions() async {
+    try {
+      final resp = await client.get('/user/getPermission');
+      final raw = resp.data;
+      List<dynamic>? items;
+
+      if (raw is List) {
+        items = raw;
+      } else if (raw is Map<String, dynamic>) {
+        final payload =
+            raw['data'] ?? raw['permissions'] ?? raw['result'] ?? raw['items'];
+        if (payload is List) items = payload;
+      }
+
+      if (items == null) return [];
+
+      return items
+          .map<String>((e) {
+            if (e is String) return e.trim();
+            if (e is Map)
+              return ((e['name'] ?? e['permission'] ?? '') as Object)
+                  .toString()
+                  .trim();
+            return '';
+          })
+          .where((n) => n.isNotEmpty)
+          .toList();
+    } catch (_) {
+      // Silently degrade — never crash the app because of a missing permission list.
+      return [];
     }
   }
 }

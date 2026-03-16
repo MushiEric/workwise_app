@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:workwise_erp/core/constants/app_constant.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/permission_provider.dart';
@@ -32,39 +35,41 @@ class AppDrawer extends ConsumerWidget {
 
     // Header user info
     final currentUserAsync = ref.watch(currentUserProvider);
+    final authState = ref.watch(authNotifierProvider);
 
+    // Prefer the authenticated user from auth state (ensures immediate update on login/logout).
+    // Fall back to the cached current user response when auth state is not yet populated.
     String headerName = 'Guest User';
     String headerEmail = 'guest@example.com';
     String? headerAvatar;
 
-    currentUserAsync.maybeWhen(
-      data: (either) {
-        either.fold((_) => null, (u) {
-          headerName = u.name ?? headerName;
-          headerEmail = u.email ?? headerEmail;
-          headerAvatar = (u.avatar != null && u.avatar!.isNotEmpty)
-              ? u.avatar
-              : headerAvatar;
-        });
+    bool hasAuthUser = false;
+    authState.maybeWhen(
+      authenticated: (u) {
+        hasAuthUser = true;
+        headerName = u.name ?? headerName;
+        headerEmail = u.email ?? headerEmail;
+        headerAvatar = (u.avatar != null && u.avatar!.isNotEmpty)
+            ? u.avatar
+            : null;
       },
       orElse: () {},
     );
 
-    final authState = ref.watch(authNotifierProvider);
-    authState.maybeWhen(
-      authenticated: (u) {
-        headerName = (headerName == 'Guest User')
-            ? (u.name ?? headerName)
-            : headerName;
-        headerEmail = (headerEmail == 'guest@example.com')
-            ? (u.email ?? headerEmail)
-            : headerEmail;
-        headerAvatar =
-            headerAvatar ??
-            ((u.avatar != null && u.avatar!.isNotEmpty) ? u.avatar : null);
-      },
-      orElse: () {},
-    );
+    if (!hasAuthUser) {
+      currentUserAsync.maybeWhen(
+        data: (either) {
+          either.fold((_) => null, (u) {
+            headerName = u.name ?? headerName;
+            headerEmail = u.email ?? headerEmail;
+            headerAvatar = (u.avatar != null && u.avatar!.isNotEmpty)
+                ? u.avatar
+                : headerAvatar;
+          });
+        },
+        orElse: () {},
+      );
+    }
 
     return Drawer(
       elevation: 20,
@@ -108,67 +113,6 @@ class AppDrawer extends ConsumerWidget {
                     return const SizedBox.shrink();
                   }
 
-                  if (m.id == 'logistic') {
-                    return _buildAnimatedExpansionGroup(
-                      context: context,
-                      title: m.title,
-                      icon: _getLucideIconForLogistic(),
-                      children: [
-                        _DrawerChild(
-                          title: 'Journey',
-                          route: '/logistic/journey',
-                          icon: LucideIcons.map,
-                        ),
-                        _DrawerChild(
-                          title: 'Trips',
-                          route: '/logistic/trips',
-                          icon: LucideIcons.truck,
-                        ),
-                        _DrawerChild(
-                          title: 'Vehicle',
-                          route: '/logistic/vehicle',
-                          icon: LucideIcons.car,
-                        ),
-                        _DrawerChild(
-                          title: 'Operators',
-                          route: '/logistic/operators',
-                          icon: LucideIcons.users,
-                        ),
-                        _DrawerChild(
-                          title: 'Expenses',
-                          route: '/logistic/expenses',
-                          icon: LucideIcons.receipt,
-                        ),
-                        _DrawerChild(
-                          title: 'History',
-                          route: '/logistic/history',
-                          icon: LucideIcons.history,
-                        ),
-                      ],
-                    );
-                  }
-
-                  if (m.id == 'support') {
-                    return _buildAnimatedExpansionGroup(
-                      context: context,
-                      title: m.title,
-                      icon: LucideIcons.heading,
-                      children: [
-                        _DrawerChild(
-                          title: 'Tickets',
-                          route: '/support',
-                          icon: LucideIcons.ticket,
-                        ),
-                        _DrawerChild(
-                          title: 'Settings',
-                          route: '/support/settings',
-                          icon: LucideIcons.settings,
-                        ),
-                      ],
-                    );
-                  }
-
-                  // Default single menu tile with animation
                   return _buildAnimatedMenuItem(
                     context: context,
                     isDark: isDark,
@@ -198,118 +142,100 @@ class AppDrawer extends ConsumerWidget {
     required String headerEmail,
     String? headerAvatar,
   }) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutQuad,
-      builder: (context, double value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Material(
-              color: AppColors.white,
-              child: InkWell(
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/profile');
-                },
-                child: Container(
-                  color: AppColors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 20,
-                  ),
-                  child: Row(
-                    children: [
-                      // Avatar with glow effect
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
-                              blurRadius: 12,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: headerAvatar != null
-                            ? CircleAvatar(
-                                radius: 30,
-                                backgroundColor: Colors.transparent,
-                                backgroundImage: imageProviderFromUrl(
-                                  headerAvatar,
-                                ),
-                              )
-                            : CircleAvatar(
-                                radius: 30,
-                                backgroundColor: AppColors.primary,
-                                child: Text(
-                                  headerName.isNotEmpty
-                                      ? headerName[0].toUpperCase()
-                                      : 'U',
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                      ),
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              headerName,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: const Color(0xFF1A2634),
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              headerEmail,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Edit profile indicator
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          LucideIcons.chevronRight,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+    String _initials(String name) {
+      final parts = name.trim().split(RegExp(r"\s+"));
+      if (parts.isEmpty) return 'U';
+      if (parts.length == 1) return parts.first[0].toUpperCase();
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+
+    final initials = _initials(headerName);
+
+    final imageProvider = headerAvatar != null
+        ? imageProviderFromUrl(headerAvatar)
+        : null;
+
+    return Material(
+      color: AppColors.primary,
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.pushNamed(context, '/profile');
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
             ),
           ),
-        );
-      },
+          child: Row(
+            children: [
+              // Avatar / initials
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: Colors.white,
+                  backgroundImage: imageProvider,
+                  child: imageProvider == null
+                      ? Text(
+                          initials,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      headerName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      headerEmail,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -609,6 +535,67 @@ class AppDrawer extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          // Share App
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _inviteFriends(context),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.share2,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        context.l10n.shareApp,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: isDark ? Colors.white : AppColors.primary,
+                            ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.chevronRight,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
           // Logout Button
           Material(
             color: Colors.transparent,
@@ -723,10 +710,64 @@ class AppDrawer extends ConsumerWidget {
         return LucideIcons.settings;
       case 'reports':
         return LucideIcons.fileText;
+      case 'jobcard':
+        return LucideIcons.fileText;
       case 'users':
         return LucideIcons.users;
       default:
         return LucideIcons.circle;
+    }
+  }
+
+  Future<void> _inviteFriends(BuildContext context) async {
+    final appName = context.l10n.appName;
+    final baseDescription =
+        'An AI-powered software built to help you and your team stay organized, automate work and streamline your operations.';
+
+    final isMobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    final mobileExtras =
+        '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
+
+    final shareText = isMobile
+        ? '$appName — $baseDescription$mobileExtras\n\nLearn more: ${AppConstant.website}'
+        : '$appName — $baseDescription\n\nLearn more: ${AppConstant.website}';
+
+    final subject = 'Try $appName — team productivity & operations';
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(text: shareText, subject: subject),
+      );
+    } catch (e) {
+      // Fallback: copy invite text to clipboard when share sheet isn't available
+      try {
+        await Clipboard.setData(ClipboardData(text: shareText));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(
+                'Share dialog unavailable — invite text copied to clipboard',
+              ),
+            ),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          final message = kDebugMode
+              ? 'Could not share or copy invite text: ${e.toString()}'
+              : 'Could not share invite. Please try again.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              content: Text(message),
+            ),
+          );
+        }
+      }
     }
   }
 

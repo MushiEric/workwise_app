@@ -56,7 +56,19 @@ class _VerifyForgotPasswordOtpPageState extends ConsumerState<VerifyForgotPasswo
     hideAppLoadingDialog(context);
 
     res.fold(
-      (failure) => AppDialog.showError(context: context, title: context.l10n.verificationFailed, message: failure.message),
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failure.message),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      },
       (_) {
         Navigator.pushNamed(context, '/forgot-password/change', arguments: {'identifier': identifier, 'otp': otp});
       },

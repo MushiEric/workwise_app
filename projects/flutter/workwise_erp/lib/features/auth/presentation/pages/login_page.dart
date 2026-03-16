@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 // centralise icon tokens for easy re-themeing
 import '../../../../core/themes/app_icons.dart';
 
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
-import 'package:workwise_erp/core/widgets/app_modal.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
-import 'package:workwise_erp/core/provider/tenant_provider.dart';
+import 'package:workwise_erp/core/provider/navigator_key_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/extensions/l10n_extension.dart';
 
@@ -31,6 +32,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   void initState() {
     super.initState();
+
+    // Clear any leftover snackbars from earlier flows (e.g., forgot-password)
+    ref.read(scaffoldMessengerKeyProvider).currentState?.clearSnackBars();
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -91,10 +96,23 @@ class _LoginPageState extends ConsumerState<LoginPage>
         Navigator.pushReplacementNamed(context, '/index');
       },
       error: (message) {
-        AppDialog.showError(
-          context: context,
-          title: context.l10n.loginFailed,
-          message: message,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.error,
+            content: Row(
+              children: [
+                const Icon(AppIcons.loginError, color: Colors.white, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Login Failed: $message',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -110,8 +128,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
         builder: (context, ref, _) {
           final selected = ref.watch(appLocaleProvider);
 
-          Widget langTile(String code, String label) {
+          Widget langTile(String code, String label, String flag) {
             return ListTile(
+              leading: Text(flag, style: const TextStyle(fontSize: 20)),
               title: Text(label),
               trailing: selected == code
                   ? Icon(AppIcons.check, color: AppColors.primary)
@@ -128,10 +147,26 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
                 // show confirmation to user (verify still mounted)
                 if (!mounted) return;
-                context.showSuccessModal(
-                  title: context.l10n.success,
-                  message: context.l10n.languageUpdatedSuccess,
-                  buttonText: context.l10n.done,
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(
+                          AppIcons.check,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(context.l10n.languageUpdatedSuccess),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade600,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    duration: const Duration(seconds: 3),
+                  ),
                 );
               },
             );
@@ -169,9 +204,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  langTile('en', 'English'),
-                  langTile('sw', 'Swahili'),
-                  langTile('fr', 'French'),
+                  for (final code in AppLocalizations.supportedLocales)
+                    langTile(
+                      code.languageCode,
+                      languageLabel(code.languageCode),
+                      languageFlag(code.languageCode) ?? '',
+                    ),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -184,20 +222,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final tenant = ref.watch(tenantProvider);
-
-    // If tenant isn't configured, avoid initializing network-dependent providers
-    // (they read `tenantProvider` and would throw). `initState` will redirect to
-    // `/workspace` via a post-frame callback — show a harmless placeholder here.
-    if (tenant == null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF0A0E21)
-            : const Color(0xFFF8F9FC),
-        body: const SizedBox.shrink(),
-      );
-    }
-
     final state = ref.watch(authNotifierProvider);
     final isLoading = state.whenOrNull(loading: (_) => true) ?? false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -277,22 +301,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               children: [
                                 AppTextField(
                                   controller: _emailCtrl,
-                                  labelText: 'Email Address',
-                                  hintText: 'Enter your email',
+                                  labelText: context.l10n.emailAddress,
+                                  hintText: context.l10n.emailAddress,
                                   keyboardType: TextInputType.emailAddress,
                                   prefixIcon: const Icon(AppIcons.mail),
                                   validator: (v) => (v == null || v.isEmpty)
-                                      ? 'Email is required'
+                                      ? context.l10n.emailRequired
                                       : null,
                                 ),
                                 const SizedBox(height: 16),
 
                                 AppPasswordField(
                                   controller: _passCtrl,
-
-                                  labelText: 'Password',
+                                  labelText: context.l10n.password,
+                                  hintText: context.l10n.passwordHint,
                                   validator: (v) => (v == null || v.isEmpty)
-                                      ? 'Password is required'
+                                      ? context.l10n.passwordRequired
                                       : null,
                                 ),
 
@@ -347,9 +371,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                             //   ),
                                             // ),
                                           )
-                                        : const Text(
-                                            'Sign In',
-                                            style: TextStyle(
+                                        : Text(
+                                            context.l10n.signIn,
+                                            style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -424,7 +448,7 @@ Widget _buildSwitchToWorkSpace(BuildContext context) {
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Text(
-          'Switch To Workspace',
+          context.l10n.switchWorkspace,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white70 : AppColors.primary,
