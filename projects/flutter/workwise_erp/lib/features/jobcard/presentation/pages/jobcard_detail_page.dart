@@ -14,6 +14,7 @@ import '../../../../core/widgets/app_tab_bar.dart';
 import '../../../../core/themes/app_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../providers/jobcard_providers.dart';
+import '../widgets/jobcard_tile.dart';
 import '../../../../core/widgets/app_modal.dart';
 import 'jobcard_create_page.dart';
 
@@ -34,6 +35,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   bool _isRejecting = false;
 
   bool? _isApprovalEligible;
+  int? _approvalId;
+  int? _roleUserId;
+  int? _approvalStatus;
 
   @override
   void didChangeDependencies() {
@@ -97,16 +101,35 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   Future<bool> _checkApprovalEligibility(int id) async {
     final checkUc = ref.read(checkApprovalEligibilityUseCaseProvider);
     final result = await checkUc.call(id);
-    return result.fold((_) => false, (data) {
-      // Backend returns { status: 200, eligible: true, ... }
-      final eligible = data['eligible'];
-      if (eligible is bool) return eligible;
-      final eligibleStr = eligible?.toString().trim().toLowerCase();
-      if (eligibleStr == '1' || eligibleStr == 'true' || eligibleStr == 'yes') {
-        return true;
-      }
-      return false;
-    });
+
+    return result.fold(
+      (_) {
+        _approvalId = null;
+        _roleUserId = null;
+        _approvalStatus = null;
+        return false;
+      },
+      (data) {
+        // Backend returns { status: 200, eligible: true, ... }
+        final eligibleRaw = data['eligible'];
+        final eligible = (eligibleRaw is bool)
+            ? eligibleRaw
+            : (eligibleRaw?.toString().trim().toLowerCase() == 'true' ||
+                  eligibleRaw?.toString().trim() == '1');
+
+        int? parseInt(dynamic v) {
+          if (v == null) return null;
+          if (v is int) return v;
+          return int.tryParse(v.toString());
+        }
+
+        _approvalId = parseInt(data['approval_id']);
+        _roleUserId = parseInt(data['role_user_id']);
+        _approvalStatus = parseInt(data['approval_status']);
+
+        return eligible;
+      },
+    );
   }
 
   Future<void> _refreshApprovalEligibility() async {
@@ -142,8 +165,28 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     }
 
     showAppLoadingDialog(context, message: 'Approving...');
+    if (_approvalId == null || _roleUserId == null) {
+      if (!mounted) return;
+      hideAppLoadingDialog(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          content: Text('Unable to determine approval context'),
+        ),
+      );
+      setState(() => _isApproving = false);
+      return;
+    }
+
     final approveUc = ref.read(approveJobcardUseCaseProvider);
-    final res = await approveUc.call(id, comment: comment);
+    final res = await approveUc.call(
+      jobcardId: id,
+      status: 3,
+      approvalId: _approvalId!,
+      roleUserId: _roleUserId!,
+      comment: comment,
+    );
     if (!mounted) return;
     hideAppLoadingDialog(context);
 
@@ -174,74 +217,13 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   }
 
   Future<String?> _askRejectionReason() async {
-    String? reason;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Reject Jobcard'),
-          content: TextField(
-            controller: controller,
-            maxLines: 3,
-            decoration: const InputDecoration(hintText: 'Optional reason'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                reason = controller.text.trim();
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Reject'),
-            ),
-          ],
-        );
-      },
-    );
-    return reason;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return JobcardTile.showRejectCommentDialog(context, isDark: isDark);
   }
 
   Future<String?> _askApprovalComment() async {
-    String? comment;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('JOB CARD APPROVAL'),
-          content: AppTextField(
-            controller: controller,
-            maxLines: 5,
-            minLines: 3,
-            labelText: 'Comment',
-            hintText: 'Enter Comment here',
-            textInputAction: TextInputAction.newline,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                comment = controller.text.trim();
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Approve'),
-            ),
-          ],
-        );
-      },
-    );
-    return comment;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return JobcardTile.showApproveCommentDialog(context, isDark: isDark);
   }
 
   Future<void> _rejectJobcard(int id) async {
@@ -249,10 +231,27 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     final reason = await _askRejectionReason();
     if (!mounted) return;
 
+    if (_approvalId == null || _roleUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          content: Text('Unable to determine approval context'),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isRejecting = true);
     showAppLoadingDialog(context, message: 'Rejecting...');
     final rejectUc = ref.read(rejectJobcardUseCaseProvider);
-    final res = await rejectUc.call(id, reason: reason);
+    final res = await rejectUc.call(
+      jobcardId: id,
+      status: 2,
+      approvalId: _approvalId!,
+      roleUserId: _roleUserId!,
+      comment: reason,
+    );
     if (!mounted) return;
     hideAppLoadingDialog(context);
 
@@ -1624,9 +1623,19 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
     bool isDark,
   ) {
     final approvals = (jobcard.approvals ?? <dynamic>[]) as List;
-    // Only show approve/reject actions if the server explicitly confirms eligibility.
-    // This prevents showing buttons based purely on status string heuristics.
-    final canAct = _isApprovalEligible == true;
+
+    bool hasPendingApprovalStatus() {
+      if (approvals.isEmpty) return false;
+      final first = approvals.first;
+      final status = first['status'];
+      if (status == null) return true;
+      if (status is int) return status == 1;
+      return status.toString() == '1';
+    }
+
+    // Only show approve/reject actions if the server explicitly confirms eligibility
+    // and the approval log indicates the jobcard is still pending.
+    final canAct = _isApprovalEligible == true && hasPendingApprovalStatus();
 
     Widget buildActionButtons() {
       if (!canAct || _id == null) return const SizedBox.shrink();

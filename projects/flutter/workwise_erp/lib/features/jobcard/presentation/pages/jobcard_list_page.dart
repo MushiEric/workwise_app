@@ -22,6 +22,20 @@ import '../../../../core/widgets/google_nav_bar.dart';
 import '../../domain/entities/jobcard.dart';
 import '../../domain/entities/jobcard_status.dart';
 
+class _ApprovalEligibility {
+  final bool eligible;
+  final int? approvalId;
+  final int? roleUserId;
+  final int? approvalStatus;
+
+  const _ApprovalEligibility({
+    required this.eligible,
+    this.approvalId,
+    this.roleUserId,
+    this.approvalStatus,
+  });
+}
+
 class JobcardListPage extends ConsumerStatefulWidget {
   const JobcardListPage({super.key});
 
@@ -37,6 +51,13 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Tracks approval eligibility state per jobcard id.
+  // - `eligible` controls whether the swipe approve/reject is enabled.
+  // - `approvalId` and `roleUserId` are required by the `/logistic/jobcardApproval` payload.
+  final Map<int, _ApprovalEligibility> _approvalEligibility = {};
+  final Set<int> _approvalEligibilityRequested = {};
+
   bool _isSearching = false;
   bool _showStats = true;
   int _bottomNavIndex = 0;
@@ -156,7 +177,10 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     if (targets.isEmpty) {
       if (_jobcardTutorialRetryCount < 10) {
         _jobcardTutorialRetryCount += 1;
-        Future<void>.delayed(const Duration(milliseconds: 250), _attemptShowJobcardTutorial);
+        Future<void>.delayed(
+          const Duration(milliseconds: 250),
+          _attemptShowJobcardTutorial,
+        );
       } else {
         TutorialService.markJobcardTutorialSeen();
       }
@@ -785,6 +809,12 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
       );
     }
 
+    // When the list is rendered, pre-fetch approval eligibility so that swipe
+    // actions can be enabled/disabled per jobcard.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureApprovalEligibility(filteredJobcards);
+    });
+
     final users = ref.watch(jobcardUsersProvider).valueOrNull ?? [];
     final customers = ref.watch(jobcardCustomersProvider).valueOrNull ?? [];
     final vehicles = ref.watch(jobcardVehiclesProvider).valueOrNull ?? [];
@@ -795,6 +825,16 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
       itemCount: filteredJobcards.length,
       itemBuilder: (context, idx) {
         final jobcard = filteredJobcards[idx];
+        final eligibility = jobcard.id != null
+            ? _approvalEligibility[jobcard.id!]
+            : null;
+        final isEligible = eligibility?.eligible ?? true;
+        final isLocked = jobcard.isApprovalLocked;
+        final canSwipe =
+            (showApproveReject || _isApprovableStatus(jobcard)) &&
+            !isLocked &&
+            isEligible;
+
         return JobcardTile(
           key: idx == 0 ? _jobcardTileKey : null,
           jobcard: jobcard,
@@ -804,14 +844,14 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
             customers: customers,
             vehicles: vehicles,
           ),
-          showApproveReject: showApproveReject || _isApprovableStatus(jobcard),
+          showApproveReject: canSwipe,
           showReminder: showReminder,
           onTap: () => Navigator.of(
             context,
           ).pushNamed('/jobcards/detail', arguments: jobcard.id),
           onDelete: () => _confirmDelete(jobcard),
-          onApprove: (id, comment) => _approveJobcard(id, comment),
-          onReject: (id, reason) => _rejectJobcard(id, reason),
+          onApprove: (id, comment) => _approveJobcard(jobcard, comment),
+          onReject: (id, reason) => _rejectJobcard(jobcard, reason),
         );
       },
     );
@@ -981,24 +1021,76 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     );
   }
 
-  Future<void> _approveJobcard(int id, String? comment) async {
+  Future<_ApprovalEligibility> _fetchApprovalEligibility(int id) async {
     final checkUc = ref.read(checkApprovalEligibilityUseCaseProvider);
-    final approveUc = ref.read(approveJobcardUseCaseProvider);
+    final result = await checkUc.call(id);
 
-    showAppLoadingDialog(context, message: 'Checking eligibility...');
-    final checkResult = await checkUc.call(id);
-    hideAppLoadingDialog(context);
+    return result.fold((_) => const _ApprovalEligibility(eligible: false), (
+      data,
+    ) {
+      final eligibleRaw = data['eligible'];
+      final eligible = (eligibleRaw is bool)
+          ? eligibleRaw
+          : (eligibleRaw?.toString().trim().toLowerCase() == 'true' ||
+                eligibleRaw?.toString().trim() == '1');
 
-    bool eligible = checkResult.fold((_) => false, (data) {
-      final status = data['status'];
-      return status == true ||
-          status == 1 ||
-          status == 200 ||
-          status?.toString() == '1' ||
-          status?.toString() == '200';
+      int? parseInt(dynamic v) {
+        if (v == null) return null;
+        if (v is int) return v;
+        return int.tryParse(v.toString());
+      }
+
+      return _ApprovalEligibility(
+        eligible: eligible,
+        approvalId: parseInt(data['approval_id']),
+        roleUserId: parseInt(data['role_user_id']),
+        approvalStatus: parseInt(data['approval_status']),
+      );
     });
+  }
 
-    if (!eligible) {
+  void _ensureApprovalEligibility(List<Jobcard> jobcards) {
+    for (final jc in jobcards) {
+      final id = jc.id;
+      if (id == null) continue;
+      if (_approvalEligibilityRequested.contains(id)) continue;
+
+      _approvalEligibilityRequested.add(id);
+
+      // If approval status indicates approved/rejected, we already know it's locked.
+      if (jc.isApprovalLocked) {
+        _approvalEligibility[id] = _ApprovalEligibility(
+          eligible: false,
+          approvalId: jc.approvalId,
+          roleUserId: jc.roleUserId,
+          approvalStatus: jc.approvalStatus,
+        );
+        continue;
+      }
+
+      _fetchApprovalEligibility(id).then((info) {
+        if (!mounted) return;
+        setState(() {
+          _approvalEligibility[id] = info;
+        });
+      });
+    }
+  }
+
+  Future<void> _approveJobcard(Jobcard jobcard, String? comment) async {
+    final jobcardId = jobcard.id;
+    if (jobcardId == null) return;
+
+    // Ensure we have eligibility info (and the required approval context)
+    if (!_approvalEligibility.containsKey(jobcardId)) {
+      _approvalEligibility[jobcardId] = await _fetchApprovalEligibility(
+        jobcardId,
+      );
+    }
+
+    final eligibility = _approvalEligibility[jobcardId]!;
+
+    if (!eligibility.eligible) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1010,8 +1102,31 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
       return;
     }
 
+    final approvalId = eligibility.approvalId ?? jobcard.approvalId;
+    final roleUserId = eligibility.roleUserId ?? jobcard.roleUserId;
+
+    if (approvalId == null || roleUserId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: const Text('Unable to determine approval context'),
+        ),
+      );
+      return;
+    }
+
+    final approveUc = ref.read(approveJobcardUseCaseProvider);
+
     showAppLoadingDialog(context, message: 'Approving...');
-    final res = await approveUc.call(id, comment: comment);
+    final res = await approveUc.call(
+      jobcardId: jobcardId,
+      status: 3,
+      approvalId: approvalId,
+      roleUserId: roleUserId,
+      comment: comment,
+    );
     hideAppLoadingDialog(context);
 
     if (!mounted) return;
@@ -1031,16 +1146,53 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
             content: Text('Jobcard approved successfully'),
           ),
         );
+        setState(() {
+          _approvalEligibility.clear();
+          _approvalEligibilityRequested.clear();
+        });
         ref.read(jobcardNotifierProvider.notifier).loadJobcards(force: true);
       },
     );
   }
 
-  Future<void> _rejectJobcard(int id, String? reason) async {
+  Future<void> _rejectJobcard(Jobcard jobcard, String? comment) async {
+    final jobcardId = jobcard.id;
+    if (jobcardId == null) return;
+
+    // Ensure we have eligibility info (and the required approval context)
+    if (!_approvalEligibility.containsKey(jobcardId)) {
+      _approvalEligibility[jobcardId] = await _fetchApprovalEligibility(
+        jobcardId,
+      );
+    }
+
+    final eligibility = _approvalEligibility[jobcardId]!;
+
+    final approvalId = eligibility.approvalId ?? jobcard.approvalId;
+    final roleUserId = eligibility.roleUserId ?? jobcard.roleUserId;
+
+    if (approvalId == null || roleUserId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: const Text('Unable to determine approval context'),
+        ),
+      );
+      return;
+    }
+
     final rejectUc = ref.read(rejectJobcardUseCaseProvider);
 
     showAppLoadingDialog(context, message: 'Rejecting...');
-    final res = await rejectUc.call(id, reason: reason);
+    final res = await rejectUc.call(
+      jobcardId: jobcardId,
+      status: 2,
+      approvalId: approvalId,
+      roleUserId: roleUserId,
+      comment: comment,
+    );
     hideAppLoadingDialog(context);
 
     if (!mounted) return;
@@ -1059,6 +1211,10 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
             content: Text('Jobcard rejected'),
           ),
         );
+        setState(() {
+          _approvalEligibility.clear();
+          _approvalEligibilityRequested.clear();
+        });
         ref.read(jobcardNotifierProvider.notifier).loadJobcards(force: true);
       },
     );

@@ -60,12 +60,31 @@ abstract class JobcardRepository {
 
   /// Approve a jobcard.
   ///
-  /// Some backends allow passing an optional comment for audit trails.
+  /// This uses the `/logistic/jobcardApproval` endpoint, which requires:
+  /// - `status`: 3 for approval
+  /// - `approval_id`: the approval record id
+  /// - `role_user_id`: the approving role user id
+  /// - `comment`: optional user comment
   Future<Either<dynamic, void>> approveJobcard(
     int jobcardId, {
+    required int status,
+    required int approvalId,
+    required int roleUserId,
     String? comment,
   });
 
-  /// Reject a jobcard with an optional reason.
-  Future<Either<dynamic, void>> rejectJobcard(int jobcardId, {String? reason});
+  /// Reject a jobcard.
+  ///
+  /// This uses the `/logistic/jobcardApproval` endpoint, which requires:
+  /// - `status`: 2 for rejection
+  /// - `approval_id`: the approval record id
+  /// - `role_user_id`: the approving role user id
+  /// - `comment`: optional user comment
+  Future<Either<dynamic, void>> rejectJobcard(
+    int jobcardId, {
+    required int status,
+    required int approvalId,
+    required int roleUserId,
+    String? comment,
+  });
 }

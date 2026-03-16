@@ -17,6 +17,18 @@ class Jobcard extends Equatable {
   final String? location;
   final String? departments;
 
+  /// Approval-related metadata (from the API's "approvals" field).
+  ///
+  /// - `approvalStatus`: 1 (pending/null), 2 (rejected), 3 (approved)
+  /// - `approvalId`: id of the approval record
+  /// - `roleUserId`: the role_user_id for this approval workflow
+  ///
+  /// This is used to determine whether the jobcard is locked and to drive the
+  /// new `/logistic/jobcardApproval` request payload.
+  final int? approvalStatus;
+  final int? approvalId;
+  final int? roleUserId;
+
   const Jobcard({
     this.id,
     this.jobcardNumber,
@@ -33,7 +45,12 @@ class Jobcard extends Equatable {
     this.receiverName,
     this.location,
     this.departments,
+    this.approvalStatus,
+    this.approvalId,
+    this.roleUserId,
   });
+
+  bool get isApprovalLocked => approvalStatus == 2 || approvalStatus == 3;
 
   @override
   List<Object?> get props => [
@@ -52,5 +69,8 @@ class Jobcard extends Equatable {
     receiverName,
     location,
     departments,
+    approvalStatus,
+    approvalId,
+    roleUserId,
   ];
 }

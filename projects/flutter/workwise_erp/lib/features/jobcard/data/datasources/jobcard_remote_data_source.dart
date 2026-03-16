@@ -494,6 +494,55 @@ class JobcardRemoteDataSource {
     }
   }
 
+  /// POST /logistic/jobcardApproval
+  ///
+  /// Payload:
+  /// {
+  ///   "status": 3, // 1 pending, 2 rejected, 3 approved
+  ///   "jobcard_id": <id>,
+  ///   "comment": "...",
+  ///   "approval_id": <approvalId>,
+  ///   "role_user_id": <roleUserId>,
+  /// }
+  Future<void> submitJobcardApproval({
+    required int jobcardId,
+    required int status,
+    required int approvalId,
+    required int roleUserId,
+    String? comment,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'status': status,
+        'jobcard_id': jobcardId,
+        'approval_id': approvalId,
+        'role_user_id': roleUserId,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+      };
+      final resp = await client.post(
+        '/logistic/jobcardApproval',
+        data: payload,
+      );
+
+      final raw = resp.data;
+      if (raw is String && raw.trim().startsWith('<')) {
+        throw ServerException(
+          'Server returned HTML for /logistic/jobcardApproval',
+        );
+      }
+    } on DioException catch (e) {
+      final respData = e.response?.data;
+      if (respData is String && respData.trim().startsWith('<')) {
+        throw ServerException(
+          'Server returned HTML for /logistic/jobcardApproval',
+        );
+      }
+      throw ServerException(friendlyDioError(e));
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
   /// POST /jobcard/approveJobCard
   ///
   /// Some backends accept an optional `reason`/`comment` for auditing.

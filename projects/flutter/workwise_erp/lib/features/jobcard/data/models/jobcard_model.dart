@@ -17,6 +17,9 @@ class JobcardModel extends Jobcard {
     String? receiverName,
     String? location,
     String? departments,
+    int? approvalStatus,
+    int? approvalId,
+    int? roleUserId,
   }) : super(
          id: id,
          jobcardNumber: jobcardNumber,
@@ -33,6 +36,9 @@ class JobcardModel extends Jobcard {
          receiverName: receiverName,
          location: location,
          departments: departments,
+         approvalStatus: approvalStatus,
+         approvalId: approvalId,
+         roleUserId: roleUserId,
        );
 
   factory JobcardModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +58,24 @@ class JobcardModel extends Jobcard {
     if (json['status_row'] is Map)
       statusRow = Map<String, dynamic>.from(json['status_row'] as Map);
 
+    List<Map<String, dynamic>> approvals = [];
+    if (json['approvals'] is List) {
+      approvals = (json['approvals'] as List)
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+
+    int? approvalStatus;
+    int? approvalId;
+    int? roleUserId;
+    if (approvals.isNotEmpty) {
+      final first = approvals.first;
+      approvalStatus = _int(first['status']);
+      approvalId = _int(first['id']);
+      roleUserId = _int(first['role_user_id'] ?? first['roleUserId']);
+    }
+
     return JobcardModel(
       id: _int(json['id']),
       jobcardNumber: _str(
@@ -70,6 +94,9 @@ class JobcardModel extends Jobcard {
       receiverName: _str(json['receiver_name']),
       location: _str(json['location']),
       departments: _str(json['departments']),
+      approvalStatus: approvalStatus,
+      approvalId: approvalId,
+      roleUserId: roleUserId,
     );
   }
 }

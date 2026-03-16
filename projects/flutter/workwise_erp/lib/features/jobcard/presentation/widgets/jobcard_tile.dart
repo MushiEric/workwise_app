@@ -169,7 +169,12 @@ class JobcardTile extends StatelessWidget {
     );
   }
 
-  Future<bool> _showApproveDialog(BuildContext context, bool isDark) async {
+  /// Shows a shared approval dialog and returns the comment entered by the user
+  /// (or null if the user cancels).
+  static Future<String?> showApproveCommentDialog(
+    BuildContext context, {
+    required bool isDark,
+  }) async {
     final commentCtl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
@@ -246,17 +251,18 @@ class JobcardTile extends StatelessWidget {
       ),
     );
 
-    if (confirm == true && onApprove != null) {
-      await onApprove!(
-        jobcard.id!,
-        commentCtl.text.trim().isEmpty ? null : commentCtl.text.trim(),
-      );
-    }
+    final comment = commentCtl.text.trim();
     commentCtl.dispose();
-    return false; // Don't dismiss the tile
+    if (confirm == true) return comment.isEmpty ? null : comment;
+    return null;
   }
 
-  Future<bool> _showRejectDialog(BuildContext context, bool isDark) async {
+  /// Shows a shared rejection dialog and returns the comment entered by the user
+  /// (or null if the user cancels).
+  static Future<String?> showRejectCommentDialog(
+    BuildContext context, {
+    required bool isDark,
+  }) async {
     final reasonCtl = TextEditingController();
     final confirm = await showDialog<bool>(
       context: context,
@@ -290,15 +296,6 @@ class JobcardTile extends StatelessWidget {
                   ],
                 ),
               ),
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              //   child: Text(
-              //     'Reject jobcard ${jobcard.jobcardNumber ?? '#${jobcard.id}'}?',
-              //     style: TextStyle(
-              //       color: isDark ? Colors.white70 : Colors.grey.shade700,
-              //     ),
-              //   ),
-              // ),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -342,13 +339,25 @@ class JobcardTile extends StatelessWidget {
       ),
     );
 
-    if (confirm == true && onReject != null) {
-      await onReject!(
-        jobcard.id!,
-        reasonCtl.text.trim().isEmpty ? null : reasonCtl.text.trim(),
-      );
-    }
+    final comment = reasonCtl.text.trim();
     reasonCtl.dispose();
+    if (confirm == true) return comment.isEmpty ? null : comment;
+    return null;
+  }
+
+  Future<bool> _showApproveDialog(BuildContext context, bool isDark) async {
+    final comment = await showApproveCommentDialog(context, isDark: isDark);
+    if (comment != null && onApprove != null) {
+      await onApprove!(jobcard.id!, comment);
+    }
+    return false; // Don't dismiss the tile
+  }
+
+  Future<bool> _showRejectDialog(BuildContext context, bool isDark) async {
+    final comment = await showRejectCommentDialog(context, isDark: isDark);
+    if (comment != null && onReject != null) {
+      await onReject!(jobcard.id!, comment);
+    }
     return false; // Don't dismiss the tile
   }
 

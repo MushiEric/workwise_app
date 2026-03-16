@@ -510,10 +510,19 @@ class JobcardRepositoryImpl implements JobcardRepository {
   @override
   Future<Either<dynamic, void>> approveJobcard(
     int jobcardId, {
+    required int status,
+    required int approvalId,
+    required int roleUserId,
     String? comment,
   }) async {
     try {
-      await remote.approveJobcard(jobcardId, comment: comment);
+      await remote.submitJobcardApproval(
+        jobcardId: jobcardId,
+        status: status,
+        approvalId: approvalId,
+        roleUserId: roleUserId,
+        comment: comment,
+      );
       return Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
@@ -525,10 +534,19 @@ class JobcardRepositoryImpl implements JobcardRepository {
   @override
   Future<Either<dynamic, void>> rejectJobcard(
     int jobcardId, {
-    String? reason,
+    required int status,
+    required int approvalId,
+    required int roleUserId,
+    String? comment,
   }) async {
     try {
-      await remote.rejectJobcard(jobcardId, reason: reason);
+      await remote.submitJobcardApproval(
+        jobcardId: jobcardId,
+        status: status,
+        approvalId: approvalId,
+        roleUserId: roleUserId,
+        comment: comment,
+      );
       return Either.right(null);
     } on ServerException catch (e) {
       return Either.left(ServerFailure(e.message));
