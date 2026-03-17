@@ -63,7 +63,7 @@ class AppTabBar extends StatelessWidget {
         isScrollable: isScrollable,
         tabAlignment: isScrollable ? TabAlignment.start : TabAlignment.fill,
         tabs: tabs.map((label) => Tab(text: label)).toList(),
-        labelColor: primary,
+        labelColor: isDark ? Colors.white : primary,
         labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
         unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
         unselectedLabelStyle: TextStyle(fontSize: 13.sp),

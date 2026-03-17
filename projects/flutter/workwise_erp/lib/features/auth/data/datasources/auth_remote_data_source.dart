@@ -355,7 +355,10 @@ class AuthRemoteDataSource {
   }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp};
-      final response = await client.post('/verifyForgotPasswordOtp', data: payload);
+      final response = await client.post(
+        '/verifyForgotPasswordOtp',
+        data: payload,
+      );
 
       // Some backends return a JSON payload with a `status` field even when the
       // HTTP status code is 200. Treat non-200 `status` codes as errors.
@@ -400,8 +403,10 @@ class AuthRemoteDataSource {
   }) async {
     try {
       final payload = {'email': emailOrPhone, 'otp': otp, 'password': password};
-      final response =
-          await client.post('/changePasswordUsingOtp', data: payload);
+      final response = await client.post(
+        '/changePasswordUsingOtp',
+        data: payload,
+      );
 
       // Some backends return a JSON payload with a `status` field even when the
       // HTTP status code is 200. Treat non-200 `status` codes as errors.
@@ -453,7 +458,11 @@ class AuthRemoteDataSource {
 
   Future<UserModel> updateProfile(Map<String, dynamic> payload) async {
     try {
-      final isMultipart = payload.values.any((v) => v is MultipartFile);
+      final isMultipart =
+          payload.values.any((v) => v is MultipartFile) ||
+          (payload.containsKey('avatar') &&
+              payload['avatar'] is String &&
+              (payload['avatar'] as String).startsWith('data:'));
       final resp = await client.post(
         '/user/updateProfile/',
         data: isMultipart ? FormData.fromMap(payload) : payload,
