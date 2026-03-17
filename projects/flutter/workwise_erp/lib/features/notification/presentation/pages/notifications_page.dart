@@ -561,7 +561,9 @@ class _NotificationSkeletonCard extends StatelessWidget {
                           height: 14,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white12 : Colors.grey.shade300,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -570,7 +572,9 @@ class _NotificationSkeletonCard extends StatelessWidget {
                           height: 12,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white12 : Colors.grey.shade300,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
@@ -579,7 +583,9 @@ class _NotificationSkeletonCard extends StatelessWidget {
                           height: 12,
                           width: MediaQuery.of(context).size.width * 0.6,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white12 : Colors.grey.shade300,
+                            color: isDark
+                                ? Colors.white12
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),

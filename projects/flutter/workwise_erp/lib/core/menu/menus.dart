@@ -12,14 +12,14 @@ const List<MenuItemModel> appMenus = [
   // ),
 
   // // Customer management: allow everyone by default (no permission required)
-  // MenuItemModel(
-  //   id: 'customer',
-  //   title: 'Customers',
-  //   icon: Icons.people_outline,
-  //   route: '/customers',
-  //   // optionally guard with CRM permission if desired:
-  //   // requiredPermissions: ['show crm dashboard'],
-  // ),
+  MenuItemModel(
+    id: 'customer',
+    title: 'Customers',
+    icon: Icons.people_outline,
+    route: '/customers',
+    // optionally guard with CRM permission if desired:
+    // requiredPermissions: ['show crm dashboard'],
+  ),
 
   // Logistic: allow by default (no strict permission)
   MenuItemModel(
@@ -27,7 +27,7 @@ const List<MenuItemModel> appMenus = [
     title: 'Logistic',
     icon: Icons.local_shipping,
     route: '/logistic',
-    requiredPermissions: ['show logistic dashboard']
+    requiredPermissions: ['show logistic dashboard'],
   ),
 
   // TODO(assets): Temporarily disabled — uncomment when assets module is restored
@@ -36,23 +36,22 @@ const List<MenuItemModel> appMenus = [
 
   // Inventory: allow users who can view invoices/accounts or inventory (no explicit permission in payload)
 
-
   // Project: requires 'show project dashboard' — open projects list
-  // MenuItemModel(
-  //   id: 'project',
-  //   title: 'Project',
-  //   icon: Icons.work_outline,
-  //   route: '/projects',
-  //   requiredPermissions: ['show project dashboard'],
-  // ),
+  MenuItemModel(
+    id: 'project',
+    title: 'Project',
+    icon: Icons.work_outline,
+    route: '/projects',
+    requiredPermissions: ['show project dashboard'],
+  ),
 
   // // Documents: open to everyone
-  // MenuItemModel(
-  //   id: 'documents',
-  //   title: 'Documents',
-  //   icon: Icons.folder_open,
-  //   route: '/documents',
-  // ),
+  MenuItemModel(
+    id: 'documents',
+    title: 'Documents',
+    icon: Icons.folder_open,
+    route: '/documents',
+  ),
 
   // Support
   MenuItemModel(

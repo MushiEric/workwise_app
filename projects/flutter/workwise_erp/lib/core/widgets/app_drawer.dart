@@ -521,8 +521,12 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildBottomSection(BuildContext context, WidgetRef ref, bool isDark) {
-    final shareBg = isDark ? Colors.white12 : AppColors.primary.withOpacity(0.05);
-    final shareIconBg = isDark ? Colors.white10 : AppColors.primary.withOpacity(0.15);
+    final shareBg = isDark
+        ? Colors.white12
+        : AppColors.primary.withOpacity(0.05);
+    final shareIconBg = isDark
+        ? Colors.white10
+        : AppColors.primary.withOpacity(0.15);
     final shareTextColor = isDark ? Colors.white : AppColors.primary;
 
     final logoutBg = isDark ? Colors.white12 : Colors.red.withOpacity(0.05);

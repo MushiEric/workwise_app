@@ -76,7 +76,8 @@ class AppGoogleNavBar extends StatelessWidget {
                 iconColor: item.iconColor,
                 iconActiveColor: item.activeIconColor,
                 text: item.label,
-                textStyle: item.textStyle ??
+                textStyle:
+                    item.textStyle ??
                     theme.textTheme.bodyMedium?.copyWith(
                       color: isDark ? Colors.white : Colors.black,
                       fontWeight: FontWeight.w600,

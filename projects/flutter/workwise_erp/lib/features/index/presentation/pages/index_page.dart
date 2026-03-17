@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
@@ -39,7 +40,6 @@ class _IndexPageState extends ConsumerState<IndexPage>
   // Tutorial retry state (keys may not be available immediately on first build)
   bool _tutorialShown = false;
   int _tutorialRetryCount = 0;
-
 
   @override
   void initState() {
@@ -89,7 +89,10 @@ class _IndexPageState extends ConsumerState<IndexPage>
       // Retry a few times before giving up.
       if (_tutorialRetryCount < 10) {
         _tutorialRetryCount += 1;
-        Future<void>.delayed(const Duration(milliseconds: 250), _attemptShowTutorial);
+        Future<void>.delayed(
+          const Duration(milliseconds: 250),
+          _attemptShowTutorial,
+        );
       } else {
         // Give up and avoid retrying forever.
         TutorialService.markTutorialSeen();
@@ -593,12 +596,12 @@ class _IndexPageState extends ConsumerState<IndexPage>
                         controller: _scrollController,
                         padding: const EdgeInsets.all(12),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
-                              // wider aspect ratio -> shorter cards
-                              childAspectRatio: 1.35,
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 170,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              // square cards (equal width + height)
+                              childAspectRatio: 1.0,
                             ),
                         itemCount: filteredMenus.length,
                         itemBuilder: (context, idx) {
@@ -706,6 +709,39 @@ class _ModuleTileState extends State<_ModuleTile>
 
   Color _accentForIndex(int idx) => _accentColors[idx % _accentColors.length];
 
+  String? _svgAssetForMenuId(String id) {
+    switch (id) {
+      case 'support':
+        return 'assets/icons/support.svg';
+      case 'jobcard':
+        return 'assets/icons/jobcard.svg';
+      case 'logistic':
+        return 'assets/icons/service.svg';
+      case 'customer':
+        return 'assets/icons/customer.svg';
+      case 'project':
+        return 'assets/icons/project.svg';
+      case 'documents':
+        return 'assets/icons/documents.svg';    
+      default:
+        return null;
+    }
+  }
+
+  Widget _buildMenuIcon(String menuId, Color color, {double size = 48}) {
+    final asset = _svgAssetForMenuId(menuId);
+    if (asset != null) {
+      return SvgPicture.asset(
+        asset,
+        width: size,
+        height: size,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      );
+    }
+
+    return Icon(widget.menu.icon, color: color, size: size);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -744,95 +780,54 @@ class _ModuleTileState extends State<_ModuleTile>
         onExit: (_) => _hoverController.reverse(),
         child: GestureDetector(
           onTap: () => Navigator.pushNamed(context, menu.route),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F1724) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.grey.shade200,
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon card
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F1724) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      // colored icon block (smaller)
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: _accentForIndex(
-                            widget.index,
-                          ).withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          menu.icon,
-                          color: _accentForIndex(widget.index),
-                          size: 22,
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // subtle more icon (smaller)
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white12 : Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          LucideIcons.moreHorizontal,
-                          size: 14,
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+                child: Center(
+                  child: _buildMenuIcon(
+                    menu.id,
+                    _accentForIndex(widget.index),
+                    size: 48,
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // Title
-                  Text(
-                    menu.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1A2634),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // Subtitle (kept as requested)
-                  Text(
-                    context.l10n.manageModule(menu.title.toLowerCase()),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? Colors.white54 : Colors.grey.shade600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                ),
               ),
-            ),
+
+              const SizedBox(height: 10),
+
+              // Label outside of the card container
+              Text(
+                menu.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : const Color(0xFF1A2634),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
