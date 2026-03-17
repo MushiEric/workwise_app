@@ -967,21 +967,22 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
   Widget _buildJobcardSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 6.h),
-        padding: EdgeInsets.all(16.h),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+   
+    return Card(
+      margin: EdgeInsets.only(bottom: 12.h),
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
+          width: 1,
         ),
+      ),
+      color: isDark ? const Color(0xFF151A2E) : Colors.white,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

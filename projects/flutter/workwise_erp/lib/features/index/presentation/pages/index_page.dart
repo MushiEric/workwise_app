@@ -254,6 +254,14 @@ class _IndexPageState extends ConsumerState<IndexPage>
               )
               .toList();
 
+    // Sort to bring jobcard and support to the front
+    filteredMenus.sort((a, b) {
+      final order = {'jobcard': 0, 'support': 1};
+      final aLevel = order[a.id] ?? 99;
+      final bLevel = order[b.id] ?? 99;
+      return aLevel.compareTo(bLevel);
+    });
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -596,8 +604,8 @@ class _IndexPageState extends ConsumerState<IndexPage>
                         controller: _scrollController,
                         padding: const EdgeInsets.all(12),
                         gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 170,
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
                               mainAxisSpacing: 10,
                               crossAxisSpacing: 10,
                               // square cards (equal width + height)

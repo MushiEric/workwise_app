@@ -1263,8 +1263,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                 )
               else
                 Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 18.r,
+                  Icons.arrow_drop_down,
+                  size: 22.r,
                   color: isDark ? Colors.white38 : Colors.grey.shade400,
                 ),
             ],
@@ -1402,8 +1402,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                               }),
                             )
                           : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
+                              Icons.arrow_drop_down,
+                              size: 22.r,
                               color: Colors.grey,
                             ),
                     ),
@@ -1432,8 +1432,8 @@ class _SupportListPageState extends ConsumerState<SupportListPage>
                               }),
                             )
                           : Icon(
-                              LucideIcons.chevronDown,
-                              size: 16.r,
+                              Icons.arrow_drop_down,
+                              size: 22.r,
                               color: Colors.grey,
                             ),
                     ),

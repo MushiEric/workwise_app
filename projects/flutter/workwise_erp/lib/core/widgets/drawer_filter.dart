@@ -588,8 +588,8 @@ class _DrawerFilterState extends State<DrawerFilter> {
                             }),
                           )
                         : Icon(
-                            LucideIcons.chevronDown,
-                            size: 16.r,
+                            Icons.arrow_drop_down,
+                            size: 22.r,
                             color: Colors.grey,
                           ),
                   ),
@@ -622,8 +622,8 @@ class _DrawerFilterState extends State<DrawerFilter> {
                             }),
                           )
                         : Icon(
-                            LucideIcons.chevronDown,
-                            size: 16.r,
+                            Icons.arrow_drop_down,
+                            size: 22.r,
                             color: Colors.grey,
                           ),
                   ),
@@ -659,8 +659,8 @@ class _DrawerFilterState extends State<DrawerFilter> {
                             }),
                           )
                         : Icon(
-                            LucideIcons.chevronDown,
-                            size: 16.r,
+                            Icons.arrow_drop_down,
+                            size: 22.r,
                             color: Colors.grey,
                           ),
                   ),
@@ -696,8 +696,8 @@ class _DrawerFilterState extends State<DrawerFilter> {
                             }),
                           )
                         : Icon(
-                            LucideIcons.chevronDown,
-                            size: 16.r,
+                            Icons.arrow_drop_down,
+                            size: 22.r,
                             color: Colors.grey,
                           ),
                   ),
