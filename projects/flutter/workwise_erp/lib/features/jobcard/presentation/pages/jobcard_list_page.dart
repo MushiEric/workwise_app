@@ -829,15 +829,19 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
             ? _approvalEligibility[jobcard.id!]
             : null;
         final isEligible = eligibility?.eligible ?? true;
-        final isLocked = jobcard.isApprovalLocked;
+        final approvalStatus =
+            eligibility?.approvalStatus ?? jobcard.approvalStatus;
+        final isLocked = approvalStatus == 2 || approvalStatus == 3;
         final canSwipe =
-            (showApproveReject || _isApprovableStatus(jobcard)) &&
+            (showApproveReject ||
+                _isApprovableStatus(jobcard, approvalStatus)) &&
             !isLocked &&
             isEligible;
 
         return JobcardTile(
           key: idx == 0 ? _jobcardTileKey : null,
           jobcard: jobcard,
+          approvalStatusOverride: approvalStatus,
           resolvedReceiverName: _resolveReceiverName(
             jobcard,
             users: users,
@@ -857,7 +861,14 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     );
   }
 
-  bool _isApprovableStatus(Jobcard jobcard) {
+  bool _isApprovableStatus(Jobcard jobcard, int? approvalStatus) {
+    // If we have an approval status, it is authoritative.
+    if (approvalStatus != null) {
+      // Approve/reject actions are only valid when the approval is pending.
+      return approvalStatus == 1;
+    }
+
+    // Fall back to checking the status label if approval status is unavailable.
     final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '')
         .toString()
         .toLowerCase();
@@ -956,7 +967,12 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
   Widget _buildJobcardSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.white12 : Colors.grey.shade200;
+    final highlightColor = isDark ? Colors.white24 : Colors.grey.shade100;
+
     return Shimmer(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 6.h),
         padding: EdgeInsets.all(16.h),
@@ -978,7 +994,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
               height: 16.h,
               width: 120.w,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: baseColor,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -987,7 +1003,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
               height: 12.h,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: baseColor,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -998,7 +1014,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
                   child: Container(
                     height: 12.h,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: baseColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -1008,7 +1024,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
                   child: Container(
                     height: 12.h,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: baseColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),

@@ -20,6 +20,7 @@ import '../../../../core/themes/app_colors.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
+import 'package:workwise_erp/core/provider/theme_provider.dart';
 import 'package:workwise_erp/core/services/tutorial_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
@@ -152,9 +153,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         return;
       }
 
-      payload['avatar'] = await MultipartFile.fromFile(
-        _pickedAvatarFile!.path,
-        filename: _pickedAvatarFile!.path.split('/').last,
+      final bytes = await _pickedAvatarFile!.readAsBytes();
+      final extension = _pickedAvatarFile!.path.split('.').last.toLowerCase();
+
+      // Backend expects multipart/form-data with a file upload.
+      // Send the image as a proper MultipartFile (not a base64 string field).
+      payload['avatar'] = MultipartFile.fromBytes(
+        bytes,
+        filename: 'avatar.${extension.isNotEmpty ? extension : 'jpg'}',
       );
     }
 
@@ -1003,107 +1009,104 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   void _showSettingsMenu() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF151A2E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildMenuTile(
-                icon: AppIcons.moon,
-                label: context.l10n.darkMode,
-                trailing: Switch(
-                  value: isDark,
-                  onChanged: (value) {
-                    // Toggle theme
-                    Navigator.pop(context);
-                  },
-                  activeThumbColor: AppColors.primary,
-                ),
-              ),
-              Consumer(
-                builder: (context, ref, _) {
-                  // prefer authenticated user's lang, otherwise app provider
-                  final code = ref
-                      .watch(authNotifierProvider)
-                      .maybeWhen(
-                        authenticated: (u) =>
-                            u.lang ?? ref.watch(appLocaleProvider),
-                        orElse: () => ref.watch(appLocaleProvider),
-                      );
-                  return _buildMenuTile(
-                    icon: AppIcons.globe,
-                    label: context.l10n.language,
-                    subtitle: languageLabel(code),
-                    onTap: _showLanguageSelection,
-                  );
-                },
-              ),
-              _buildMenuTile(
-                icon: LucideIcons.helpCircle,
-                label: 'Show Tutorial',
-                onTap: () async {
-                  Navigator.pop(context);
-                  await TutorialService.resetAll();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Tutorial will run next time you open the app.',
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuTile(
-                icon: AppIcons.volume,
-                label: context.l10n.sound,
-                trailing: Switch(
-                  value: true,
-                  onChanged: (value) {},
-                  activeThumbColor: AppColors.primary,
-                ),
-              ),
-              _buildMenuTile(
-                icon: AppIcons.server,
-                label: context.l10n.switchWorkspace,
-                subtitle: context.l10n.changeWorkspaceSubtitle,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSwitchWorkspaceConfirmation();
-                },
-              ),
-              _buildMenuTile(
-                icon: AppIcons.logOut,
-                label: context.l10n.signOut,
-                color: Colors.red,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showLogoutConfirmation();
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151A2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
-        ),
-      ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final themeMode = ref.watch(themeModeProvider);
+                    final isDarkMode = themeMode == ThemeMode.dark;
+                    return _buildMenuTile(
+                      icon: AppIcons.moon,
+                      label: context.l10n.darkMode,
+                      trailing: Switch(
+                        value: isDarkMode,
+                        onChanged: (value) {
+                          ref
+                              .read(themeModeProvider.notifier)
+                              .setThemeMode(
+                                value ? ThemeMode.dark : ThemeMode.light,
+                              );
+                        },
+                        activeThumbColor: AppColors.primary,
+                      ),
+                    );
+                  },
+                ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    // prefer authenticated user's lang, otherwise app provider
+                    final code = ref
+                        .watch(authNotifierProvider)
+                        .maybeWhen(
+                          authenticated: (u) =>
+                              u.lang ?? ref.watch(appLocaleProvider),
+                          orElse: () => ref.watch(appLocaleProvider),
+                        );
+                    return _buildMenuTile(
+                      icon: AppIcons.globe,
+                      label: context.l10n.language,
+                      subtitle: languageLabel(code),
+                      onTap: _showLanguageSelection,
+                    );
+                  },
+                ),
+
+                _buildMenuTile(
+                  icon: AppIcons.volume,
+                  label: context.l10n.sound,
+                  trailing: Switch(
+                    value: true,
+                    onChanged: (value) {},
+                    activeThumbColor: AppColors.primary,
+                  ),
+                ),
+                // _buildMenuTile(
+                //   icon: AppIcons.server,
+                //   label: context.l10n.switchWorkspace,
+                //   subtitle: context.l10n.changeWorkspaceSubtitle,
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     _showSwitchWorkspaceConfirmation();
+                //   },
+                // ),
+                _buildMenuTile(
+                  icon: AppIcons.logOut,
+                  label: context.l10n.signOut,
+                  color: Colors.red,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showLogoutConfirmation();
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

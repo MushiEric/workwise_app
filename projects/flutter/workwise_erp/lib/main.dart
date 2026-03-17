@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'core/themes/app_colors.dart';
 import 'core/themes/app_typography.dart';
 import 'core/provider/locale_provider.dart';
 import 'core/provider/navigator_key_provider.dart';
+import 'core/provider/theme_provider.dart';
 import 'core/routes/app_router.dart';
 import '../../../core/constants/app_constant.dart';
 
@@ -107,6 +109,46 @@ class Workwise extends ConsumerWidget {
       child: const SizedBox.shrink(),
       builder: (context, child) {
         // child will be null when not provided, so guard but we don't use it
+        final themeMode = ref.watch(themeModeProvider);
+
+        final lightTheme = ThemeData(
+          primaryColor: AppColors.primary,
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+          appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+          ),
+          scaffoldBackgroundColor: AppColors.greyFill,
+          // Centralized typography (Inter default, Figtree for titles/numbers)
+          textTheme: AppTypography.textTheme,
+          // Standardize icon sizing across the app
+          iconTheme: const IconThemeData(size: 20),
+        );
+
+        final darkTheme = ThemeData.dark().copyWith(
+          primaryColor: AppColors.primary,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primary,
+            brightness: Brightness.dark,
+          ),
+          scaffoldBackgroundColor: const Color(0xFF0A0E21),
+          cardColor: const Color(0xFF151A2E),
+          appBarTheme: AppBarTheme(
+            backgroundColor: const Color(0xFF0A0E21),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle.light,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+          ),
+          textTheme: AppTypography.textTheme.apply(
+            bodyColor: Colors.white,
+            displayColor: Colors.white,
+          ),
+          iconTheme: const IconThemeData(size: 20, color: Colors.white),
+        );
+
         return MaterialApp(
           navigatorKey: ref.watch(navigatorKeyProvider),
           scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
@@ -128,20 +170,9 @@ class Workwise extends ConsumerWidget {
             Locale('fr'),
             Locale('hi'),
           ],
-          theme: ThemeData(
-            primaryColor: AppColors.primary,
-            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-            appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-              ),
-            ),
-            // Centralized typography (Inter default, Figtree for titles/numbers)
-            textTheme: AppTypography.textTheme,
-            // Standardize icon sizing across the app
-            iconTheme: const IconThemeData(size: 20),
-          ),
+          themeMode: themeMode,
+          theme: lightTheme,
+          darkTheme: darkTheme,
           routes: AppRouter.routes,
           initialRoute: '/splash',
         ); // end MaterialApp

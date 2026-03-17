@@ -113,14 +113,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
           orElse: () => null,
         );
 
+        // Merge in any fields missing from the server response so UI stays
+        // consistent (e.g., name/email/avatar not returned on update).
         var mergedUser = u;
         if (previousUser != null) {
           final oldRoles = previousUser.roles ?? [];
           final newRoles = u.roles ?? [];
 
           // If newRoles is empty but oldRoles was not, keep oldRoles.
-          // If newRoles is NOT empty, but elements are missing permissions,
-          // merge permissions from matching oldRoles.
+          // If newRoles is NOT empty but missing permissions, merge permissions
+          // from matching oldRoles.
           final List<Role> effectiveRoles = [];
           if (newRoles.isEmpty && oldRoles.isNotEmpty) {
             effectiveRoles.addAll(oldRoles);
@@ -144,7 +146,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
             }
           }
 
+          String? prefer(String? newValue, String? oldValue) {
+            if (newValue == null || newValue.isEmpty) return oldValue;
+            return newValue;
+          }
+
           mergedUser = u.copyWith(
+            name: prefer(u.name, previousUser.name),
+            email: prefer(u.email, previousUser.email),
+            phone: prefer(u.phone, previousUser.phone),
+            avatar: prefer(u.avatar, previousUser.avatar),
+            lang: prefer(u.lang, previousUser.lang),
+            mode: prefer(u.mode, previousUser.mode),
+            messengerColor: prefer(
+              u.messengerColor,
+              previousUser.messengerColor,
+            ),
             roles: effectiveRoles,
             isAdmin: u.isAdmin ?? previousUser.isAdmin,
           );

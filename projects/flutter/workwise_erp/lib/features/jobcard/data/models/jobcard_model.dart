@@ -69,11 +69,28 @@ class JobcardModel extends Jobcard {
     int? approvalStatus;
     int? approvalId;
     int? roleUserId;
+
+    // If the API returns multiple approval records, pick the most recent one.
+    // Some backends return the oldest record first, so using the first entry may
+    // incorrectly show "pending" even after approval/rejection.
     if (approvals.isNotEmpty) {
-      final first = approvals.first;
-      approvalStatus = _int(first['status']);
-      approvalId = _int(first['id']);
-      roleUserId = _int(first['role_user_id'] ?? first['roleUserId']);
+      // Prefer the approval record with the highest numeric ID (newest).
+      var latestApproval = approvals.first;
+      for (final approval in approvals) {
+        final currentId = _int(approval['id']) ?? 0;
+        final latestId = _int(latestApproval['id']) ?? 0;
+        if (currentId > latestId) {
+          latestApproval = approval;
+        }
+      }
+
+      approvalStatus = _int(latestApproval['status']);
+      approvalId = _int(latestApproval['id']);
+      roleUserId = _int(
+        latestApproval['role_user_id'] ??
+            latestApproval['roleUserId'] ??
+            latestApproval['role_userid'],
+      );
     }
 
     return JobcardModel(

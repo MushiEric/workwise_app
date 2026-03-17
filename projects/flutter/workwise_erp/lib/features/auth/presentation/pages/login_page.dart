@@ -380,7 +380,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                           ),
                                   ),
                                 ),
-                                _buildSwitchToWorkSpace(context),
+                                // _buildSwitchToWorkSpace(context),
                               ],
                             ),
                           ),

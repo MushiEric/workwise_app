@@ -1628,6 +1628,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
       if (approvals.isEmpty) return false;
       final first = approvals.first;
       final status = first['status'];
+
+      // Pending is indicated by: null or 1
       if (status == null) return true;
       if (status is int) return status == 1;
       return status.toString() == '1';
@@ -1717,7 +1719,23 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                   ? roleName
                   : (userId != null ? 'User #$userId' : 'Unknown');
               final statusVal = approval['status'];
-              final isApproved = statusVal == 1 || statusVal == '1';
+              int? statusId;
+              if (statusVal is int) {
+                statusId = statusVal;
+              } else if (statusVal != null) {
+                statusId = int.tryParse(statusVal.toString());
+              }
+
+              final isApproved = statusId == 3;
+              final isRejected = statusId == 2;
+              final isPending = statusId == 1 || statusId == null;
+
+              final statusLabel = isApproved
+                  ? 'Approved'
+                  : isRejected
+                  ? 'Rejected'
+                  : 'Pending';
+
               final comment = approval['comment']?.toString();
               final hasComment = comment != null && comment.isNotEmpty;
               final createdAt = _formatDate(approval['created_at']?.toString());
@@ -1846,12 +1864,14 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
                                   ),
                                 ),
                                 child: Text(
-                                  isApproved ? 'Approved' : 'Pending',
+                                  statusLabel,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isApproved
                                         ? Colors.green.shade700
-                                        : Colors.grey.shade700,
+                                        : (isRejected
+                                              ? Colors.red.shade700
+                                              : Colors.grey.shade700),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

@@ -27,6 +27,14 @@ class JobcardTile extends StatelessWidget {
   /// When provided, this takes priority over jobcard.receiverName.
   final String? resolvedReceiverName;
 
+  /// Optionally override the approval status displayed in the tile.
+  ///
+  /// The backend may return approval status metadata via a separate API call
+  /// (e.g. checkApprovalEligibility). When available, this value should be used
+  /// to show the accurate approval state even if the main jobcard payload still
+  /// contains an older approval record.
+  final int? approvalStatusOverride;
+
   const JobcardTile({
     super.key,
     required this.jobcard,
@@ -37,6 +45,7 @@ class JobcardTile extends StatelessWidget {
     this.onApprove,
     this.onReject,
     this.onSetReminder,
+    this.approvalStatusOverride,
     this.resolvedReceiverName,
   });
 
@@ -70,9 +79,12 @@ class JobcardTile extends StatelessWidget {
       statusColor = hexToColor(rowColorStr, fallback: statusColor);
     }
 
-    final displayStatus = statusName.isNotEmpty
-        ? statusName
-        : (jobcard.status ?? 'Unknown');
+    final approvalStatus = approvalStatusOverride ?? jobcard.approvalStatus;
+    final displayStatus = approvalStatus == 3
+        ? 'Approved'
+        : approvalStatus == 2
+        ? 'Rejected'
+        : (statusName.isNotEmpty ? statusName : (jobcard.status ?? 'Unknown'));
 
     Widget card = _buildCard(context, isDark, statusColor, displayStatus);
 

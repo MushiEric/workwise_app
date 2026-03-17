@@ -71,6 +71,8 @@ class AppDrawer extends ConsumerWidget {
       );
     }
 
+    final headerColor = isDark ? const Color(0xFF10163B) : AppColors.primary;
+
     return Drawer(
       elevation: 20,
       shape: const RoundedRectangleBorder(
@@ -84,6 +86,7 @@ class AppDrawer extends ConsumerWidget {
             _buildAnimatedHeader(
               context: context,
               isDark: isDark,
+              headerColor: headerColor,
               headerName: headerName,
               headerEmail: headerEmail,
               headerAvatar: headerAvatar,
@@ -138,6 +141,7 @@ class AppDrawer extends ConsumerWidget {
   Widget _buildAnimatedHeader({
     required BuildContext context,
     required bool isDark,
+    required Color headerColor,
     required String headerName,
     required String headerEmail,
     String? headerAvatar,
@@ -156,7 +160,7 @@ class AppDrawer extends ConsumerWidget {
         : null;
 
     return Material(
-      color: AppColors.primary,
+      color: headerColor,
       child: InkWell(
         onTap: () {
           Navigator.pop(context);
@@ -165,7 +169,7 @@ class AppDrawer extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: headerColor,
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(32),
               bottomRight: Radius.circular(32),
@@ -517,6 +521,14 @@ class AppDrawer extends ConsumerWidget {
   }
 
   Widget _buildBottomSection(BuildContext context, WidgetRef ref, bool isDark) {
+    final shareBg = isDark ? Colors.white12 : AppColors.primary.withOpacity(0.05);
+    final shareIconBg = isDark ? Colors.white10 : AppColors.primary.withOpacity(0.15);
+    final shareTextColor = isDark ? Colors.white : AppColors.primary;
+
+    final logoutBg = isDark ? Colors.white12 : Colors.red.withOpacity(0.05);
+    final logoutIconBg = isDark ? Colors.white10 : Colors.red.withOpacity(0.1);
+    final logoutTextColor = isDark ? Colors.white : Colors.red;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -524,8 +536,8 @@ class AppDrawer extends ConsumerWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white,
-            isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50,
+            isDark ? const Color(0xFF0A0E21) : Colors.white,
+            isDark ? const Color(0xFF0A0E21) : Colors.grey.shade50,
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -547,7 +559,7 @@ class AppDrawer extends ConsumerWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: shareBg,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -555,12 +567,12 @@ class AppDrawer extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
+                        color: shareIconBg,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.share2,
-                        color: AppColors.primary,
+                        color: shareTextColor,
                         size: 18,
                       ),
                     ),
@@ -572,19 +584,21 @@ class AppDrawer extends ConsumerWidget {
                             ?.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color: isDark ? Colors.white : AppColors.primary,
+                              color: shareTextColor,
                             ),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: isDark
+                            ? Colors.white10
+                            : AppColors.primary.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.chevronRight,
-                        color: AppColors.primary,
+                        color: shareTextColor,
                         size: 16,
                       ),
                     ),
@@ -608,7 +622,7 @@ class AppDrawer extends ConsumerWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.05),
+                  color: logoutBg,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -616,12 +630,12 @@ class AppDrawer extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: logoutIconBg,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.logOut,
-                        color: Colors.red,
+                        color: logoutTextColor,
                         size: 18,
                       ),
                     ),
@@ -633,19 +647,19 @@ class AppDrawer extends ConsumerWidget {
                             ?.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color: Colors.red,
+                              color: logoutTextColor,
                             ),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: logoutIconBg,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         LucideIcons.chevronRight,
-                        color: Colors.red,
+                        color: logoutTextColor,
                         size: 16,
                       ),
                     ),

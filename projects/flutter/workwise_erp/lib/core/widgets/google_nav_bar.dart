@@ -48,6 +48,8 @@ class AppGoogleNavBar extends StatelessWidget {
     final defaultBg =
         theme.bottomAppBarTheme.color ?? theme.colorScheme.surface;
 
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       color: backgroundColor ?? defaultBg,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -74,7 +76,11 @@ class AppGoogleNavBar extends StatelessWidget {
                 iconColor: item.iconColor,
                 iconActiveColor: item.activeIconColor,
                 text: item.label,
-                textStyle: item.textStyle,
+                textStyle: item.textStyle ??
+                    theme.textTheme.bodyMedium?.copyWith(
+                      color: isDark ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
                 leading: item.leading,
               ),
             )
