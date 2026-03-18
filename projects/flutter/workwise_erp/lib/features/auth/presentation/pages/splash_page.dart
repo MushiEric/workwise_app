@@ -117,6 +117,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -153,37 +154,17 @@ class _SplashPageState extends ConsumerState<SplashPage>
             ),
           ),
 
-          // Loading indicator moved to the bottom
+          // Standardized Cupertino Loading Indicator at the bottom
           Positioned(
             bottom: 80,
             left: 0,
             right: 0,
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
+              child: const Center(
+                child: CupertinoActivityIndicator(
+                  radius: 16,
+                ),
               ),
             ),
           ),
