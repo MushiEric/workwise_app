@@ -117,45 +117,58 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.purple],
-          ),
-        ),
-        child: Center(
-          child: FadeTransition(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Background image set to contain to ensure its content (Workwise text) isn't cropped
+          FadeTransition(
             opacity: _fadeAnim,
-            child: ScaleTransition(
-              scale: _scaleAnim,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      width: 240,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 48),
-                    const SizedBox(
-                      width: 28,
-                      height: 28,
-                      child: CupertinoActivityIndicator(
-                        radius: 14,
-                        color: Colors.white,
-                      ),
-                    ),
+            child: Center(
+              child: Image.asset(
+                'assets/images/home.png',
+                fit: BoxFit.contain,
+                width: MediaQuery.of(context).size.width * 0.85,
+              ),
+            ),
+          ),
+          
+          // Subtle overlay only at the bottom for loading text readability
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 200,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withOpacity(0.0),
+                    Colors.white.withOpacity(0.8),
                   ],
                 ),
               ),
             ),
           ),
-        ),
+
+          // Standardized Cupertino Loading Indicator at the bottom
+          Positioned(
+            bottom: 80,
+            left: 0,
+            right: 0,
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: const Center(
+                child: CupertinoActivityIndicator(
+                  radius: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
