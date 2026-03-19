@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../themes/app_colors.dart';
-import '../themes/app_icons.dart';
 
 /// A smart dropdown that renders its label ABOVE the tappable field (not as a
 /// floating label inside the input box) and opens a searchable bottom sheet.
@@ -8,6 +7,10 @@ class AppSmartDropdown<T> extends StatefulWidget {
   final T? value;
   final List<T> items;
   final String Function(T) itemBuilder;
+  /// Optional builder used for rendering items inside the bottom sheet list.
+  ///
+  /// If set, this is used instead of the default text-based rendering.
+  final Widget Function(T)? itemWidgetBuilder;
   final String label;
   final void Function(T?) onChanged;
   final String? hintText;
@@ -23,6 +26,7 @@ class AppSmartDropdown<T> extends StatefulWidget {
     required this.value,
     required this.items,
     required this.itemBuilder,
+    this.itemWidgetBuilder,
     required this.label,
     required this.onChanged,
     this.hintText,
@@ -47,6 +51,7 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
       builder: (ctx) => _SelectionBottomSheet<T>(
         items: widget.items,
         itemBuilder: widget.itemBuilder,
+        itemWidgetBuilder: widget.itemWidgetBuilder,
         label: widget.label,
         selectedValue: widget.value,
       ),
@@ -178,12 +183,14 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
 class _SelectionBottomSheet<T> extends StatefulWidget {
   final List<T> items;
   final String Function(T) itemBuilder;
+  final Widget Function(T)? itemWidgetBuilder;
   final String label;
   final T? selectedValue;
 
   const _SelectionBottomSheet({
     required this.items,
     required this.itemBuilder,
+    this.itemWidgetBuilder,
     required this.label,
     this.selectedValue,
   });
@@ -318,20 +325,22 @@ class _SelectionBottomSheetState<T> extends State<_SelectionBottomSheet<T>> {
                         final label = widget.itemBuilder(item);
                         final isSelected = item == widget.selectedValue;
                         return ListTile(
-                          title: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : (isDark
-                                        ? Colors.white70
-                                        : Colors.grey.shade800),
-                            ),
-                          ),
+                          title: widget.itemWidgetBuilder != null
+                              ? widget.itemWidgetBuilder!(item)
+                              : Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : (isDark
+                                              ? Colors.white70
+                                              : Colors.grey.shade800),
+                                  ),
+                                ),
                           trailing: isSelected
                               ? const Icon(
                                   Icons.check_rounded,

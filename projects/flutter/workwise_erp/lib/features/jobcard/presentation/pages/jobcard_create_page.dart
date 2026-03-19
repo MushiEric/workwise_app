@@ -312,23 +312,28 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
     try {
       final tRes = await ref.read(getSupportTicketsUseCaseProvider).call();
       tRes.fold((_) => _tickets = [], (list) {
-        _tickets = list
-            .map((t) => {'id': t.id, 'name': t.subject ?? 'Ticket ${t.id}'})
-            .toList();
+        _tickets = list.map((t) {
+          final code = (t.ticketCode ?? '').trim();
+          final subject = (t.subject ?? '').trim();
+          final display = (code.isNotEmpty)
+              ? '$code - ${subject.isNotEmpty ? subject : 'Ticket ${t.id}'}'
+              : (subject.isNotEmpty ? subject : 'Ticket ${t.id}');
+          return {'id': t.id, 'name': display};
+        }).toList();
       });
     } catch (_) {
       _tickets = [];
     }
 
     // Pre-load receivers for the default relatedTo so the dropdown is ready on first render
-    const _receiverTypeMap = {
+    const receiverTypeMap = {
       'Customer': 'customer',
       'Vendor': 'vendor',
       'Users': 'user',
       'User': 'user',
       'Employee': 'user',
     };
-    final defaultReceiverType = _receiverTypeMap[_relatedTo];
+    final defaultReceiverType = receiverTypeMap[_relatedTo];
     if (defaultReceiverType != null) {
       // When launched from a ticket the receiver ID is already set — preserve it.
       await _loadReceiversByType(
@@ -418,13 +423,14 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
         },
       );
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
             content: Text('Error generating jobcard number'),
           ),
         );
+      }
     } finally {
       // Stop animation
       _rotationController.stop();
@@ -881,16 +887,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             _statusError = null;
           }),
         ),
-      ],
-    );
-  }
-
-  /// Optional fields — revealed by the "Show more" button.
-  Widget _buildOptionalFields(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         // Assigned Staff *
         TechnicianSelector(
           selectedIds: _technicianIds,
@@ -902,6 +899,108 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           }),
         ),
         const SizedBox(height: 8),
+        // Related To *
+        AppSmartDropdown<String>(
+          value: _relatedTo,
+          items: const [
+            'Customer',
+            'Vehicle',
+            'Vendor',
+            'Employee',
+            'Users',
+            'Other',
+          ],
+          itemBuilder: (item) => item,
+          label: 'Related To *',
+
+          borderRadius: 12,
+          onChanged: (v) async {
+            if (v == null) return;
+            setState(() {
+              _relatedTo = v;
+              _receiverId = null;
+              _receiverType = null;
+              _receiverName = null;
+            });
+            if (v == 'Customer' ||
+                v == 'Vendor' ||
+                v == 'Users' ||
+                v == 'Employee') {
+              final map = {
+                'Customer': 'customer',
+                'Vendor': 'vendor',
+                'Users': 'user',
+                'Employee': 'user',
+              };
+              await _loadReceiversByType(map[v] ?? v.toLowerCase());
+            }
+          },
+        ),
+        const SizedBox(height: 8),
+        // Receiver / Vehicle / Other *
+        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty) ...[
+          AppSmartDropdown<int>(
+            value: _vehicleId,
+            items: _vehicles
+                .map((v) => int.tryParse(v['id']?.toString() ?? '') ?? 0)
+                .where((id) => id > 0)
+                .toList(),
+            itemBuilder: (id) {
+              final v = _vehicles.firstWhere(
+                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+                orElse: () => {},
+              );
+              return v.isNotEmpty
+                  ? (v['vehicle_name'] ?? v['name'] ?? 'Vehicle $id')
+                  : 'Vehicle $id';
+            },
+            label: 'Select Vehicle *',
+            borderRadius: 12,
+            onChanged: (v) => setState(() => _vehicleId = v),
+          ),
+        ] else if (_relatedTo == 'Other') ...[
+          AppTextField(
+            controller: _relatedOtherCtl,
+            onChanged: (v) => _receiverName = v,
+            label: 'Specify (Other) *',
+            hintText: 'Enter related value',
+          ),
+        ] else ...[
+          AppSmartDropdown<int>(
+            value: _receiverId,
+            items: _receivers
+                .map((r) => int.tryParse(r['id']?.toString() ?? '') ?? 0)
+                .where((id) => id > 0)
+                .toList(),
+            itemBuilder: (id) {
+              final r = _receivers.firstWhere(
+                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+                orElse: () => {},
+              );
+              return r.isNotEmpty
+                  ? (r['name'] ?? r['title'] ?? r['username'] ?? 'Receiver $id')
+                  : 'Receiver $id';
+            },
+            label: 'Select ${_relatedTo ?? 'Receiver'} *',
+            enabled: _receivers.isNotEmpty,
+
+            borderRadius: 12,
+            onChanged: (v) => setState(() => _receiverId = v),
+          ),
+        ],
+        const SizedBox(height: 16),
+        // Material / Service items
+        _buildStep4(context),
+      ],
+    );
+  }
+
+  /// Optional fields — revealed by the "Show more" button.
+  Widget _buildOptionalFields(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 4),
         // Supervisor
         FutureBuilder(
           future: _supervisorFuture,
@@ -985,111 +1084,34 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
             );
             return t.isNotEmpty ? (t['name'] ?? 'Ticket $id') : 'Ticket $id';
           },
+          itemWidgetBuilder: (id) {
+            final t = _tickets.firstWhere(
+              (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
+              orElse: () => {},
+            );
+            if (!t.isNotEmpty) return Text('Ticket $id');
+
+            final full = t['name']?.toString() ?? 'Ticket $id';
+            final parts = full.split(' - ');
+            if (parts.length < 2) return Text(full);
+
+            return Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${parts[0]}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: ' - ${parts.sublist(1).join(' - ')}'),
+                ],
+              ),
+            );
+          },
           label: 'Support Ticket',
 
           borderRadius: 12,
           onChanged: (v) => setState(() => _supportTicketId = v),
         ),
-        const SizedBox(height: 8),
-        // Related To
-        AppSmartDropdown<String>(
-          value: _relatedTo,
-          items: const [
-            'Customer',
-            'Vehicle',
-            'Vendor',
-            'Employee',
-            'Users',
-            'Other',
-          ],
-          itemBuilder: (item) => item,
-          label: 'Related To',
-
-          borderRadius: 12,
-          onChanged: (v) async {
-            if (v == null) return;
-            setState(() {
-              _relatedTo = v;
-              _receiverId = null;
-              _receiverType = null;
-              _receiverName = null;
-            });
-            if (v == 'Customer' ||
-                v == 'Vendor' ||
-                v == 'Users' ||
-                v == 'Employee') {
-              final map = {
-                'Customer': 'customer',
-                'Vendor': 'vendor',
-                'Users': 'user',
-                'Employee': 'user',
-              };
-              await _loadReceiversByType(map[v] ?? v.toLowerCase());
-            }
-          },
-        ),
-        // Vehicle (conditional)
-        if (_relatedTo == 'Vehicle' && _vehicles.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          AppSmartDropdown<int>(
-            value: _vehicleId,
-            items: _vehicles
-                .map((v) => int.tryParse(v['id']?.toString() ?? '') ?? 0)
-                .where((id) => id > 0)
-                .toList(),
-            itemBuilder: (id) {
-              final v = _vehicles.firstWhere(
-                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-                orElse: () => {},
-              );
-              return v.isNotEmpty
-                  ? (v['vehicle_name'] ?? v['name'] ?? 'Vehicle $id')
-                  : 'Vehicle $id';
-            },
-            label: 'Select Vehicle',
-
-            borderRadius: 12,
-            onChanged: (v) => setState(() => _vehicleId = v),
-          ),
-        ],
-        // Receiver (conditional)
-        if (_relatedTo == 'Customer' ||
-            _relatedTo == 'Vendor' ||
-            _relatedTo == 'Employee' ||
-            _relatedTo == 'Users') ...[
-          const SizedBox(height: 8),
-          AppSmartDropdown<int>(
-            value: _receiverId,
-            items: _receivers
-                .map((r) => int.tryParse(r['id']?.toString() ?? '') ?? 0)
-                .where((id) => id > 0)
-                .toList(),
-            itemBuilder: (id) {
-              final r = _receivers.firstWhere(
-                (e) => (int.tryParse(e['id']?.toString() ?? '') ?? 0) == id,
-                orElse: () => {},
-              );
-              return r.isNotEmpty
-                  ? (r['name'] ?? r['title'] ?? r['username'] ?? 'Receiver $id')
-                  : 'Receiver $id';
-            },
-            label: 'Select ${_relatedTo ?? 'Receiver'}',
-            enabled: _receivers.isNotEmpty,
-
-            borderRadius: 12,
-            onChanged: (v) => setState(() => _receiverId = v),
-          ),
-        ],
-        // Other free-text
-        if (_relatedTo == 'Other') ...[
-          const SizedBox(height: 8),
-          AppTextField(
-            controller: _relatedOtherCtl,
-            onChanged: (v) => _receiverName = v,
-            label: 'Specify (Other)',
-            hintText: 'Enter related value',
-          ),
-        ],
         const SizedBox(height: 8),
         // Completed On (dispatched date)
         AppTextField(
@@ -1116,7 +1138,6 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
           maxLines: 3,
         ),
         const SizedBox(height: 16),
-        _buildStep4(context),
       ],
     );
   }
