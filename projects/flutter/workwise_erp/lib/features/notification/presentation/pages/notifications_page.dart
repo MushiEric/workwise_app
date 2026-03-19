@@ -67,90 +67,95 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             ),
         ],
       ),
-      body: Builder(
-        builder: (context) {
-          if (state.isLoading) {
+      body: RefreshIndicator(
+        onRefresh: () => ref
+            .read(notificationsNotifierProvider.notifier)
+            .loadNotifications(),
+        child: Builder(
+          builder: (context) {
+            if (state.isLoading) {
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                itemCount: 6,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, __) => const _NotificationSkeletonCard(),
+              );
+            }
+
+            if (state.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      LucideIcons.alertCircle,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      context.l10n.failedToLoad,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.invalidate(notificationsNotifierProvider),
+                      child: Text(context.l10n.retry),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final notifications = state.notifications;
+            if (notifications.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.bellOff,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 6),
+                    Text(
+                      context.l10n.noNotificationsToShow,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             return ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: 6,
+              itemCount: notifications.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, __) => const _NotificationSkeletonCard(),
+              itemBuilder: (context, index) {
+                return _NotificationCard(
+                  notification: notifications[index],
+                  onTap: () => _showDetail(context, notifications[index]),
+                  onDismiss: () => ref
+                      .read(notificationsNotifierProvider.notifier)
+                      .dismiss(notifications[index].id),
+                );
+              },
             );
-          }
-
-          if (state.error != null) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    LucideIcons.alertCircle,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    context.l10n.failedToLoad,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(notificationsNotifierProvider),
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final notifications = state.notifications;
-          if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      LucideIcons.bellOff,
-                      size: 48,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  const SizedBox(height: 6),
-                  Text(
-                    context.l10n.noNotificationsToShow,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: notifications.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              return _NotificationCard(
-                notification: notifications[index],
-                onTap: () => _showDetail(context, notifications[index]),
-                onDismiss: () => ref
-                    .read(notificationsNotifierProvider.notifier)
-                    .dismiss(notifications[index].id),
-              );
-            },
-          );
-        },
+          },
+        ),
       ),
     );
   }

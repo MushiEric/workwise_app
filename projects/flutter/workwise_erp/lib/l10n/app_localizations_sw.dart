@@ -156,6 +156,15 @@ class AppLocalizationsSw extends AppLocalizations {
   String get setNewPassword => 'Weka Nywila Mpya';
 
   @override
+  String get currentPassword => 'Nywila ya sasa';
+
+  @override
+  String get enterCurrentPassword => 'Weka nywila ya sasa';
+
+  @override
+  String get enterNewPassword => 'Weka nywila mpya';
+
+  @override
   String resettingFor(String identifier) {
     return 'Kuweka upya kwa: $identifier';
   }

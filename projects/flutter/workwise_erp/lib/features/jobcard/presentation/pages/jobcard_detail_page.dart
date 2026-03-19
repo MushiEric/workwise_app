@@ -404,22 +404,23 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
               : 'Jobcard Detail',
           elevation: 0,
           actions: [
-            IconButton(
-              icon: Icon(
-                AppIcons.edit,
-                color: isDark ? Colors.white70 : AppColors.white,
+            if (!_hasRejectedApproval(state.item))
+              IconButton(
+                icon: Icon(
+                  AppIcons.edit,
+                  color: isDark ? Colors.white70 : AppColors.white,
+                ),
+                onPressed: () {
+                  if (state.item != null) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            JobcardCreatePage(existingJobcard: state.item),
+                      ),
+                    );
+                  }
+                },
               ),
-              onPressed: () {
-                if (state.item != null) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          JobcardCreatePage(existingJobcard: state.item),
-                    ),
-                  );
-                }
-              },
-            ),
             PopupMenuButton<String>(
               icon: Icon(
                 AppIcons.moreVertical,
@@ -1615,6 +1616,21 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         );
       },
     );
+  }
+
+  bool _hasRejectedApproval(dynamic jobcard) {
+    if (jobcard == null) return false;
+    null;
+    final approvals = (jobcard.approvals ?? <dynamic>[]) as List;
+    for (final approval in approvals) {
+      final statusVal = approval['status'];
+      if (statusVal == null) continue;
+      final status = statusVal is int
+          ? statusVal
+          : int.tryParse(statusVal.toString());
+      if (status == 2) return true;
+    }
+    return false;
   }
 
   Widget _buildApprovalLogsTab(

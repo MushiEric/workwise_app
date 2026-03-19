@@ -57,6 +57,9 @@
   "verificationFailed": "Uthibitisho umeshindwa",
 
   "setNewPassword": "Weka Nywila Mpya",
+  "currentPassword": "Nywila ya sasa",
+  "enterCurrentPassword": "Weka nywila ya sasa",
+  "enterNewPassword": "Weka nywila mpya",
   "resettingFor": "Kuweka upya kwa: {identifier}",
   "@resettingFor": {
     "placeholders": {

@@ -55,6 +55,9 @@
   "verificationFailed": "Verification failed",
 
   "setNewPassword": "Set New Password",
+  "currentPassword": "Current Password",
+  "enterCurrentPassword": "Enter current password",
+  "enterNewPassword": "Enter new password",
   "resettingFor": "Resetting for: {identifier}",
   "@resettingFor": {
     "placeholders": {

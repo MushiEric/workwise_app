@@ -156,6 +156,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get setNewPassword => 'Définir un nouveau mot de passe';
 
   @override
+  String get currentPassword => 'Mot de passe actuel';
+
+  @override
+  String get enterCurrentPassword => 'Entrez le mot de passe actuel';
+
+  @override
+  String get enterNewPassword => 'Entrez un nouveau mot de passe';
+
+  @override
   String resettingFor(String identifier) {
     return 'Réinitialisation pour: $identifier';
   }

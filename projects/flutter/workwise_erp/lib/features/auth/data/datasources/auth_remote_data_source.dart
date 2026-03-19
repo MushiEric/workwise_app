@@ -443,6 +443,58 @@ class AuthRemoteDataSource {
     }
   }
 
+  /// POST /changePasswordAuthenticated
+  Future<void> changePasswordAuthenticated({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final payload = {
+        'current_password': currentPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      };
+      final response = await client.post(
+        '/changePasswordAuthenticated',
+        data: payload,
+      );
+
+      // Some backends return a JSON payload with a `status` field even when the
+      // HTTP status code is 200. Treat non-200 `status` codes as errors.
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        final status = data['status'];
+        final message = data['message']?.toString();
+
+        if (status is int && status != 200) {
+          throw ServerException(message ?? 'Password change failed');
+        }
+      }
+
+      return;
+    } on DioException catch (e) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          throw TimeoutException(e.message ?? 'Request timed out');
+        case DioExceptionType.badResponse:
+          final message = e.response?.data is Map<String, dynamic>
+              ? (e.response?.data['message'] as String?)
+              : e.message;
+          throw ServerException(message ?? 'Server error');
+        case DioExceptionType.connectionError:
+        case DioExceptionType.unknown:
+        case DioExceptionType.cancel:
+        default:
+          throw NetworkException(e.message ?? 'Network error');
+      }
+    } catch (e) {
+      throw ServerException('Unknown error: ${e.toString()}');
+    }
+  }
+
   /// POST /logout
   Future<void> logout() async {
     try {

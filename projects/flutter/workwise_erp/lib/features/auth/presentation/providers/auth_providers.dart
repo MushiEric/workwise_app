@@ -14,6 +14,7 @@ import '../../domain/usecases/login.dart';
 import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/verify_forgot_password_otp.dart';
 import '../../domain/usecases/change_password_using_otp.dart';
+import '../../domain/usecases/change_password_authenticated.dart';
 import '../../domain/usecases/update_profile.dart';
 import '../../domain/usecases/logout.dart';
 import '../notifier/auth_notifier.dart';
@@ -68,6 +69,11 @@ final verifyForgotPasswordOtpUseCaseProvider = Provider((ref) {
 final changePasswordUsingOtpUseCaseProvider = Provider((ref) {
   final repo = ref.watch(authRepositoryProvider);
   return ChangePasswordUsingOtp(repo);
+});
+
+final changePasswordAuthenticatedUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(authRepositoryProvider);
+  return ChangePasswordAuthenticated(repo);
 });
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((

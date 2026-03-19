@@ -241,11 +241,11 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
       customerId: _selectedCustomerId,
       customerName: _selectedCustomerId != null
           ? _customers
-              .firstWhere(
-                (c) => c.id == _selectedCustomerId,
-                orElse: () => Customer(id: null, name: null),
-              )
-              .name
+                .firstWhere(
+                  (c) => c.id == _selectedCustomerId,
+                  orElse: () => Customer(id: null, name: null),
+                )
+                .name
           : null,
       contactIds: _selectedContactIds.isNotEmpty ? _selectedContactIds : null,
       files: _localFiles.isNotEmpty
@@ -332,7 +332,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
     _descriptionController.dispose();
     super.dispose();
   }
-
 
   Widget _buildAssigneesSection({
     required bool isDark,
@@ -440,7 +439,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
   }
 
   Widget _buildEndDateSection({required bool isDark, required Color primary}) {
-    final displayDate = _endDate == null ? '' : _endDate!.toLocal().toString().split(' ')[0];
+    final displayDate = _endDate == null
+        ? ''
+        : _endDate!.toLocal().toString().split(' ')[0];
     return AppTextField(
       controller: TextEditingController(text: displayDate),
       label: 'End Date',
@@ -532,7 +533,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                               color: Colors.black.withOpacity(0.02),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
-                            )
+                            ),
                           ],
                   ),
                   child: Row(
@@ -569,7 +570,8 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => setState(() => _localFiles.removeAt(i)),
+                        onPressed: () =>
+                            setState(() => _localFiles.removeAt(i)),
                         icon: Icon(
                           Icons.delete_outline_rounded,
                           size: 20,
@@ -597,7 +599,9 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill,
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : AppColors.greyFill,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
@@ -702,7 +706,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
               AppTextField(
                 controller: _subjectController,
                 label: 'Subject',
-                
+
                 validator: (v) =>
                     v?.trim().isEmpty == true ? 'Subject is required' : null,
               ),
@@ -723,7 +727,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Customer',
                 hintText: 'Select customer',
                 enabled: _customers.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) {
                   setState(() {
@@ -761,7 +764,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Priority',
                 hintText: 'Select priority',
                 enabled: _priorities.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedPriorityId = id),
               ),
@@ -782,7 +784,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Category',
                 hintText: 'Select category',
                 enabled: _categories.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedCategoryId = id),
               ),
@@ -803,7 +804,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Service',
                 hintText: 'Select service',
                 enabled: _services.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedServiceId = id),
               ),
@@ -825,7 +825,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Department',
                 hintText: 'Select department',
                 enabled: _departments.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedDepartmentId = id),
               ),
@@ -846,7 +845,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Status',
                 hintText: 'Select status',
                 enabled: _statuses.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedStatusId = id),
               ),
@@ -881,7 +879,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Supervisor',
                 hintText: 'Select supervisor',
                 enabled: _supervisors.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedSupervisorId = id),
               ),
@@ -902,7 +899,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 label: 'Location',
                 hintText: 'Select location',
                 enabled: _locations.isNotEmpty,
-                backgroundColor: isDark ? AppColors.white : AppColors.greyFill,
                 borderRadius: 12,
                 onChanged: (id) => setState(() => _selectedLocationId = id),
               ),
@@ -925,7 +921,6 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
 
               // ── Attachments ──────────────────────────────────────────
               _buildAttachmentsSection(isDark: isDark, primary: primary),
-
             ],
           ),
         ),

@@ -8,20 +8,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/themes/app_icons.dart';
-import 'package:workwise_erp/core/widgets/app_textfield.dart';
 
 import '../../domain/entities/user.dart' as domain;
 import '../providers/auth_providers.dart';
-import '../../../../core/provider/tenant_provider.dart';
+import '../routes/auth_router.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_modal.dart';
 import '../../../../core/themes/app_colors.dart';
-import 'package:workwise_erp/core/utils/image_utils.dart';
+import 'package:workwise_erp/core/widgets/app_circle_avatar.dart';
 import 'package:intl/intl.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
 import 'package:workwise_erp/core/provider/theme_provider.dart';
-import 'package:workwise_erp/core/services/tutorial_service.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
@@ -48,8 +46,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool _isEditing = false;
   File? _pickedAvatarFile;
   String? _avatarCacheBuster;
-  domain.User? _cachedUser; // persists user across loading transitions
-  bool _hasPopulated = false; // ensure controllers are populated only once
+  domain.User? _cachedUser; // persists auth-state user across loading transitions
+  domain.User? _lastPopulatedUser; // tracks which user last populated the controllers
 
   @override
   void initState() {
@@ -216,35 +214,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   Future<void> _changePassword() async {
-    // Navigate to change password screen or show modal
-    if (mounted) {
-      context.showFormModal(
-        title: context.l10n.changePassword,
-        form: Column(
-          children: [
-            AppTextField(obscureText: true),
-            const SizedBox(height: 16),
-            AppTextField(
-              obscureText: true,
-              labelText: context.l10n.newPassword,
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              obscureText: true,
-              labelText: context.l10n.confirmNewPassword,
-            ),
-          ],
-        ),
-        onSubmit: () {
-          Navigator.pop(context);
-          _showSnackBar(
-            message: context.l10n.passwordUpdatedMessage,
-            success: true,
-          );
-        },
-        submitText: context.l10n.saveChanges,
-      );
-    }
+    if (!mounted) return;
+    Navigator.pushNamed(context, AuthRoutes.changePasswordPage);
   }
 
   @override
@@ -252,20 +223,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
 
-    // Derive user exclusively from authNotifierProvider so we always reflect
-    // the latest server-confirmed data without depending on FutureProvider.
+    // Derive user from authNotifierProvider (kept up-to-date by loadCurrentUser
+    // and updateProfile calls).
     final authState = ref.watch(authNotifierProvider);
 
     domain.User? user;
     authState.maybeWhen(authenticated: (u) => user = u, orElse: () {});
 
-    // Also watch currentUserProvider (backend profile endpoint) to get the
-    // avatar URL, which may not be present in the auth token response.
+    // Also watch currentUserProvider (backend /getProfile endpoint) to get
+    // fresh profile data.  The auth state may temporarily lack fields such as
+    // name / email if the /getProfile response was partial; the FutureProvider
+    // result acts as the authoritative source for display once it resolves.
     final currentUserAsync = ref.watch(currentUserProvider);
+    domain.User? apiUser;
     String? backendAvatar;
     currentUserAsync.maybeWhen(
       data: (either) {
         either.fold((_) => null, (u) {
+          apiUser = u;
           backendAvatar = (u.avatar != null && u.avatar!.isNotEmpty)
               ? u.avatar
               : null;
@@ -277,7 +252,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     // Always keep the last known good user so the UI never collapses to
     // defaults while the notifier is in loading state.
     if (user != null) _cachedUser = user;
-    final displayUser = _cachedUser;
+
+    // Prefer the fresh API data (currentUserProvider) for display; fall back to
+    // the cached auth-state user.  This ensures the profile always shows the
+    // server-confirmed name / email even when the auth state is momentarily
+    // incomplete (e.g. after a cold restart before loadCurrentUser merges data).
+    final displayUser = apiUser ?? _cachedUser;
 
     // Resolved avatar: prefer AuthNotifier's confirmed user (which merges local
     // changes immediately) over the background profile provider if it's stale.
@@ -294,9 +274,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       resolvedAvatar = '$resolvedAvatar${separator}cb=${_avatarCacheBuster!}';
     }
 
-    // Populate form controllers exactly once (when user first becomes available).
-    if (!_hasPopulated && displayUser != null) {
-      _hasPopulated = true;
+    // Populate form controllers when display user becomes available or changes
+    // (e.g. fresh data from server replaces the cached auth-state user).
+    if (displayUser != null && displayUser != _lastPopulatedUser) {
+      _lastPopulatedUser = displayUser;
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _populateFromUser(displayUser),
       );
@@ -425,23 +406,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     ),
                   ],
                 ),
-                child: CircleAvatar(
+                child: AppCircleAvatar(
                   backgroundColor: avatarColor,
-                  backgroundImage: _pickedAvatarFile != null
-                      ? FileImage(_pickedAvatarFile!) as ImageProvider
-                      : imageProviderFromUrl(effectiveAvatar),
-                  child:
-                      (_pickedAvatarFile == null &&
-                          imageProviderFromUrl(effectiveAvatar) == null)
-                      ? Text(
-                          initials,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
+                  initials: initials,
+                  radius: 50,
+                  imageUrl: _pickedAvatarFile != null ? null : effectiveAvatar,
                 ),
               ),
               if (_isEditing)
@@ -1292,28 +1261,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       },
       icon: AppIcons.logOut,
       confirmColor: Colors.red,
-    );
-  }
-
-  void _showSwitchWorkspaceConfirmation() {
-    context.showConfirmationModal(
-      title: context.l10n.switchWorkspace,
-      message: context.l10n.switchWorkspaceMessage,
-      confirmText: context.l10n.switchButton,
-      onConfirm: () async {
-        // clear tenant and session
-        await ref.read(tenantLocalDataSourceProvider).clearTenant();
-        ref.read(tenantProvider.notifier).state = null;
-        await ref.read(authNotifierProvider.notifier).logout();
-
-        if (mounted) {
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil('/workspace', (route) => false);
-        }
-      },
-      icon: AppIcons.server,
-      confirmColor: Colors.orange,
     );
   }
 

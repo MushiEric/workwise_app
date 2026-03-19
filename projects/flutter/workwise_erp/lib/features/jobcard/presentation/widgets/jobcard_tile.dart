@@ -18,8 +18,8 @@ class JobcardTile extends StatelessWidget {
   final bool showReminder;
 
   /// Callbacks fired after confirmation dialogs
-  final Future<void> Function(int jobcardId, String? comment)? onApprove;
-  final Future<void> Function(int jobcardId, String? reason)? onReject;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
   final VoidCallback? onSetReminder;
 
   /// Pre-resolved receiver display name (passed from the list page after
@@ -109,15 +109,12 @@ class JobcardTile extends StatelessWidget {
       key: ValueKey('jc-${jobcard.id}'),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          // Swipe right → Approve
-          return await _showApproveDialog(context, isDark);
+          onApprove?.call();
         } else {
-          // Swipe left → Reject
-          return await _showRejectDialog(context, isDark);
+          onReject?.call();
         }
+        return false; // never dismiss the tile
       },
-      // We never actually remove from list until refresh; return false from
-      // confirmDismiss so the item stays visible
       onDismissed: (_) {},
       background: _swipeBackground(
         alignment: Alignment.centerLeft,
@@ -188,13 +185,14 @@ class JobcardTile extends StatelessWidget {
     required bool isDark,
   }) async {
     final commentCtl = TextEditingController();
-    final confirm = await showDialog<bool>(
+    final comment = await showDialog<String>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: MediaQuery.of(context).size.width,
+          width: MediaQuery.of(ctx).size.width,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +237,7 @@ class JobcardTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
+                      onPressed: () => Navigator.of(ctx).pop(null),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 8),
@@ -251,7 +249,9 @@ class JobcardTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () => Navigator.of(ctx).pop(true),
+                      // Read the text while the controller is still alive inside the dialog.
+                      onPressed: () =>
+                          Navigator.of(ctx).pop(commentCtl.text.trim()),
                       child: const Text('Approve'),
                     ),
                   ],
@@ -262,11 +262,9 @@ class JobcardTile extends StatelessWidget {
         ),
       ),
     );
-
-    final comment = commentCtl.text.trim();
-    commentCtl.dispose();
-    if (confirm == true) return comment.isEmpty ? null : comment;
-    return null;
+    // null  → user cancelled (Cancel button)
+    // non-null (including '') → user confirmed
+    return comment;
   }
 
   /// Shows a shared rejection dialog and returns the comment entered by the user
@@ -276,13 +274,14 @@ class JobcardTile extends StatelessWidget {
     required bool isDark,
   }) async {
     final reasonCtl = TextEditingController();
-    final confirm = await showDialog<bool>(
+    final comment = await showDialog<String>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: MediaQuery.of(context).size.width,
+          width: MediaQuery.of(ctx).size.width,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,7 +326,7 @@ class JobcardTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
+                      onPressed: () => Navigator.of(ctx).pop(null),
                       child: const Text('Cancel'),
                     ),
                     const SizedBox(width: 8),
@@ -339,7 +338,9 @@ class JobcardTile extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () => Navigator.of(ctx).pop(true),
+                      // Read the text while the controller is still alive inside the dialog.
+                      onPressed: () =>
+                          Navigator.of(ctx).pop(reasonCtl.text.trim()),
                       child: const Text('Reject'),
                     ),
                   ],
@@ -350,27 +351,9 @@ class JobcardTile extends StatelessWidget {
         ),
       ),
     );
-
-    final comment = reasonCtl.text.trim();
-    reasonCtl.dispose();
-    if (confirm == true) return comment.isEmpty ? null : comment;
-    return null;
-  }
-
-  Future<bool> _showApproveDialog(BuildContext context, bool isDark) async {
-    final comment = await showApproveCommentDialog(context, isDark: isDark);
-    if (comment != null && onApprove != null) {
-      await onApprove!(jobcard.id!, comment);
-    }
-    return false; // Don't dismiss the tile
-  }
-
-  Future<bool> _showRejectDialog(BuildContext context, bool isDark) async {
-    final comment = await showRejectCommentDialog(context, isDark: isDark);
-    if (comment != null && onReject != null) {
-      await onReject!(jobcard.id!, comment);
-    }
-    return false; // Don't dismiss the tile
+    // null  → user cancelled (Cancel button)
+    // non-null (including '') → user confirmed
+    return comment;
   }
 
   void _handleLongPress(BuildContext context) {

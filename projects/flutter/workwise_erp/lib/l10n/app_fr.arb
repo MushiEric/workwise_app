@@ -55,6 +55,9 @@
   "verificationFailed": "Échec de la vérification",
 
   "setNewPassword": "Définir un nouveau mot de passe",
+  "currentPassword": "Mot de passe actuel",
+  "enterCurrentPassword": "Entrez le mot de passe actuel",
+  "enterNewPassword": "Entrez un nouveau mot de passe",
   "resettingFor": "Réinitialisation pour: {identifier}",
   "@resettingFor": {
     "placeholders": {

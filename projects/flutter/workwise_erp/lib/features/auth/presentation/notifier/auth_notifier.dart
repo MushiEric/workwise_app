@@ -72,10 +72,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = AuthState.error(_friendlyMessageForFailure(f));
       },
       (u) async {
-        // Merge permissions from cached user if the fresh user lacks roles.
+        // Merge fields from the cached user into the fresh API response.
+        // /getProfile may return a lightweight profile that omits fields
+        // present in the login response (e.g. name, email, phone, avatar).
+        // Preserve those cached values so the profile page never shows
+        // placeholder text after a cold restart.
         var effective = u;
-        if ((u.roles == null || u.roles!.isEmpty) && cached?.roles != null) {
-          effective = u.copyWith(roles: cached!.roles);
+        if (cached != null) {
+          String? prefer(String? fresh, String? old) =>
+              (fresh == null || fresh.isEmpty) ? old : fresh;
+
+          effective = u.copyWith(
+            name: prefer(u.name, cached.name),
+            email: prefer(u.email, cached.email),
+            phone: prefer(u.phone, cached.phone),
+            avatar: prefer(u.avatar, cached.avatar),
+            roles: (u.roles == null || u.roles!.isEmpty)
+                ? (cached.roles ?? u.roles)
+                : u.roles,
+          );
         }
 
         state = AuthState.authenticated(effective);

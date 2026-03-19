@@ -375,68 +375,80 @@ class _IndexPageState extends ConsumerState<IndexPage>
         body: Column(
           children: [
             // Search Bar (when active)
-            if (_isSearching)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 70,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white10 : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.searchModulesHint,
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.white54 : Colors.grey.shade500,
-                        ),
-                        prefixIcon: Icon(
-                          LucideIcons.search,
-                          color: isDark ? Colors.white54 : Colors.grey.shade600,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            LucideIcons.x,
-                            color: isDark
-                                ? Colors.white54
-                                : Colors.grey.shade600,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _isSearching = false;
-                            });
-                          },
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1A2634),
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
-                ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: animation,
+                axisAlignment: -1,
+                child: FadeTransition(opacity: animation, child: child),
               ),
-            SizedBox(height: 16),
+              child: _isSearching
+                  ? Padding(
+                      key: const ValueKey('search-visible'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white10 : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: context.l10n.searchModulesHint,
+                            hintStyle: TextStyle(
+                              color: isDark
+                                  ? Colors.white54
+                                  : Colors.grey.shade500,
+                            ),
+                            prefixIcon: Icon(
+                              LucideIcons.search,
+                              color: isDark
+                                  ? Colors.white54
+                                  : Colors.grey.shade600,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                LucideIcons.x,
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.grey.shade600,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _isSearching = false;
+                                });
+                              },
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
+                          ),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('search-hidden')),
+            ),
+            const SizedBox(height: 16),
 
             // Greeting banner (replaces stats cards)
             Padding(
@@ -730,7 +742,7 @@ class _ModuleTileState extends State<_ModuleTile>
       case 'project':
         return 'assets/icons/project.svg';
       case 'documents':
-        return 'assets/icons/documents.svg';    
+        return 'assets/icons/documents.svg';
       default:
         return null;
     }

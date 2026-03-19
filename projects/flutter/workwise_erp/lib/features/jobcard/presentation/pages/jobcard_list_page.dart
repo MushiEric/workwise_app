@@ -11,6 +11,7 @@ import 'package:workwise_erp/core/widgets/drawer_filter.dart';
 import 'package:workwise_erp/core/utils/scroll_aware_fab.dart';
 
 import 'package:workwise_erp/core/services/tutorial_service.dart';
+import 'package:workwise_erp/core/provider/navigator_key_provider.dart';
 import '../notifier/jobcard_notifier.dart';
 import '../providers/jobcard_providers.dart';
 import '../widgets/jobcard_tile.dart';
@@ -854,8 +855,8 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
             context,
           ).pushNamed('/jobcards/detail', arguments: jobcard.id),
           onDelete: () => _confirmDelete(jobcard),
-          onApprove: (id, comment) => _approveJobcard(jobcard, comment),
-          onReject: (id, reason) => _rejectJobcard(jobcard, reason),
+          onApprove: canSwipe ? () => _approveJobcard(jobcard) : null,
+          onReject: canSwipe ? () => _rejectJobcard(jobcard) : null,
         );
       },
     );
@@ -967,7 +968,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
   Widget _buildJobcardSkeleton() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-   
+
     return Card(
       margin: EdgeInsets.only(bottom: 12.h),
       elevation: 1,
@@ -982,7 +983,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
       color: isDark ? const Color(0xFF151A2E) : Colors.white,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-        
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1089,7 +1090,17 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     }
   }
 
-  Future<void> _approveJobcard(Jobcard jobcard, String? comment) async {
+  Future<void> _approveJobcard(Jobcard jobcard) async {
+    if (!mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Show comment dialog from the stable list-page context.
+    final comment = await JobcardTile.showApproveCommentDialog(
+      context,
+      isDark: isDark,
+    );
+    if (comment == null) return; // user cancelled
+
     final jobcardId = jobcard.id;
     if (jobcardId == null) return;
 
@@ -1101,12 +1112,12 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     }
 
     final eligibility = _approvalEligibility[jobcardId]!;
+    final messenger = ref.read(scaffoldMessengerKeyProvider).currentState;
 
     if (!eligibility.eligible) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger?.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
           backgroundColor: Colors.red.shade600,
           content: const Text('Not eligible to approve this jobcard'),
         ),
@@ -1118,10 +1129,9 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     final roleUserId = eligibility.roleUserId ?? jobcard.roleUserId;
 
     if (approvalId == null || roleUserId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger?.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
           backgroundColor: Colors.red.shade600,
           content: const Text('Unable to determine approval context'),
         ),
@@ -1131,43 +1141,54 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
     final approveUc = ref.read(approveJobcardUseCaseProvider);
 
-    showAppLoadingDialog(context, message: 'Approving...');
+    if (mounted) showAppLoadingDialog(context, message: 'Approving...');
     final res = await approveUc.call(
       jobcardId: jobcardId,
       status: 3,
       approvalId: approvalId,
       roleUserId: roleUserId,
-      comment: comment,
+      comment: comment.isEmpty ? null : comment,
     );
-    hideAppLoadingDialog(context);
+    if (mounted) hideAppLoadingDialog(context);
 
-    if (!mounted) return;
     res.fold(
-      (l) => ScaffoldMessenger.of(context).showSnackBar(
+      (l) => messenger?.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
           backgroundColor: Colors.red.shade600,
           content: Text('Approval failed: $l'),
         ),
       ),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger?.showSnackBar(
           const SnackBar(
-            behavior: SnackBarBehavior.floating,
+            behavior: SnackBarBehavior.fixed,
             backgroundColor: Colors.green,
             content: Text('Jobcard approved successfully'),
           ),
         );
-        setState(() {
-          _approvalEligibility.clear();
-          _approvalEligibilityRequested.clear();
-        });
+        if (mounted) {
+          setState(() {
+            _approvalEligibility.clear();
+            _approvalEligibilityRequested.clear();
+          });
+        }
         ref.read(jobcardNotifierProvider.notifier).loadJobcards(force: true);
       },
     );
   }
 
-  Future<void> _rejectJobcard(Jobcard jobcard, String? comment) async {
+  Future<void> _rejectJobcard(Jobcard jobcard) async {
+    if (!mounted) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Show comment dialog from the stable list-page context.
+    final comment = await JobcardTile.showRejectCommentDialog(
+      context,
+      isDark: isDark,
+    );
+    if (comment == null) return; // user cancelled
+
     final jobcardId = jobcard.id;
     if (jobcardId == null) return;
 
@@ -1179,15 +1200,15 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     }
 
     final eligibility = _approvalEligibility[jobcardId]!;
+    final messenger = ref.read(scaffoldMessengerKeyProvider).currentState;
 
     final approvalId = eligibility.approvalId ?? jobcard.approvalId;
     final roleUserId = eligibility.roleUserId ?? jobcard.roleUserId;
 
     if (approvalId == null || roleUserId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger?.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
           backgroundColor: Colors.red.shade600,
           content: const Text('Unable to determine approval context'),
         ),
@@ -1197,36 +1218,37 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
 
     final rejectUc = ref.read(rejectJobcardUseCaseProvider);
 
-    showAppLoadingDialog(context, message: 'Rejecting...');
+    if (mounted) showAppLoadingDialog(context, message: 'Rejecting...');
     final res = await rejectUc.call(
       jobcardId: jobcardId,
       status: 2,
       approvalId: approvalId,
       roleUserId: roleUserId,
-      comment: comment,
+      comment: comment.isEmpty ? null : comment,
     );
-    hideAppLoadingDialog(context);
+    if (mounted) hideAppLoadingDialog(context);
 
-    if (!mounted) return;
     res.fold(
-      (l) => ScaffoldMessenger.of(context).showSnackBar(
+      (l) => messenger?.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
+          behavior: SnackBarBehavior.fixed,
           backgroundColor: Colors.red.shade600,
           content: Text('Rejection failed: $l'),
         ),
       ),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger?.showSnackBar(
           const SnackBar(
-            behavior: SnackBarBehavior.floating,
+            behavior: SnackBarBehavior.fixed,
             content: Text('Jobcard rejected'),
           ),
         );
-        setState(() {
-          _approvalEligibility.clear();
-          _approvalEligibilityRequested.clear();
-        });
+        if (mounted) {
+          setState(() {
+            _approvalEligibility.clear();
+            _approvalEligibilityRequested.clear();
+          });
+        }
         ref.read(jobcardNotifierProvider.notifier).loadJobcards(force: true);
       },
     );
@@ -1247,9 +1269,10 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
     final deleteUc = ref.read(deleteJobcardUseCaseProvider);
     showAppLoadingDialog(context, message: 'Deleting jobcard...');
     final res = await deleteUc.call(id: jobcard.id!);
-    hideAppLoadingDialog(context);
+    if (mounted) hideAppLoadingDialog(context);
+    final messenger = ref.read(scaffoldMessengerKeyProvider).currentState;
     res.fold(
-      (l) => ScaffoldMessenger.of(context).showSnackBar(
+      (l) => messenger?.showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -1258,7 +1281,7 @@ class _JobcardListPageState extends ConsumerState<JobcardListPage>
         ),
       ),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger?.showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
             content: Text('Jobcard deleted'),

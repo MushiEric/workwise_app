@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:workwise_erp/core/constants/app_constant.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/permission_provider.dart';
+import 'package:workwise_erp/core/widgets/app_circle_avatar.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 
@@ -78,7 +79,8 @@ class AppDrawer extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
       ),
-      backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
+      // Make the drawer background match the header so the top safe area is not white.
+      backgroundColor: headerColor,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,47 +93,55 @@ class AppDrawer extends ConsumerWidget {
               headerEmail: headerEmail,
               headerAvatar: headerAvatar,
             ),
-
-            const SizedBox(height: 16),
-
-            _buildDivider(isDark),
-
-            _buildMenuHeader(isDark, context),
-
-            const SizedBox(height: 12),
-
-            // Menu items with animations
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: appMenus.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 2),
-                itemBuilder: (context, index) {
-                  final m = appMenus[index];
-                  final checker = ref.watch(permissionCheckerProvider);
+              child: Container(
+                // Keep the drawer content background consistent with light/dark mode.
+                color: isDark ? const Color(0xFF0A0E21) : Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    _buildDivider(isDark),
+                    _buildMenuHeader(isDark, context),
+                    const SizedBox(height: 12),
+                    // Menu items with animations
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: appMenus.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 2),
+                        itemBuilder: (context, index) {
+                          final m = appMenus[index];
+                          final checker = ref.watch(permissionCheckerProvider);
 
-                  if (m.requiredPermissions != null &&
-                      m.requiredPermissions!.isNotEmpty &&
-                      !checker.hasAnyPermission(m.requiredPermissions!)) {
-                    return const SizedBox.shrink();
-                  }
+                          if (m.requiredPermissions != null &&
+                              m.requiredPermissions!.isNotEmpty &&
+                              !checker.hasAnyPermission(
+                                m.requiredPermissions!,
+                              )) {
+                            return const SizedBox.shrink();
+                          }
 
-                  return _buildAnimatedMenuItem(
-                    context: context,
-                    isDark: isDark,
-                    icon: _getLucideIconForMenu(m.id),
-                    title: m.title,
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, m.route);
-                    },
-                  );
-                },
+                          return _buildAnimatedMenuItem(
+                            context: context,
+                            isDark: isDark,
+                            icon: _getLucideIconForMenu(m.id),
+                            title: m.title,
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(context, m.route);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    // Bottom Section
+                    _buildBottomSection(context, ref, isDark),
+                  ],
+                ),
               ),
             ),
-
-            // Bottom Section
-            _buildBottomSection(context, ref, isDark),
           ],
         ),
       ),
@@ -191,20 +201,11 @@ class AppDrawer extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: CircleAvatar(
+                child: AppCircleAvatar(
                   radius: 28,
                   backgroundColor: Colors.white,
-                  backgroundImage: imageProvider,
-                  child: imageProvider == null
-                      ? Text(
-                          initials,
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        )
-                      : null,
+                  initials: initials,
+                  imageUrl: headerAvatar,
                 ),
               ),
               const SizedBox(width: 14),

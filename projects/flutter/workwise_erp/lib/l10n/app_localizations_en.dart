@@ -156,6 +156,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setNewPassword => 'Set New Password';
 
   @override
+  String get currentPassword => 'Current Password';
+
+  @override
+  String get enterCurrentPassword => 'Enter current password';
+
+  @override
+  String get enterNewPassword => 'Enter new password';
+
+  @override
   String resettingFor(String identifier) {
     return 'Resetting for: $identifier';
   }

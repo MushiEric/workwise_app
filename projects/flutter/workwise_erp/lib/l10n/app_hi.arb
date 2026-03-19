@@ -51,6 +51,9 @@
   "verificationFailed": "सत्यापन विफल हुआ",
 
   "setNewPassword": "नया पासवर्ड सेट करें",
+  "currentPassword": "मौजूदा पासवर्ड",
+  "enterCurrentPassword": "मौजूदा पासवर्ड दर्ज करें",
+  "enterNewPassword": "नया पासवर्ड दर्ज करें",
   "resettingFor": "के लिए रीसेट हो रहा है: {identifier}",
   "newPassword": "नया पासवर्ड",
   "confirmPassword": "पासवर्ड की पुष्टि करें",

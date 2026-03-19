@@ -261,67 +261,31 @@ class JobcardRemoteDataSource {
     }
   }
 
-  /// GET /jobcard/getJobCardSetting
+  /// GET /jobcard/getJobCardSetting (and fallback to /jobcard/getJobCardSettings)
   Future<List<Map<String, dynamic>>> getJobcardSettings() async {
-    try {
-      final resp = await client.get('/jobcard/getJobCardSetting');
+    // This endpoint varies across backends and may return:
+    // - A raw list of statuses
+    // - { data: [...], ... }
+    // - { jobcard_settings: [...] }
+    // When the response format changes, our tab list can end up empty.
+    // We attempt multiple endpoints and scan the returned map for the first list.
+
+    Future<List<Map<String, dynamic>>> tryFetch(String path) async {
+      final resp = await client.get(path);
       final raw = resp.data;
 
-      // Debug: log raw response structure to diagnose empty-status issues
-      debugPrint('[JobcardSettings] response type: ${raw.runtimeType}');
+      debugPrint('[JobcardSettings] GET $path -> ${raw.runtimeType}');
       if (raw is Map)
-        debugPrint('[JobcardSettings] top-level keys: ${raw.keys.toList()}');
-      if (raw is Map && raw['data'] is Map)
-        debugPrint(
-          '[JobcardSettings] data keys: ${(raw['data'] as Map).keys.toList()}',
-        );
+        debugPrint('[JobcardSettings] keys: ${raw.keys.toList()}');
 
-      final list = _extractList(raw);
+      return _extractList(raw);
+    }
 
-      // If list is empty, do a wider search through nested maps
-      if (list.isEmpty && raw is Map) {
-        // Search top-level keys
-        for (final key in raw.keys) {
-          if (raw[key] is List && (raw[key] as List).isNotEmpty) {
-            final extracted = (raw[key] as List)
-                .map((e) {
-                  if (e is Map) return Map<String, dynamic>.from(e);
-                  return <String, dynamic>{};
-                })
-                .where((m) => m.isNotEmpty)
-                .toList();
-            if (extracted.isNotEmpty) {
-              debugPrint(
-                '[JobcardSettings] found list under key: $key (${extracted.length} items)',
-              );
-              return extracted;
-            }
-          }
-        }
-        // Search one level deeper inside data map
-        if (raw['data'] is Map) {
-          final dataMap = raw['data'] as Map;
-          for (final key in dataMap.keys) {
-            if (dataMap[key] is List && (dataMap[key] as List).isNotEmpty) {
-              final extracted = (dataMap[key] as List)
-                  .map((e) {
-                    if (e is Map) return Map<String, dynamic>.from(e);
-                    return <String, dynamic>{};
-                  })
-                  .where((m) => m.isNotEmpty)
-                  .toList();
-              if (extracted.isNotEmpty) {
-                debugPrint(
-                  '[JobcardSettings] found list under data.$key (${extracted.length} items)',
-                );
-                return extracted;
-              }
-            }
-          }
-        }
+    try {
+      var list = await tryFetch('/jobcard/getJobCardSetting');
+      if (list.isEmpty) {
+        list = await tryFetch('/jobcard/getJobCardSettings');
       }
-
-      debugPrint('[JobcardSettings] extracted ${list.length} items');
       return list;
     } on DioException catch (e) {
       final respData = e.response?.data;
@@ -331,6 +295,14 @@ class JobcardRemoteDataSource {
           throw ServerException(
             'Server returned HTML for /jobcard/getJobCardSetting',
           );
+      }
+      // If the error is 404, retry with the alternate endpoint before failing.
+      if (e.response?.statusCode == 404) {
+        try {
+          return await tryFetch('/jobcard/getJobCardSettings');
+        } catch (_) {
+          // fall through to throw below
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -494,16 +466,14 @@ class JobcardRemoteDataSource {
     }
   }
 
-  /// POST /logistic/jobcardApproval
+  /// POST /logistic/jobCardApproval
   ///
-  /// Payload:
-  /// {
-  ///   "status": 3, // 1 pending, 2 rejected, 3 approved
-  ///   "jobcard_id": <id>,
-  ///   "comment": "...",
-  ///   "approval_id": <approvalId>,
-  ///   "role_user_id": <roleUserId>,
-  /// }
+  /// Query params:
+  /// - jobcard_id
+  /// - role_user_id
+  /// - approval_id
+  /// - status (2 = reject, 3 = approve)
+  /// - comment (optional)
   Future<void> submitJobcardApproval({
     required int jobcardId,
     required int status,
@@ -512,33 +482,40 @@ class JobcardRemoteDataSource {
     String? comment,
   }) async {
     try {
-      final payload = <String, dynamic>{
+      final params = <String, dynamic>{
         'status': status,
         'jobcard_id': jobcardId,
         'approval_id': approvalId,
         'role_user_id': roleUserId,
         if (comment != null && comment.isNotEmpty) 'comment': comment,
       };
+      print('[jobCardApproval] params: $params');
       final resp = await client.post(
-        '/logistic/jobcardApproval',
-        data: payload,
+        '/logistic/jobCardApproval',
+        queryParameters: params,
       );
 
       final raw = resp.data;
+      print('[jobCardApproval] status: ${resp.statusCode}');
+      print('[jobCardApproval] response: $raw');
       if (raw is String && raw.trim().startsWith('<')) {
         throw ServerException(
-          'Server returned HTML for /logistic/jobcardApproval',
+          'Server returned HTML for /logistic/jobCardApproval',
         );
       }
     } on DioException catch (e) {
       final respData = e.response?.data;
+      print('[jobCardApproval] DioException status: ${e.response?.statusCode}');
+      print('[jobCardApproval] DioException response: $respData');
+      print('[jobCardApproval] DioException message: ${e.message}');
       if (respData is String && respData.trim().startsWith('<')) {
         throw ServerException(
-          'Server returned HTML for /logistic/jobcardApproval',
+          'Server returned HTML for /logistic/jobCardApproval',
         );
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
+      print('[jobCardApproval] unexpected error: $e');
       throw ServerException(e.toString());
     }
   }

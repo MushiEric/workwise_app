@@ -234,14 +234,20 @@ class AppModal {
     String submitText = 'Submit',
     String? cancelText,
     bool isLoading = false,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
 
+    /// If true, the modal will expand to ~90% of screen height.
+    /// Set to false to let the content size itself more naturally.
+    bool expandContent = true,
+
+    /// Explicit heights are useful for small forms such as a change password dialog.
+    double? height,
+  }) {
+    final primaryColor = AppColors.primary;
     return show<T>(
       context: context,
       title: title,
-      expandContent: true,
+      expandContent: expandContent,
+      height: height,
       content: form,
       actions: [
         Row(
@@ -481,7 +487,6 @@ class _AppModalContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
     final modalBackgroundColor =
         backgroundColor ?? (isDark ? const Color(0xFF151A2E) : Colors.white);
     final mediaQuery = MediaQuery.of(context);
@@ -801,6 +806,8 @@ extension AppModalExtension on BuildContext {
     String submitText = 'Submit',
     String? cancelText,
     bool isLoading = false,
+    bool expandContent = true,
+    double? height,
   }) {
     return AppModal.showForm(
       context: this,
@@ -810,6 +817,8 @@ extension AppModalExtension on BuildContext {
       submitText: submitText,
       cancelText: cancelText,
       isLoading: isLoading,
+      expandContent: expandContent,
+      height: height,
     );
   }
 

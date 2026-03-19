@@ -156,6 +156,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get setNewPassword => 'नया पासवर्ड सेट करें';
 
   @override
+  String get currentPassword => 'मौजूदा पासवर्ड';
+
+  @override
+  String get enterCurrentPassword => 'मौजूदा पासवर्ड दर्ज करें';
+
+  @override
+  String get enterNewPassword => 'नया पासवर्ड दर्ज करें';
+
+  @override
   String resettingFor(String identifier) {
     return 'के लिए रीसेट हो रहा है: $identifier';
   }

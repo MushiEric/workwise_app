@@ -215,6 +215,31 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Change password for a signed-in user.
+  @override
+  Future<Either<Failure, void>> changePasswordAuthenticated({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      await remote.changePasswordAuthenticated(
+        currentPassword: currentPassword,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+      return const Either.right(null);
+    } on ServerException catch (e) {
+      return Either.left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Either.left(NetworkFailure(e.message));
+    } on TimeoutException catch (e) {
+      return Either.left(TimeoutFailure(e.message));
+    } catch (_) {
+      return const Either.left(ServerFailure('Unexpected error'));
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────
   // UPDATE PROFILE
   // ─────────────────────────────────────────────────────────────

@@ -37,4 +37,13 @@ abstract class AuthRepository {
     required String otp,
     required String newPassword,
   });
+
+  /// Change password for an authenticated user.
+  ///
+  /// Requires the current password for validation.
+  Future<Either<Failure, void>> changePasswordAuthenticated({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  });
 }
