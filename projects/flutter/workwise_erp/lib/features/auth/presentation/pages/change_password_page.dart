@@ -60,10 +60,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
             ? failure.message
             : context.l10n.tryAgain;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            behavior: SnackBarBehavior.fixed,
-          ),
+          SnackBar(content: Text(message), behavior: SnackBarBehavior.fixed),
         );
       },
       (_) {
@@ -81,9 +78,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        title: context.l10n.changePassword,
-        actions: [
+      appBar: CustomAppBar(title: context.l10n.changePassword, actions: [
           
         ],
       ),
@@ -95,7 +90,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                
                 const SizedBox(height: 24),
                 Form(
                   key: _formKey,

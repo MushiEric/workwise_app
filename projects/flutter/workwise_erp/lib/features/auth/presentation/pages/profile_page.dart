@@ -46,8 +46,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   bool _isEditing = false;
   File? _pickedAvatarFile;
   String? _avatarCacheBuster;
-  domain.User? _cachedUser; // persists auth-state user across loading transitions
-  domain.User? _lastPopulatedUser; // tracks which user last populated the controllers
+  domain.User?
+  _cachedUser; // persists auth-state user across loading transitions
+  domain.User?
+  _lastPopulatedUser; // tracks which user last populated the controllers
 
   @override
   void initState() {

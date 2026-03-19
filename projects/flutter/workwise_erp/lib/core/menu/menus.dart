@@ -36,7 +36,7 @@ const List<MenuItemModel> appMenus = [
 
   // Inventory: allow users who can view invoices/accounts or inventory (no explicit permission in payload)
 
-  // Project: requires 'show project dashboard' — open projects list
+  // // Project: requires 'show project dashboard' — open projects list
   // MenuItemModel(
   //   id: 'project',
   //   title: 'Project',
@@ -45,7 +45,7 @@ const List<MenuItemModel> appMenus = [
   //   requiredPermissions: ['show project dashboard'],
   // ),
 
-  // // Documents: open to everyone
+  // Documents: open to everyone
   // MenuItemModel(
   //   id: 'documents',
   //   title: 'Documents',

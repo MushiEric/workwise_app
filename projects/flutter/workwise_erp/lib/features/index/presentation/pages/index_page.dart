@@ -288,7 +288,7 @@ class _IndexPageState extends ConsumerState<IndexPage>
           titleWidget: Padding(
             padding: const EdgeInsets.only(left: 4.0),
             child: Image.asset(
-              'assets/images/logo2.png',
+              'assets/images/logo-white.png',
               height: 28,
               fit: BoxFit.contain,
             ),
@@ -481,14 +481,17 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [AppColors.primary, AppColors.purple],
+                        colors: [
+                          AppColors.primary,
+                          Color.fromARGB(255, 56, 59, 223),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
                         ),
                       ],
                     ),
@@ -614,10 +617,13 @@ class _IndexPageState extends ConsumerState<IndexPage>
                       opacity: _fadeAnimation,
                       child: GridView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
+                              crossAxisCount: 2,
                               mainAxisSpacing: 10,
                               crossAxisSpacing: 10,
                               // square cards (equal width + height)
@@ -755,7 +761,7 @@ class _ModuleTileState extends State<_ModuleTile>
         asset,
         width: size,
         height: size,
-        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        // colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       );
     }
 
@@ -800,54 +806,52 @@ class _ModuleTileState extends State<_ModuleTile>
         onExit: (_) => _hoverController.reverse(),
         child: GestureDetector(
           onTap: () => Navigator.pushNamed(context, menu.route),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icon card
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F1724) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.grey.shade200,
-                    width: 1,
+          child: AspectRatio(
+            aspectRatio: 1.0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F1724) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 6),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 6),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: _buildMenuIcon(
+                        menu.id,
+                        _accentForIndex(widget.index),
+                        size: 80,
+                      ),
                     ),
-                  ],
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                child: Center(
-                  child: _buildMenuIcon(
-                    menu.id,
-                    _accentForIndex(widget.index),
-                    size: 48,
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  Text(
+                    menu.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 10),
-
-              // Label outside of the card container
-              Text(
-                menu.title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1A2634),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+            ),
           ),
         ),
       ),

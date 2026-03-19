@@ -53,8 +53,8 @@ class AuthRepositoryImpl implements AuthRepository {
       // ensures the cached value is trustworthy for the NEXT cold start).
       final domain.User domainUser =
           (model.roles != null && model.roles!.isNotEmpty)
-              ? model.toDomain()
-              : await _withMergedRoles(model);
+          ? model.toDomain()
+          : await _withMergedRoles(model);
 
       return Either.right(domainUser);
     }
