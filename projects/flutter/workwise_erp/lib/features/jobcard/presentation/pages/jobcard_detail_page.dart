@@ -3,12 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workwise_erp/core/widgets/app_button.dart';
 import 'package:workwise_erp/core/widgets/app_dialog.dart';
-import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/core/themes/app_colors.dart';
 import '../providers/jobcard_detail_providers.dart';
-import '../notifier/jobcard_detail_notifier.dart';
 import 'package:workwise_erp/features/support/domain/entities/support_department.dart';
-import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_tab_bar.dart';
 import '../../../../core/themes/app_icons.dart';
@@ -26,18 +23,31 @@ class JobcardDetailPage extends ConsumerStatefulWidget {
 }
 
 class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   TabController? _tabController;
+  late final AnimationController _shimmerController;
+  late final Animation<double> _shimmerAnimation;
+
   int? _id;
-  String? _selectedStatusName;
-  bool _isChangingStatus = false;
   bool _isApproving = false;
   bool _isRejecting = false;
 
   bool? _isApprovalEligible;
   int? _approvalId;
   int? _roleUserId;
-  int? _approvalStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+    _shimmerAnimation = CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   void didChangeDependencies() {
@@ -55,47 +65,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
   @override
   void dispose() {
+    _shimmerController.dispose();
     _tabController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _updateJobcardStatus(String newName, int newId) async {
-    final previous = _selectedStatusName;
-    setState(() {
-      _selectedStatusName = newName;
-      _isChangingStatus = true;
-    });
-    if (!context.mounted) return;
-    showAppLoadingDialog(context, message: 'Updating status...');
-    final err = await ref
-        .read(jobcardDetailNotifierProvider.notifier)
-        .changeStatus(_id!, newId);
-    if (!context.mounted) return;
-    hideAppLoadingDialog(context);
-    if (err != null) {
-      setState(() {
-        _selectedStatusName = previous;
-        _isChangingStatus = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update status: $err'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } else {
-      setState(() => _isChangingStatus = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Status updated to $newName')));
-    }
-  }
-
-  bool _isApprovableStatus(dynamic jobcard) {
-    final status = (jobcard.statusRow?['name'] ?? jobcard.status ?? '')
-        .toString()
-        .toLowerCase();
-    return status.contains('approve') || status.contains('pending');
   }
 
   Future<bool> _checkApprovalEligibility(int id) async {
@@ -106,7 +78,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
       (_) {
         _approvalId = null;
         _roleUserId = null;
-        _approvalStatus = null;
         return false;
       },
       (data) {
@@ -125,7 +96,42 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
         _approvalId = parseInt(data['approval_id']);
         _roleUserId = parseInt(data['role_user_id']);
-        _approvalStatus = parseInt(data['approval_status']);
+
+        // Fallback: if the API didn't return approval_id / role_user_id,
+        // extract them from the already-loaded jobcard's pending approval record.
+        if (eligible && (_approvalId == null || _roleUserId == null)) {
+          final jobcard = ref.read(jobcardDetailNotifierProvider).item;
+          if (jobcard != null) {
+            final approvals = (jobcard.approvals ?? <dynamic>[]) as List;
+            for (final a in approvals) {
+              if (a is! Map) continue;
+              final statusVal = a['status'];
+              final isPending =
+                  statusVal == null ||
+                  statusVal == 1 ||
+                  statusVal.toString() == '1';
+              if (isPending) {
+                _approvalId ??= parseInt(a['id']);
+                _roleUserId ??= parseInt(
+                  a['role_user_id'] ?? a['roleUserId'] ?? a['role_userid'],
+                );
+                break;
+              }
+            }
+            // Last resort: take values from the first approval record.
+            if ((_approvalId == null || _roleUserId == null) &&
+                approvals.isNotEmpty &&
+                approvals.first is Map) {
+              final first = approvals.first as Map;
+              _approvalId ??= parseInt(first['id']);
+              _roleUserId ??= parseInt(
+                first['role_user_id'] ??
+                    first['roleUserId'] ??
+                    first['role_userid'],
+              );
+            }
+          }
+        }
 
         return eligible;
       },
@@ -201,6 +207,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         ),
       ),
       (_) async {
+        // Immediately hide the buttons before the async reload completes.
+        if (mounted) setState(() => _isApprovalEligible = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -228,8 +236,20 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
   Future<void> _rejectJobcard(int id) async {
     if (_isRejecting) return;
-    final reason = await _askRejectionReason();
+
+    // Re-check eligibility so that _approvalId and _roleUserId are populated.
+    final eligible = await _checkApprovalEligibility(id);
     if (!mounted) return;
+    if (!eligible) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade600,
+          content: const Text('Not eligible to reject this jobcard'),
+        ),
+      );
+      return;
+    }
 
     if (_approvalId == null || _roleUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -241,6 +261,10 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
       );
       return;
     }
+
+    final reason = await _askRejectionReason();
+    if (!mounted) return;
+    if (reason == null) return;
 
     setState(() => _isRejecting = true);
     showAppLoadingDialog(context, message: 'Rejecting...');
@@ -266,6 +290,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         ),
       ),
       (_) async {
+        // Immediately hide the buttons before the async reload completes.
+        if (mounted) setState(() => _isApprovalEligible = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             behavior: SnackBarBehavior.floating,
@@ -321,57 +347,218 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   }
 
   Widget _buildDetailSkeleton(bool isDark) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _skeletonLine(width: 160.w, height: 18.h, isDark: isDark),
-          SizedBox(height: 12.h),
-          _skeletonLine(width: double.infinity, height: 14.h, isDark: isDark),
-          SizedBox(height: 8.h),
-          _skeletonLine(width: double.infinity, height: 14.h, isDark: isDark),
-          SizedBox(height: 20.h),
-          _skeletonLine(width: double.infinity, height: 120.h, isDark: isDark),
-          SizedBox(height: 20.h),
-          Row(
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, _) {
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: _skeletonLine(
-                  width: double.infinity,
-                  height: 12.h,
-                  isDark: isDark,
+              // ── Jobcard Information card skeleton ──────────────────────
+              _shimmerCard(
+                isDark: isDark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _shimmerBox(
+                          width: 18.w,
+                          height: 18.h,
+                          isDark: isDark,
+                          radius: 4.r,
+                        ),
+                        SizedBox(width: 8.w),
+                        _shimmerBox(width: 140.w, height: 16.h, isDark: isDark),
+                      ],
+                    ),
+                    SizedBox(height: 14.h),
+                    ...List.generate(
+                      6,
+                      (_) => Padding(
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: Row(
+                          children: [
+                            _shimmerBox(
+                              width: 100.w,
+                              height: 13.h,
+                              isDark: isDark,
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: _shimmerBox(
+                                width: double.infinity,
+                                height: 13.h,
+                                isDark: isDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: _skeletonLine(
-                  width: double.infinity,
-                  height: 12.h,
-                  isDark: isDark,
+
+              SizedBox(height: 16.h),
+
+              // ── Status section skeleton ────────────────────────────────
+              _shimmerCard(
+                isDark: isDark,
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                child: Row(
+                  children: [
+                    _shimmerBox(
+                      width: 16.w,
+                      height: 16.h,
+                      isDark: isDark,
+                      radius: 4.r,
+                    ),
+                    SizedBox(width: 8.w),
+                    _shimmerBox(width: 48.w, height: 14.h, isDark: isDark),
+                    SizedBox(width: 16.w),
+                    _shimmerBox(
+                      width: 9.w,
+                      height: 9.h,
+                      isDark: isDark,
+                      isCircle: true,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: _shimmerBox(
+                        width: double.infinity,
+                        height: 14.h,
+                        isDark: isDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Summary of Tasks skeleton ──────────────────────────────
+              _shimmerCard(
+                isDark: isDark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _shimmerBox(
+                          width: 18.w,
+                          height: 18.h,
+                          isDark: isDark,
+                          radius: 4.r,
+                        ),
+                        SizedBox(width: 8.w),
+                        _shimmerBox(width: 155.w, height: 16.h, isDark: isDark),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    _shimmerBox(
+                      width: double.infinity,
+                      height: 13.h,
+                      isDark: isDark,
+                    ),
+                    SizedBox(height: 8.h),
+                    _shimmerBox(
+                      width: double.infinity,
+                      height: 13.h,
+                      isDark: isDark,
+                    ),
+                    SizedBox(height: 8.h),
+                    _shimmerBox(width: 220.w, height: 13.h, isDark: isDark),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Recommendation skeleton ────────────────────────────────
+              _shimmerCard(
+                isDark: isDark,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _shimmerBox(
+                          width: 18.w,
+                          height: 18.h,
+                          isDark: isDark,
+                          radius: 4.r,
+                        ),
+                        SizedBox(width: 8.w),
+                        _shimmerBox(width: 130.w, height: 16.h, isDark: isDark),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    _shimmerBox(
+                      width: double.infinity,
+                      height: 13.h,
+                      isDark: isDark,
+                    ),
+                    SizedBox(height: 8.h),
+                    _shimmerBox(width: 180.w, height: 13.h, isDark: isDark),
+                  ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12.h),
-          _skeletonLine(width: double.infinity, height: 12.h, isDark: isDark),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _skeletonLine({
+  /// A shimmer-animated coloured box.
+  Widget _shimmerBox({
     required double width,
     required double height,
     required bool isDark,
+    double? radius,
+    bool isCircle = false,
   }) {
+    final t = _shimmerAnimation.value;
+    final baseColor = isDark
+        ? const Color(0xFF1E2433)
+        : const Color(0xFFE8EAED);
+    final highlightColor = isDark
+        ? const Color(0xFF2E3650)
+        : const Color(0xFFF4F5F7);
+    final color = Color.lerp(baseColor, highlightColor, t)!;
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: isDark ? Colors.white12 : Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(8.r),
+        color: color,
+        borderRadius: isCircle ? null : BorderRadius.circular(radius ?? 6.r),
+        shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
       ),
+    );
+  }
+
+  /// A shimmer-animated card container.
+  Widget _shimmerCard({
+    required bool isDark,
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+  }) {
+    final t = _shimmerAnimation.value;
+    final borderColor = isDark
+        ? Color.lerp(Colors.white10, Colors.white12, t)!
+        : Color.lerp(Colors.grey.shade200, Colors.grey.shade100, t)!;
+    return Container(
+      padding: padding ?? const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Color.lerp(const Color(0xFF10142A), const Color(0xFF151A2E), t)!
+            : Color.lerp(Colors.white, const Color(0xFFFAFAFA), t)!,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: child,
     );
   }
 
@@ -379,15 +566,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
   Widget build(BuildContext context) {
     final state = ref.watch(jobcardDetailNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Sync _selectedStatusName whenever a new jobcard loads
-    ref.listen<JobcardDetailState>(jobcardDetailNotifierProvider, (_, next) {
-      if (next.item != null && !next.loading) {
-        final sr = next.item.statusRow as Map<String, dynamic>?;
-        final name = sr?['name']?.toString() ?? next.item.status?.toString();
-        if (name != null && mounted) setState(() => _selectedStatusName = name);
-      }
-    });
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -582,7 +760,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
   Widget _buildOverviewTab(BuildContext context, dynamic jobcard, bool isDark) {
     final primaryColor = AppColors.primary;
-    final statusesAsync = ref.watch(jobcardStatusesForDetailProvider);
     final usersAsync = ref.watch(jobcardUsersForDetailProvider);
     final departmentsAsync = ref.watch(jobcardDepartmentsForDetailProvider);
     final relatedTo = jobcard.relatedTo?.toString() ?? '';
@@ -590,12 +767,8 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         ? ref.watch(jobcardReceiversForDetailProvider(relatedTo))
         : const AsyncData(<Map<String, dynamic>>[]);
 
-    final permissionChecker = ref.watch(permissionCheckerProvider);
-    final canManageStatus = permissionChecker.hasPermission(
-      'manage jobcard status',
-    );
-
     final users = usersAsync.valueOrNull ?? [];
+
     final receivers = receiversAsync.valueOrNull ?? [];
 
     final currentStatusId = jobcard.status?.toString() ?? '';
@@ -750,226 +923,51 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
           const SizedBox(height: 16),
 
-          // ── 2. Status Dropdown (styled like support ticket view) ────────
+          // ── 2. Status ──────────────────────────────────────────────────
           Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.03)
-                  : Colors.grey.shade50,
+              color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: currentStatusColor.withOpacity(0.3),
                 width: 1,
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        AppIcons.flagRounded,
-                        size: 14,
-                        color: currentStatusColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Status',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: currentStatusColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+            child: Row(
+              children: [
+                Icon(AppIcons.flagRounded, size: 16, color: currentStatusColor),
+                const SizedBox(width: 8),
+                Text(
+                  'Status',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: currentStatusColor,
                   ),
-                  const SizedBox(height: 8),
-                  statusesAsync.when(
-                    loading: () => const SizedBox(
-                      height: 48,
-                      child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                    error: (_, __) => _buildStatusBadge(
-                      currentStatusName,
-                      currentStatusColor,
-                    ),
-                    data: (statusList) {
-                      if (statusList.isEmpty) {
-                        // If status options aren't available, allow retry and show current status.
-                        return GestureDetector(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Reloading status options...'),
-                              ),
-                            );
-                            ref.invalidate(jobcardStatusesForDetailProvider);
-                          },
-                          child: Row(
-                            children: [
-                              _buildStatusBadge(
-                                currentStatusName,
-                                currentStatusColor,
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.refresh_rounded,
-                                size: 18,
-                                color: currentStatusColor.withOpacity(0.8),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      final effectiveName =
-                          _selectedStatusName ?? currentStatusName;
-                      final availableNames = statusList
-                          .map((s) => s.name ?? '')
-                          .where((n) => n.isNotEmpty)
-                          .toList();
-                      final currentValue =
-                          availableNames.contains(effectiveName)
-                          ? effectiveName
-                          : (availableNames.isNotEmpty
-                                ? availableNames.first
-                                : effectiveName);
-
-                      final displayColor = (() {
-                        final match = statusList.firstWhere(
-                          (s) => s.name == currentValue,
-                          orElse: () => statusList.first,
-                        );
-                        if (match.color != null) {
-                          return _hexColor(match.color!);
-                        }
-                        return _getStatusColor(currentValue);
-                      })();
-
-                      final canChangeStatus =
-                          canManageStatus && !_isChangingStatus;
-
-                      return GestureDetector(
-                        onTap: canChangeStatus
-                            ? () => _showStatusPickerDialog(
-                                context: context,
-                                label: 'Status',
-                                value: currentValue,
-                                options: availableNames,
-                                colorOf: (name) {
-                                  final match = statusList.firstWhere(
-                                    (s) => s.name == name,
-                                    orElse: () => statusList.first,
-                                  );
-                                  return match.color != null
-                                      ? _hexColor(match.color!)
-                                      : _getStatusColor(name);
-                                },
-                                onChanged: (selected) {
-                                  if (selected == currentValue ||
-                                      jobcard.id == null)
-                                    return;
-                                  final matchedStatus = statusList.firstWhere(
-                                    (s) => s.name == selected,
-                                    orElse: () => statusList.first,
-                                  );
-                                  if (matchedStatus.id == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        behavior: SnackBarBehavior.floating,
-                                        content: Text(
-                                          'Cannot update status (missing status ID)',
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  _updateJobcardStatus(
-                                    selected,
-                                    matchedStatus.id!,
-                                  );
-                                },
-                              )
-                            : null,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: displayColor.withOpacity(0.35),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 9,
-                                height: 9,
-                                decoration: BoxDecoration(
-                                  color: displayColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  currentValue,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white
-                                        : const Color(0xFF1A2634),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              if (!canManageStatus)
-                                Icon(
-                                  Icons.lock_outline,
-                                  size: 18,
-                                  color: isDark
-                                      ? Colors.white38
-                                      : Colors.grey.shade500,
-                                )
-                              else if (_isChangingStatus)
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      displayColor,
-                                    ),
-                                  ),
-                                )
-                              else
-                                Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 20,
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.grey.shade600,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: currentStatusColor,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    currentStatusName.isNotEmpty ? currentStatusName : '-',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF1A2634),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -1060,93 +1058,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
         ],
       ),
     );
-  }
-
-  Widget _buildStatusBadge(String name, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        name,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-
-  Future<void> _showStatusPickerDialog({
-    required BuildContext context,
-    required String label,
-    required String value,
-    required List<String> options,
-    required Color Function(String) colorOf,
-    required Function(String) onChanged,
-  }) async {
-    final picked = await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: isDark ? const Color(0xFF1A2234) : Colors.white,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Text(
-                  'Select $label',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
-                ),
-              ),
-              const Divider(height: 1),
-              ...options.map((opt) {
-                final isSelected = opt.toLowerCase() == value.toLowerCase();
-                final optColor = colorOf(opt);
-                return ListTile(
-                  leading: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: optColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  title: Text(
-                    opt,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                      color: isSelected
-                          ? optColor
-                          : (isDark ? Colors.white70 : Colors.grey.shade800),
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? Icon(Icons.check_rounded, color: optColor, size: 18)
-                      : null,
-                  onTap: () => Navigator.of(ctx).pop(opt),
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (picked != null && picked != value) onChanged(picked);
   }
 
   Color _hexColor(String hex) {
@@ -1457,7 +1368,9 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
           rawStatus;
     }
 
-    // Build a map of user_id -> user name from the user_creator field
+    // Build a map of user_id -> user name.
+    // Seed from the jobcard creator, then enrich from nested user objects
+    // that may be present on each log entry (various API shapes supported).
     final userCreator = jobcard.userCreator as Map<String, dynamic>?;
     final Map<String, String> userNameMap = {};
     if (userCreator != null) {
@@ -1465,6 +1378,35 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
       final uname = userCreator['name']?.toString();
       if (uid != null && uname != null) {
         userNameMap[uid] = uname;
+      }
+    }
+    // Enrich map from inline user objects on each log record.
+    for (final logEntry in logs) {
+      if (logEntry is! Map) continue;
+      final entryId = logEntry['user_id']?.toString();
+      if (entryId == null || userNameMap.containsKey(entryId)) continue;
+      // Try log['user'], log['causer'], log['author']
+      for (final key in ['user', 'causer', 'author']) {
+        final obj = logEntry[key];
+        if (obj is Map) {
+          final name =
+              obj['name']?.toString() ??
+              obj['full_name']?.toString() ??
+              obj['username']?.toString();
+          if (name != null && name.isNotEmpty) {
+            userNameMap[entryId] = name;
+            break;
+          }
+        }
+      }
+      // Also try direct user_name / username fields on the log entry
+      if (!userNameMap.containsKey(entryId)) {
+        final directName =
+            logEntry['user_name']?.toString() ??
+            logEntry['username']?.toString();
+        if (directName != null && directName.isNotEmpty) {
+          userNameMap[entryId] = directName;
+        }
       }
     }
 
@@ -1642,9 +1584,30 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
     bool hasPendingApprovalStatus() {
       if (approvals.isEmpty) return false;
-      final first = approvals.first;
-      final status = first['status'];
 
+      // Pick the approval record with the highest numeric ID (most recent).
+      // Some backends return records oldest-first, so checking only
+      // approvals.first would show "pending" even after the action completes.
+      Map<String, dynamic>? latest;
+      int latestId = -1;
+      for (final a in approvals) {
+        if (a is! Map) continue;
+        final rid = a['id'];
+        final numId = (rid is int)
+            ? rid
+            : (int.tryParse(rid?.toString() ?? '') ?? -1);
+        if (numId > latestId) {
+          latestId = numId;
+          latest = Map<String, dynamic>.from(a);
+        }
+      }
+      // If we couldn't find any valid record fall back to first.
+      latest ??= (approvals.first is Map)
+          ? Map<String, dynamic>.from(approvals.first as Map)
+          : null;
+      if (latest == null) return false;
+
+      final status = latest['status'];
       // Pending is indicated by: null or 1
       if (status == null) return true;
       if (status is int) return status == 1;
@@ -1729,11 +1692,48 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
             itemBuilder: (context, index) {
               final approval = approvals[index] as Map<String, dynamic>;
               final dependent = approval['dependent'] as Map<String, dynamic>?;
-              final roleName = dependent?['name']?.toString();
+
+              // Resolve the display name by trying multiple API response shapes:
+              // 1. approval[user][name]  — nested user object
+              // 2. approval[approver][name]
+              // 3. dependent[user][name]
+              // 4. dependent[name]      — role / approver name
+              // 5. approval[user_name] / approval[username]
+              // 6. Fall back to "User #<id>"
+              String? _findName(Map<String, dynamic>? m, List<String> keys) {
+                if (m == null) return null;
+                for (final k in keys) {
+                  final v = m[k];
+                  if (v is String && v.isNotEmpty) return v;
+                }
+                return null;
+              }
+
+              final userObj = approval['user'] is Map
+                  ? Map<String, dynamic>.from(approval['user'] as Map)
+                  : null;
+              final approverObj = approval['approver'] is Map
+                  ? Map<String, dynamic>.from(approval['approver'] as Map)
+                  : null;
+              final depUserObj = (dependent != null && dependent['user'] is Map)
+                  ? Map<String, dynamic>.from(dependent['user'] as Map)
+                  : null;
+
               final userId = approval['user_id']?.toString();
-              final displayName = roleName != null
-                  ? roleName
-                  : (userId != null ? 'User #$userId' : 'Unknown');
+              final displayName =
+                  _findName(userObj, ['name', 'full_name', 'username']) ??
+                  _findName(approverObj, ['name', 'full_name', 'username']) ??
+                  _findName(depUserObj, ['name', 'full_name', 'username']) ??
+                  _findName(dependent, ['name']) ??
+                  (approval['user_name']?.toString().isNotEmpty == true
+                      ? approval['user_name'].toString()
+                      : null) ??
+                  (approval['username']?.toString().isNotEmpty == true
+                      ? approval['username'].toString()
+                      : null) ??
+                  (userId != null && userId.isNotEmpty
+                      ? 'User #$userId'
+                      : 'Unknown');
               final statusVal = approval['status'];
               int? statusId;
               if (statusVal is int) {
@@ -1744,7 +1744,6 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
               final isApproved = statusId == 3;
               final isRejected = statusId == 2;
-              final isPending = statusId == 1 || statusId == null;
 
               final statusLabel = isApproved
                   ? 'Approved'

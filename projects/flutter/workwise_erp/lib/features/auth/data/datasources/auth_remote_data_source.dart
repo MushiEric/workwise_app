@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import 'package:workwise_erp/core/constants/api_constant.dart';
 import 'package:workwise_erp/core/errors/exceptions.dart';
 import 'package:workwise_erp/core/errors/exceptions_extended.dart';
 import '../models/user_model.dart';
@@ -14,6 +15,68 @@ bool _isDefaultAvatarPlaceholder(String url) {
   return url == 'avatar.png' ||
       url.endsWith('/avatar.png') ||
       url.endsWith('/storage/avatar.png');
+}
+
+String _normalizeAvatarPath(String url) {
+  // The backend may return "/profile/profile/..." on /getProfile.
+  // Normalize this consistently to /storage/... so image loading works.
+  if (url.startsWith('/profile/')) {
+    return url.replaceFirst('/profile/', '/storage/');
+  }
+  return url;
+}
+
+Future<String?> _resolveAvatarUrl(Dio client, String url) async {
+  final trimmed = url.trim();
+  if (trimmed.isEmpty) return null;
+
+  // Absolute URL (S3 or direct path) should be used as-is.
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  // Strip leading slash for the service API request body.
+  final lookupUrl = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+
+  if (lookupUrl.isNotEmpty) {
+    try {
+      final resp = await client.post(
+        '/getFile',
+        data: {'url': lookupUrl},
+        options: Options(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
+        ),
+      );
+
+      if (resp.data is Map<String, dynamic>) {
+        final path = resp.data['path'];
+        if (path is String && path.isNotEmpty) {
+          return path;
+        }
+      }
+    } catch (_) {
+      // ignore and fallback to local path normalization below.
+    }
+  }
+
+  // Local/legacy fallback path.
+  if (trimmed.startsWith('/profile/')) {
+    return trimmed.replaceFirst('/profile/', '/storage/');
+  }
+
+  if (trimmed.startsWith('/')) {
+    final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    return '$base$trimmed';
+  }
+
+  if (!trimmed.contains('://') && trimmed.contains('/')) {
+    final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    return '$base/$trimmed';
+  }
+
+  return trimmed;
 }
 
 class AuthRemoteDataSource {
@@ -51,21 +114,45 @@ class AuthRemoteDataSource {
         throw ServerException('Invalid server response when fetching user');
       }
 
-      // /getProfile returns a full avatar URL in the `profile` field.
-      // Promote it into `avatar` so the rest of the app can use it without
-      // any model changes — imageProviderFromUrl already handles full URLs.
-      // Skip the server's default placeholder (avatar.png) which returns 404.
+      // /getProfile may supply `profile` and/or `avatar` fields.
+      // Resolve the exact image URL via /getFile for dev/staging mixed storage paths.
       final profileUrl = dataMap['profile'];
+      final avatarVal = dataMap['avatar'];
+
+      String? resolvedAvatar;
+
       if (profileUrl is String &&
           profileUrl.isNotEmpty &&
           !_isDefaultAvatarPlaceholder(profileUrl)) {
-        dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = profileUrl;
-      } else {
-        // Clear the bare filename from `avatar` too so we don't hit the same 404.
-        final avatarVal = dataMap['avatar'];
-        if (avatarVal is String && _isDefaultAvatarPlaceholder(avatarVal)) {
-          dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = null;
+        final url = await _resolveAvatarUrl(client, profileUrl);
+        if (url != null && url.isNotEmpty) {
+          resolvedAvatar = url;
+          dataMap = Map<String, dynamic>.from(dataMap)..['profile'] = url;
         }
+      }
+
+      if ((resolvedAvatar == null || resolvedAvatar.isEmpty) &&
+          avatarVal is String &&
+          avatarVal.isNotEmpty &&
+          !_isDefaultAvatarPlaceholder(avatarVal)) {
+        final url = await _resolveAvatarUrl(client, avatarVal);
+        if (url != null && url.isNotEmpty) {
+          resolvedAvatar = url;
+        }
+      }
+
+      if (resolvedAvatar != null && resolvedAvatar.isNotEmpty) {
+        dataMap = Map<String, dynamic>.from(dataMap)
+          ..['avatar'] = resolvedAvatar;
+      } else if (avatarVal is String &&
+          _isDefaultAvatarPlaceholder(avatarVal)) {
+        dataMap = Map<String, dynamic>.from(dataMap)..['avatar'] = null;
+      } else if (avatarVal is String && avatarVal.isNotEmpty) {
+        dataMap = Map<String, dynamic>.from(dataMap)
+          ..['avatar'] = _normalizeAvatarPath(avatarVal);
+      } else if (profileUrl is String && profileUrl.isNotEmpty) {
+        dataMap = Map<String, dynamic>.from(dataMap)
+          ..['avatar'] = _normalizeAvatarPath(profileUrl);
       }
 
       // normalize older backend responses that use `type` (string/number)
@@ -251,6 +338,19 @@ class AuthRemoteDataSource {
           }
           if (fetchedMap != null) {
             fetchedMap['api_token'] = fetchedMap['api_token'] ?? token;
+
+            if ((fetchedMap['roles'] == null ||
+                    (fetchedMap['roles'] is List &&
+                        (fetchedMap['roles'] as List).isEmpty)) &&
+                fetchedMap.containsKey('type')) {
+              final t = fetchedMap['type'];
+              if (t != null) {
+                fetchedMap['roles'] = [
+                  {'name': t.toString()},
+                ];
+              }
+            }
+
             return UserModel.fromJson(fetchedMap);
           }
         } catch (_) {

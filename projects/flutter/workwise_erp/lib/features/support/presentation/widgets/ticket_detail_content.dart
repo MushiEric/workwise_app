@@ -1694,49 +1694,187 @@ class _TicketDetailContentState extends ConsumerState<TicketDetailContent>
   }
 }
 
-class TicketDetailSkeleton extends StatelessWidget {
+class TicketDetailSkeleton extends StatefulWidget {
   const TicketDetailSkeleton({super.key});
+
+  @override
+  State<TicketDetailSkeleton> createState() => _TicketDetailSkeletonState();
+}
+
+class _TicketDetailSkeletonState extends State<TicketDetailSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final base = isDark ? Colors.white12 : Colors.grey.shade200;
 
-    Widget line({required double height, double width = double.infinity}) {
-      return Container(
-        height: height,
-        width: width,
-        decoration: BoxDecoration(
-          color: base,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      );
-    }
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (context, _) {
+        final t = _anim.value;
+        final baseColor =
+            isDark ? const Color(0xFF1E2433) : const Color(0xFFE8EAED);
+        final highlightColor =
+            isDark ? const Color(0xFF2E3650) : const Color(0xFFF4F5F7);
+        final shimmerColor = Color.lerp(baseColor, highlightColor, t)!;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          line(height: 18.h, width: 140.w),
-          SizedBox(height: 12.h),
-          line(height: 14.h, width: 180.w),
-          SizedBox(height: 20.h),
-          line(height: 16.h),
-          SizedBox(height: 12.h),
-          line(height: 16.h),
-          SizedBox(height: 12.h),
-          line(height: 16.h),
-          SizedBox(height: 20.h),
-          line(height: 14.h),
-          SizedBox(height: 10.h),
-          line(height: 14.h),
-          SizedBox(height: 10.h),
-          line(height: 14.h),
-          SizedBox(height: 22.h),
-          line(height: 44.h),
-        ],
-      ),
+        final cardBg = isDark
+            ? Color.lerp(const Color(0xFF10142A), const Color(0xFF151A2E), t)!
+            : Color.lerp(Colors.white, const Color(0xFFFAFAFA), t)!;
+        final borderColor = isDark
+            ? Color.lerp(Colors.white10, Colors.white12, t)!
+            : Color.lerp(
+                const Color(0xFFE5E7EA), const Color(0xFFEEF0F2), t)!;
+
+        // A single shimmering box.
+        Widget box({
+          required double height,
+          double width = double.infinity,
+          double radius = 8,
+          bool isCircle = false,
+        }) {
+          return Container(
+            height: height,
+            width: width,
+            decoration: BoxDecoration(
+              color: shimmerColor,
+              borderRadius:
+                  isCircle ? null : BorderRadius.circular(radius),
+              shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
+            ),
+          );
+        }
+
+        // A card shell that holds skeleton children.
+        Widget shimmerCard({required Widget child}) {
+          return Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: child,
+          );
+        }
+
+        // A skeleton card header: icon placeholder + title placeholder.
+        Widget cardHeader({required double titleWidth}) {
+          return Row(
+            children: [
+              box(height: 18.r, width: 18.r, isCircle: false, radius: 5),
+              SizedBox(width: 8.w),
+              box(height: 14.h, width: titleWidth),
+            ],
+          );
+        }
+
+        // A skeleton info row: label + value.
+        Widget infoRow({double valueWidth = double.infinity}) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: 10.h),
+            child: Row(
+              children: [
+                box(height: 13.h, width: 90.w),
+                SizedBox(width: 12.w),
+                Expanded(child: box(height: 13.h, width: valueWidth)),
+              ],
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Status + Priority pills ──────────────────────────────────
+              Row(
+                children: [
+                  Expanded(child: box(height: 44.h, radius: 14)),
+                  SizedBox(width: 12.w),
+                  Expanded(child: box(height: 44.h, radius: 14)),
+                ],
+              ),
+
+              SizedBox(height: 20.h),
+
+              // ── Customer Information card ────────────────────────────────
+              shimmerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    cardHeader(titleWidth: 170.w),
+                    SizedBox(height: 14.h),
+                    infoRow(valueWidth: 160.w),
+                    infoRow(valueWidth: 200.w),
+                    infoRow(valueWidth: 140.w),
+                    infoRow(valueWidth: 180.w),
+                    // Assigned user rows (optional — shown as ghost rows)
+                    SizedBox(height: 4.h),
+                    infoRow(valueWidth: 130.w),
+                    infoRow(valueWidth: 90.w),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Details card ─────────────────────────────────────────────
+              shimmerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    cardHeader(titleWidth: 70.w),
+                    SizedBox(height: 14.h),
+                    infoRow(valueWidth: 120.w),
+                    infoRow(valueWidth: 200.w),
+                    infoRow(valueWidth: 150.w),
+                    infoRow(valueWidth: 170.w),
+                    infoRow(valueWidth: 140.w),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 16.h),
+
+              // ── Description card ─────────────────────────────────────────
+              shimmerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    cardHeader(titleWidth: 110.w),
+                    SizedBox(height: 14.h),
+                    box(height: 13.h),
+                    SizedBox(height: 8.h),
+                    box(height: 13.h),
+                    SizedBox(height: 8.h),
+                    box(height: 13.h, width: 220.w),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

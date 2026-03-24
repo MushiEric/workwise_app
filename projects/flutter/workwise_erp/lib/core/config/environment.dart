@@ -76,8 +76,8 @@ class EnvConfig {
   // `--dart-define=DEV_API_HOST=192.168.0.10` (or similar). The default is
   // the Android emulator localhost alias (10.0.2.2).
   static final String _devApiHost = String.fromEnvironment(
-    'DEV_API_HOST',
-    defaultValue: '10.0.2.2',
+    '192.168.1.120',
+    defaultValue: '192.168.1.120',
   );
 
   static EnvConfig get current {
