@@ -68,5 +68,4 @@ void main() {
     // role badge should display the role name from roles[0]
     expect(find.text('operator'), findsOneWidget);
   });
-  });
 }

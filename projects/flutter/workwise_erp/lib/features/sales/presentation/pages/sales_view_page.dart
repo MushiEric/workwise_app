@@ -18,7 +18,11 @@ class SalesViewPage extends ConsumerWidget {
         title: 'Order #${order.orderNumber ?? order.id}',
         actions: [
           IconButton(
-            icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+            icon: Icon(Icons.edit_rounded, color: isDark ? Colors.white70 : Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/sales/orders/edit', arguments: order),
+          ),
+          IconButton(
+            icon: Icon(Icons.share_rounded, color: isDark ? Colors.white70 : Colors.white),
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Share order — not implemented'))),
           ),
           PopupMenuButton<String>(

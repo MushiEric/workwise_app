@@ -13,6 +13,11 @@ class DrawerFilterValue {
   final String? staffName;
   final String? statusId;
   final String? statusName;
+  final String? customer;
+  final String? vehicle;
+  final String? pickup;
+  final String? delivery;
+  final String? departure;
 
   const DrawerFilterValue({
     this.dateRangeType,
@@ -22,6 +27,11 @@ class DrawerFilterValue {
     this.staffName,
     this.statusId,
     this.statusName,
+    this.customer,
+    this.vehicle,
+    this.pickup,
+    this.delivery,
+    this.departure,
   });
 
   bool get isEmpty =>
@@ -29,7 +39,12 @@ class DrawerFilterValue {
       dateFrom == null &&
       dateTo == null &&
       staffId == null &&
-      statusId == null;
+      statusId == null &&
+      customer == null &&
+      vehicle == null &&
+      pickup == null &&
+      delivery == null &&
+      departure == null;
 
   DrawerFilterValue copyWith({
     String? dateRangeType,
@@ -39,6 +54,11 @@ class DrawerFilterValue {
     String? staffName,
     String? statusId,
     String? statusName,
+    String? customer,
+    String? vehicle,
+    String? pickup,
+    String? delivery,
+    String? departure,
   }) {
     return DrawerFilterValue(
       dateRangeType: dateRangeType ?? this.dateRangeType,
@@ -48,6 +68,11 @@ class DrawerFilterValue {
       staffName: staffName ?? this.staffName,
       statusId: statusId ?? this.statusId,
       statusName: statusName ?? this.statusName,
+      customer: customer ?? this.customer,
+      vehicle: vehicle ?? this.vehicle,
+      pickup: pickup ?? this.pickup,
+      delivery: delivery ?? this.delivery,
+      departure: departure ?? this.departure,
     );
   }
 }
@@ -106,11 +131,21 @@ class _DrawerFilterState extends State<DrawerFilter> {
   String? _staffName;
   String? _statusId;
   String? _statusName;
+  String? _customer;
+  String? _vehicle;
+  String? _pickup;
+  String? _delivery;
+  String? _departure;
 
   final _dateFromCtrl = TextEditingController();
   final _dateToCtrl = TextEditingController();
   final _staffCtrl = TextEditingController();
   final _statusCtrl = TextEditingController();
+  final _customerCtrl = TextEditingController();
+  final _vehicleCtrl = TextEditingController();
+  final _pickupCtrl = TextEditingController();
+  final _deliveryCtrl = TextEditingController();
+  final _departureCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -124,10 +159,21 @@ class _DrawerFilterState extends State<DrawerFilter> {
       _staffName = v.staffName;
       _statusId = v.statusId;
       _statusName = v.statusName;
+      _customer = v.customer;
+      _vehicle = v.vehicle;
+      _pickup = v.pickup;
+      _delivery = v.delivery;
+      _departure = v.departure;
+
       _dateFromCtrl.text = _fmtDate(_dateFrom);
       _dateToCtrl.text = _fmtDate(_dateTo);
       _staffCtrl.text = _staffName ?? '';
       _statusCtrl.text = _statusName ?? '';
+      _customerCtrl.text = _customer ?? '';
+      _vehicleCtrl.text = _vehicle ?? '';
+      _pickupCtrl.text = _pickup ?? '';
+      _deliveryCtrl.text = _delivery ?? '';
+      _departureCtrl.text = _departure ?? '';
     }
   }
 
@@ -137,6 +183,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
     _dateToCtrl.dispose();
     _staffCtrl.dispose();
     _statusCtrl.dispose();
+    _customerCtrl.dispose();
+    _vehicleCtrl.dispose();
+    _pickupCtrl.dispose();
+    _deliveryCtrl.dispose();
+    _departureCtrl.dispose();
     super.dispose();
   }
 
@@ -430,10 +481,20 @@ class _DrawerFilterState extends State<DrawerFilter> {
       _staffName = null;
       _statusId = null;
       _statusName = null;
+      _customer = null;
+      _vehicle = null;
+      _pickup = null;
+      _delivery = null;
+      _departure = null;
       _dateFromCtrl.clear();
       _dateToCtrl.clear();
       _staffCtrl.clear();
       _statusCtrl.clear();
+      _customerCtrl.clear();
+      _vehicleCtrl.clear();
+      _pickupCtrl.clear();
+      _deliveryCtrl.clear();
+      _departureCtrl.clear();
     });
     widget.onReset?.call();
     Navigator.pop(context);
@@ -449,6 +510,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
         staffName: _staffName,
         statusId: _statusId,
         statusName: _statusName,
+        customer: _customer,
+        vehicle: _vehicle,
+        pickup: _pickup,
+        delivery: _delivery,
+        departure: _departure,
       ),
     );
     Navigator.pop(context);
@@ -700,6 +766,61 @@ class _DrawerFilterState extends State<DrawerFilter> {
                             size: 22.r,
                             color: Colors.grey,
                           ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Customer ────────────────────────────────────────
+                  _sectionLabel('Customer', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _customerCtrl,
+                    hintText: 'Filter by customer',
+                    onChanged: (v) => _customer = v,
+                    prefixIcon: Icon(LucideIcons.user, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Vehicle ────────────────────────────────────────
+                  _sectionLabel('Vehicle', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _vehicleCtrl,
+                    hintText: 'Filter by vehicle',
+                    onChanged: (v) => _vehicle = v,
+                    prefixIcon: Icon(LucideIcons.truck, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Pickup ────────────────────────────────────────
+                  _sectionLabel('Pickup', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _pickupCtrl,
+                    hintText: 'Filter by pickup location',
+                    onChanged: (v) => _pickup = v,
+                    prefixIcon: Icon(LucideIcons.mapPin, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Delivery ────────────────────────────────────────
+                  _sectionLabel('Delivery', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _deliveryCtrl,
+                    hintText: 'Filter by delivery location',
+                    onChanged: (v) => _delivery = v,
+                    prefixIcon: Icon(LucideIcons.mapPin, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // ── Departure ──────────────────────────────────────
+                  _sectionLabel('Departure', labelColor),
+                  SizedBox(height: 8.h),
+                  AppTextField(
+                    controller: _departureCtrl,
+                    hintText: 'Filter by departure',
+                    onChanged: (v) => _departure = v,
+                    prefixIcon: Icon(LucideIcons.navigation, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
                   ),
                   SizedBox(height: 24.h),
                 ],

@@ -92,7 +92,6 @@ void main() {
     expect(model.roles, isNotNull);
     expect(model.roles!.first.name, equals('company'));
   });
-  });
 
   test('login parses JSON string response', () async {
     final respJson = {'user': {'id': 21, 'name': 'Str User', 'email': 'str@example.com'}, 'token': 't1'};

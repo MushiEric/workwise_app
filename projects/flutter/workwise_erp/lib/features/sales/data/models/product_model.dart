@@ -9,6 +9,8 @@ class ProductModel with _$ProductModel {
   const factory ProductModel({
     int? id,
     String? name,
+    String? type,
+    @JsonKey(name: 'item_type') String? itemType,
     @JsonKey(name: 'sale_price') String? salePrice,
     @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'item_number') String? itemNumber,
@@ -23,6 +25,8 @@ extension ProductModelX on ProductModel {
   ProductSummary toDomain() => ProductSummary(
     id: id,
     name: name,
+    type: type,
+    itemType: itemType,
     itemNumber: itemNumber,
     salePrice: salePrice,
     purchasePrice: purchasePrice,

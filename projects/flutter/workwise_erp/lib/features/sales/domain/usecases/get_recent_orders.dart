@@ -8,7 +8,7 @@ class GetRecentOrders {
   final SalesRepository repository;
   GetRecentOrders(this.repository);
 
-  Future<Either<Failure, List<SalesOrder>>> call() async {
-    return repository.getRecentOrders();
+  Future<Either<Failure, List<SalesOrder>>> call([Map<String, dynamic>? params]) async {
+    return repository.getRecentOrders(params);
   }
 }

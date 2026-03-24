@@ -25,7 +25,7 @@ void main() {
 
     await notifier.loadOrders();
 
-    final loaded = notifier.state.maybeWhen(loaded: (l) => l, orElse: () => null);
+    final loaded = notifier.state.maybeWhen(loaded: (l, _, __) => l, orElse: () => null);
     expect(loaded, isNotNull);
     expect(loaded, [sample]);
   });
