@@ -1730,10 +1730,12 @@ class _TicketDetailSkeletonState extends State<TicketDetailSkeleton>
       animation: _anim,
       builder: (context, _) {
         final t = _anim.value;
-        final baseColor =
-            isDark ? const Color(0xFF1E2433) : const Color(0xFFE8EAED);
-        final highlightColor =
-            isDark ? const Color(0xFF2E3650) : const Color(0xFFF4F5F7);
+        final baseColor = isDark
+            ? const Color(0xFF1E2433)
+            : const Color(0xFFE8EAED);
+        final highlightColor = isDark
+            ? const Color(0xFF2E3650)
+            : const Color(0xFFF4F5F7);
         final shimmerColor = Color.lerp(baseColor, highlightColor, t)!;
 
         final cardBg = isDark
@@ -1741,8 +1743,7 @@ class _TicketDetailSkeletonState extends State<TicketDetailSkeleton>
             : Color.lerp(Colors.white, const Color(0xFFFAFAFA), t)!;
         final borderColor = isDark
             ? Color.lerp(Colors.white10, Colors.white12, t)!
-            : Color.lerp(
-                const Color(0xFFE5E7EA), const Color(0xFFEEF0F2), t)!;
+            : Color.lerp(const Color(0xFFE5E7EA), const Color(0xFFEEF0F2), t)!;
 
         // A single shimmering box.
         Widget box({
@@ -1756,8 +1757,7 @@ class _TicketDetailSkeletonState extends State<TicketDetailSkeleton>
             width: width,
             decoration: BoxDecoration(
               color: shimmerColor,
-              borderRadius:
-                  isCircle ? null : BorderRadius.circular(radius),
+              borderRadius: isCircle ? null : BorderRadius.circular(radius),
               shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
             ),
           );
@@ -1795,7 +1795,9 @@ class _TicketDetailSkeletonState extends State<TicketDetailSkeleton>
               children: [
                 box(height: 13.h, width: 90.w),
                 SizedBox(width: 12.w),
-                Expanded(child: box(height: 13.h, width: valueWidth)),
+                Expanded(
+                  child: box(height: 13.h, width: valueWidth),
+                ),
               ],
             ),
           );
