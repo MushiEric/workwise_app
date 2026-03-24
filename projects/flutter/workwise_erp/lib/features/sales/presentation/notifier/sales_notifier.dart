@@ -10,7 +10,7 @@ class SalesNotifier extends StateNotifier<SalesState> {
 
   int _currentOffset = 0;
   Map<String, dynamic>? _lastParams;
-  static const int _pageSize = 10;
+  static const int _pageSize = 5000;
 
   Future<void> loadOrders([Map<String, dynamic>? params]) async {
     state = const SalesState.loading();

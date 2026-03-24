@@ -8,6 +8,10 @@ class ProductSummary extends Equatable {
   final String? itemNumber;
   final String? salePrice;
   final String? purchasePrice;
+  final int? unitId;
+  final String? unitName;
+  final int? taxId;
+  final String? taxName;
 
   const ProductSummary({
     this.id,
@@ -17,8 +21,24 @@ class ProductSummary extends Equatable {
     this.itemNumber,
     this.salePrice,
     this.purchasePrice,
+    this.unitId,
+    this.unitName,
+    this.taxId,
+    this.taxName,
   });
 
   @override
-  List<Object?> get props => [id, name, type, itemType, itemNumber, salePrice, purchasePrice];
+  List<Object?> get props => [
+        id,
+        name,
+        type,
+        itemType,
+        itemNumber,
+        salePrice,
+        purchasePrice,
+        unitId,
+        unitName,
+        taxId,
+        taxName,
+      ];
 }

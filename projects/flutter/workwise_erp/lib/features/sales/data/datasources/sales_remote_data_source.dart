@@ -18,11 +18,11 @@ class SalesRemoteDataSource {
       final defaultData = {
         "draw": "1",
         "start": "0",
-        "length": "1000",
+        "length": "5000",
         "search[value]": "",
         "search[regex]": "false",
-        "start_date": "2024-12-12",
-        "end_date": "2026-12-12 23:59:59",
+        "start_date": "2000-01-01",
+        "end_date": "2100-12-31 23:59:59",
         "user": "All",
         "customer": "All",
         "vehicle": "All",
@@ -35,7 +35,7 @@ class SalesRemoteDataSource {
       
       // Ensure start and length are present as strings if not provided
       queryParams.putIfAbsent('start', () => '0');
-      queryParams.putIfAbsent('length', () => '1000');
+      queryParams.putIfAbsent('length', () => '5000');
 
       // Expand with common pagination synonyms to be robust against backend variations
       final start = queryParams['start'].toString();
@@ -188,6 +188,26 @@ class SalesRemoteDataSource {
     out['purchase_price'] = _asString(src['purchase_price'] ?? src['purchasePrice']);
     out['item_number'] = _asString(src['item_number'] ?? src['sku'] ?? src['code'] ?? src['number']);
     out['category_id'] = _asInt(src['category_id']);
+    
+    // Improved unit and tax normalization
+    final rawUnit = src['unit'] ?? src['uom'] ?? src['package_unit'] ?? src['measurement_unit'];
+    if (rawUnit is Map) {
+      out['unit_id'] = _asInt(rawUnit['id'] ?? rawUnit['uuid'] ?? rawUnit['unit_id'] ?? src['unit_id'] ?? src['uom_id']);
+      out['unit_name'] = _asString(rawUnit['name'] ?? rawUnit['title'] ?? rawUnit['short_name'] ?? rawUnit['unit_name'] ?? rawUnit['unit'] ?? rawUnit['uom'] ?? src['unit_name'] ?? src['unit']);
+    } else {
+      out['unit_id'] = _asInt(src['unit_id'] ?? src['uom_id']);
+      out['unit_name'] = _asString(src['unit_name'] ?? src['unit'] ?? src['uom']);
+    }
+
+    final rawTax = src['tax'] ?? src['tax_rate'] ?? src['tax_row'];
+    if (rawTax is Map) {
+      out['tax_id'] = _asInt(rawTax['id'] ?? rawTax['tax_id'] ?? rawTax['tax_rate_id'] ?? src['tax_id'] ?? src['tax_rate_id']);
+      out['tax_name'] = _asString(rawTax['name'] ?? rawTax['title'] ?? rawTax['tax_name'] ?? rawTax['tax_label'] ?? rawTax['rate'] ?? src['tax_name'] ?? src['tax']);
+    } else {
+      out['tax_id'] = _asInt(src['tax_id'] ?? src['tax_rate_id']);
+      out['tax_name'] = _asString(src['tax_name'] ?? src['tax'] ?? src['tax_label']);
+    }
+    
     return out;
   }
 

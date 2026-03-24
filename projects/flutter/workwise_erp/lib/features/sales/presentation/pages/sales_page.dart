@@ -289,6 +289,18 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         borderColor: AppColors.primary,
       ),
       DashboardStatCard(
+        label: 'Grand Total',
+        valueText: state.maybeWhen(
+          loaded: (orders, _, __) {
+            final sum = orders.fold<double>(0, (prev, o) => prev + (o.amount ?? 0));
+            return NumberFormat.compact().format(sum);
+          },
+          orElse: () => '0',
+        ),
+        icon: Icons.monetization_on_rounded,
+        borderColor: Colors.blueAccent,
+      ),
+      DashboardStatCard(
         label: 'Pending',
         count: state.maybeWhen(
           loaded: (orders, _, __) => orders.where((o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'pending').length,
@@ -508,8 +520,8 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
 
   Map<String, dynamic> _mapFilterToParams(DrawerFilterValue? filter) {
     final now = DateTime.now();
-    final df = filter?.dateFrom ?? DateTime(2024, 12, 12);
-    final dt = filter?.dateTo ?? DateTime(2026, 12, 12, 23, 59, 59);
+    final df = filter?.dateFrom ?? DateTime(2000, 1, 1);
+    final dt = filter?.dateTo ?? DateTime(2100, 12, 31, 23, 59, 59);
 
     final startStr = DateFormat('yyyy-MM-dd').format(df);
     final endStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);

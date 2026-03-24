@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_textfields.dart';
 import '../../../../core/widgets/app_smart_dropdown.dart';
+import '../../../jobcard/presentation/widgets/searchable_dialog.dart';
 
 import '../../domain/entities/sales_order.dart';
 import '../../domain/entities/product_summary.dart';
@@ -201,6 +202,19 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
         _popFilePath = result.files.first.path;
       });
     }
+  }
+
+  void _updateTotals() {
+    double grandTotal = 0;
+    for (var item in _items) {
+      grandTotal += item.amount;
+      if (item.tax != null && item.tax!.toLowerCase().contains('vat')) {
+        final percentMatch = RegExp(r'(\d+)\s*%').firstMatch(item.tax!);
+        final percent = double.tryParse(percentMatch?.group(1) ?? '0') ?? 18.0;
+        grandTotal += (item.amount * percent / 100);
+      }
+    }
+    _amountCtl.text = grandTotal.toStringAsFixed(2);
   }
 
   Future<void> _submit() async {
@@ -697,109 +711,254 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   }
 
   Widget _buildItems(bool isDark, Map<String, dynamic> cfg) {
-    double subTotal = _items.fold(0, (sum, i) => sum + i.amount);
+    final primaryColor = AppColors.primary;
+
+    // Calculate totals
+    double subTotal = 0;
+    double totalVat = 0;
+    for (var item in _items) {
+      subTotal += item.amount;
+      if (item.tax != null && item.tax!.toLowerCase().contains('vat')) {
+        final percentMatch = RegExp(r'(\d+)\s*%').firstMatch(item.tax!);
+        final percent = double.tryParse(percentMatch?.group(1) ?? '0') ?? 18.0; // Default to 18 if 'VAT' present but no %
+        totalVat += (item.amount * percent / 100);
+      }
+    }
+    double grandTotal = subTotal + totalVat;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                "No Item Added",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+          )
+        else ...[
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) {
+              final item = _items[i];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0x1AFFFFFF) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
+                  ),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${i + 1}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              _buildItemTag(isDark, 'Qty: ${item.qty}'),
+                              if (item.packSize != null) _buildItemTag(isDark, 'Pack: ${item.packSize}'),
+                              _buildItemTag(isDark, 'Price: ${NumberFormat.decimalPattern().format(item.price)}'),
+                              if (item.tax != null) _buildItemTag(isDark, 'Tax: ${item.tax}'),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Total: ${NumberFormat.decimalPattern().format(item.amount)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() => _items.removeAt(i));
+                        _updateTotals();
+                      },
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 20,
+                        color: Colors.red.shade400,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Totals Summary (Matching Jobcard feel but adjusted for Sales)
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
             ),
             child: Column(
               children: [
-                Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade400),
-                const SizedBox(height: 12),
-                Text('No items added', style: TextStyle(color: Colors.grey.shade500)),
+                _buildSummaryRow('Sub Total', subTotal, isDark),
+                const SizedBox(height: 8),
+                _buildSummaryRow('VAT', totalVat, isDark),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(height: 1),
+                ),
+                _buildSummaryRow('Grand Total', grandTotal, isDark, isTotal: true),
               ],
             ),
-          )
-        else
-          Container(
+          ),
+        ],
+        
+        const SizedBox(height: 16),
+        
+        InkWell(
+          onTap: () async {
+            final result = await showModalBottomSheet<_DraftItem>(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => _AddItemDrawer(cfg: cfg),
+            );
+            if (result != null) {
+              if (mounted) {
+                setState(() => _items.add(result));
+                _updateTotals();
+              }
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 14),
             decoration: BoxDecoration(
-              border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300),
+              color: primaryColor.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
-                columns: const [
-                  DataColumn(label: Text('ITEM')),
-                  DataColumn(label: Text('AVAILABLE')),
-                  DataColumn(label: Text('QTY & UNIT')),
-                  DataColumn(label: Text('PACK SIZE')),
-                  DataColumn(label: Text('PRICE')),
-                  DataColumn(label: Text('DISCOUNT')),
-                  DataColumn(label: Text('TAX')),
-                  DataColumn(label: Text('AMOUNT')),
-                  DataColumn(label: Text('ACTION')),
-                ],
-                rows: [
-                  ..._items.map((item) => DataRow(
-                    cells: [
-                      DataCell(Text(item.name)),
-                      DataCell(Text(item.available.toString())),
-                      DataCell(Text('${item.qty}')),
-                      DataCell(Text(item.packSize ?? '--')),
-                      DataCell(Text(item.price.toStringAsFixed(2))),
-                      DataCell(Text(item.discount.toStringAsFixed(2))),
-                      DataCell(Text(item.tax ?? '---')),
-                      DataCell(Text(item.amount.toStringAsFixed(2))),
-                      DataCell(
-                        IconButton(
-                          icon: const Icon(AppIcons.delete, color: Colors.red, size: 18),
-                          onPressed: () => setState(() => _items.remove(item)),
-                        ),
-                      ),
-                    ],
-                  )),
-                  DataRow(
-                    cells: [
-                      const DataCell(Text('Sub Total', style: TextStyle(fontWeight: FontWeight.bold))),
-                      const DataCell(Text('')),
-                      const DataCell(Text('')),
-                      const DataCell(Text('')),
-                      const DataCell(Text('')),
-                      const DataCell(Text('')),
-                      const DataCell(Text('')),
-                      DataCell(Text(subTotal.toStringAsFixed(2), style: const TextStyle(fontWeight: FontWeight.bold))),
-                      const DataCell(Text('')),
-                    ],
-                  ),
-                ],
+              border: Border.all(
+                color: primaryColor.withOpacity(0.3),
+                style: BorderStyle.solid,
               ),
             ),
-          ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final result = await showModalBottomSheet<_DraftItem>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (ctx) => _AddItemDrawer(cfg: cfg),
-              );
-              if (result != null) {
-                if (mounted) setState(() => _items.add(result));
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_circle_outline_rounded, size: 20, color: primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  _items.isEmpty ? 'Add Item' : 'Add another item',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add Item'),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSummaryRow(String label, double value, bool isDark, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            color: isTotal ? (isDark ? Colors.white : Colors.black) : (isDark ? Colors.white60 : Colors.grey.shade600),
+          ),
+        ),
+        Text(
+          NumberFormat.decimalPattern().format(value),
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+            color: isTotal ? AppColors.primary : (isDark ? Colors.white : Colors.black87),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildItemTag(bool isDark, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white12 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white70 : Colors.grey.shade700,
+        ),
+      ),
     );
   }
 }
@@ -837,9 +996,9 @@ class _AddItemDrawer extends ConsumerStatefulWidget {
 }
 
 class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
-  final _itemNameCtl = TextEditingController();
+  final _itemNameCtl = TextEditingController(); // For custom entry
   final _qtyCtl = TextEditingController(text: '1');
-  final _packSizeCtl = TextEditingController();
+  final _packSizeInputCtl = TextEditingController();
   final _priceCtl = TextEditingController();
   final _discountCtl = TextEditingController(text: '0');
   
@@ -848,6 +1007,16 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
   String? _selectedPackSize;
   double _availableStock = 0; 
   String? _selectedTax;
+
+  @override
+  void dispose() {
+    _itemNameCtl.dispose();
+    _qtyCtl.dispose();
+    _packSizeInputCtl.dispose();
+    _priceCtl.dispose();
+    _discountCtl.dispose();
+    super.dispose();
+  }
 
   void _submit() {
     final name = _selectedProduct?.name ?? _itemNameCtl.text;
@@ -863,7 +1032,7 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
         name: name,
         available: _availableStock,
         qty: qty,
-        packSize: _selectedPackSize ?? _packSizeCtl.text,
+        packSize: _selectedPackSize ?? _packSizeInputCtl.text,
         price: price,
         discount: discount,
         tax: _selectedTax,
@@ -873,131 +1042,246 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final productsAsync = ref.watch(salesProductsProvider);
     final unitsAsync = ref.watch(salesPackageUnitsProvider);
+    final taxesAsync = ref.watch(salesTaxesProvider);
 
     final qty = double.tryParse(_qtyCtl.text) ?? 1;
     final price = double.tryParse(_priceCtl.text) ?? 0;
     final discount = double.tryParse(_discountCtl.text) ?? 0;
     final calculatedAmount = (qty * price) - discount;
 
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      padding: EdgeInsets.only(
-        left: 24, top: 24, right: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
+    final productCandidates = productsAsync.value ?? [];
+    final unitList = (unitsAsync.value ?? []).map((u) => u.name ?? 'Unit').toList()
+      ..addAll(['PCS', 'LITERS', 'tonne', 'kgs', 'Bags', 'drum', 'BOX', 'Pair', 'bottles']
+      .where((d) => !(unitsAsync.value ?? []).any((e) => e.name?.toLowerCase() == d.toLowerCase())));
+    if (_selectedUnit != null && !unitList.contains(_selectedUnit)) {
+      unitList.add(_selectedUnit!);
+    }
+    
+    final taxList = (taxesAsync.value ?? []).map((e) =>
+      e['name']?.toString() ?? e['title']?.toString() ?? e['tax_name']?.toString() ?? e['desc']?.toString() ?? e['value']?.toString() ?? ''
+    ).where((s) => s.isNotEmpty).toList()
+      ..addAll(['No Tax', 'VAT 18%']
+      .where((d) => !(taxesAsync.value ?? []).any((e) => (e['name']??'').toString().toLowerCase() == d.toLowerCase())));
+    if (_selectedTax != null && !taxList.contains(_selectedTax)) {
+      taxList.add(_selectedTax!);
+    }
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF151A2E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Add Material', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            AppSmartDropdown<ProductSummary>(
-              value: _selectedProduct,
-              items: productsAsync.value ?? [],
-              itemBuilder: (p) => p.name ?? 'Unknown',
-              label: 'Material',
-              hintText: productsAsync.isLoading ? 'Loading materials...' : 'Select from list or leave empty to type manually',
-              onChanged: (p) => setState(() {
-                _selectedProduct = p;
-                if (p != null) {
-                  _itemNameCtl.text = p.name ?? '';
-                  _priceCtl.text = p.salePrice?.toString() ?? '0';
-                  _availableStock = 100; // Mock available balance
-                }
-              }),
-            ),
-            const SizedBox(height: 12),
-            if (_selectedProduct == null) ...[
-              AppTextField(controller: _itemNameCtl, label: 'Custom Material Name'),
-              const SizedBox(height: 12),
-            ],
-            Row(
-              children: [
-                Expanded(child: AppTextField(
-                  controller: _qtyCtl, 
-                  label: 'Qty', 
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState((){}),
-                )),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: AppSmartDropdown<String>(
-                    value: _selectedUnit,
-                    items: (unitsAsync.value ?? []).map((u) => u.name ?? 'Unit').toList()..addAll(['PCS', 'LITERS', 'tonne', 'kgs', 'Bags', 'drum', 'BOX', 'Pair', 'bottles'].where((d) => !(unitsAsync.value ?? []).any((e) => e.name?.toLowerCase() == d.toLowerCase()))),
-                    itemBuilder: (s) => s,
-                    label: 'Unit',
-                    hintText: unitsAsync.isLoading ? 'Loading...' : 'Select unit',
-                    onChanged: (v) => setState(() => _selectedUnit = v),
-                  ),
+            // Drag handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: AppTextField(controller: _packSizeCtl, label: 'Pack Size (Input)')),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: AppSmartDropdown<String>(
-                    value: _selectedPackSize,
-                    items: (unitsAsync.value ?? []).map((u) => u.name ?? 'Unit').toList()..addAll(['PCS', 'LITERS', 'tonne', 'kgs', 'Bags', 'drum', 'BOX', 'Pair', 'bottles'].where((d) => !(unitsAsync.value ?? []).any((e) => e.name?.toLowerCase() == d.toLowerCase()))),
-                    itemBuilder: (s) => s,
-                    label: 'Pack Size (Drop)',
-                    hintText: unitsAsync.isLoading ? 'Loading...' : 'Select',
-                    onChanged: (v) => setState(() => _selectedPackSize = v),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: AppTextField(
-                  controller: _priceCtl, 
-                  label: 'Price', 
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState((){}),
-                )),
-                const SizedBox(width: 8),
-                Expanded(child: AppTextField(
-                  controller: _discountCtl, 
-                  label: 'Discount', 
-                  keyboardType: TextInputType.number,
-                  onChanged: (_) => setState((){}),
-                )),
-              ],
-            ),
-            const SizedBox(height: 12),
-            AppSmartDropdown<String>(
-              value: _selectedTax,
-              items: (ref.watch(salesTaxesProvider).value ?? []).map((e) =>
-                e['name']?.toString() ?? e['title']?.toString() ?? e['tax_name']?.toString() ?? e['desc']?.toString() ?? e['value']?.toString() ?? ''
-              ).where((s) => s.isNotEmpty).toList()..addAll(['No Tax', 'VAT 18%'].where((d) => !(ref.watch(salesTaxesProvider).value ?? []).any((e) => (e['name']??'').toString().toLowerCase() == d.toLowerCase()))),
-              itemBuilder: (s) => s,
-              label: 'Tax',
-              hintText: ref.watch(salesTaxesProvider).isLoading ? 'Loading...' : 'Select tax',
-              onChanged: (v) => setState(() => _selectedTax = v),
-            ),
-            const SizedBox(height: 12),
-            AppTextField(
-              label: 'Amount',
-              readOnly: true,
-              hintText: calculatedAmount.toStringAsFixed(2),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Add Item'),
-            )
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.inventory_2_rounded,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Add Material',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Material selection using AppSmartDropdown (matching other form fields)
+                    AppSmartDropdown<ProductSummary>(
+                      value: _selectedProduct,
+                      items: productCandidates,
+                      itemBuilder: (p) => p.name ?? 'Unknown',
+                      label: 'Material',
+                      hintText: productsAsync.isLoading ? 'Loading materials...' : 'Select material',
+                      onChanged: (p) {
+                        if (p != null) {
+                          setState(() {
+                            _selectedProduct = p;
+                            _itemNameCtl.text = p.name ?? '';
+                            _priceCtl.text = p.salePrice?.toString() ?? '0';
+                            _availableStock = 100; // Mock available balance
+                            
+                            // Auto-populate unit from product
+                            if (p.unitName != null && p.unitName!.isNotEmpty) {
+                              final match = unitList.firstWhere(
+                                (u) => u.toLowerCase() == p.unitName!.toLowerCase(),
+                                orElse: () => p.unitName!,
+                              );
+                              _selectedUnit = match;
+                            }
+                            
+                            // Auto-populate tax from product
+                            if (p.taxName != null && p.taxName!.isNotEmpty) {
+                              final match = taxList.firstWhere(
+                                (t) => t.toLowerCase() == p.taxName!.toLowerCase(),
+                                orElse: () => p.taxName!,
+                              );
+                              _selectedTax = match;
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    if (_selectedProduct == null) ...[
+                      AppTextField(controller: _itemNameCtl, label: 'Custom Material Name', hintText: 'Enter name manually'),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    Row(
+                      children: [
+                        Expanded(child: AppTextField(
+                          controller: _qtyCtl, 
+                          label: 'Qty', 
+                          isRequired: true,
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState((){}),
+                        )),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: AppSmartDropdown<String>(
+                            value: _selectedUnit,
+                            items: unitList,
+                            itemBuilder: (s) => s,
+                            label: 'Unit',
+                            hintText: 'Select unit',
+                            onChanged: (v) => setState(() => _selectedUnit = v),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    Row(
+                      children: [
+                        Expanded(child: AppTextField(controller: _packSizeInputCtl, label: 'Pack Size (Input)', hintText: 'eg. 50')),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: AppSmartDropdown<String>(
+                            value: _selectedPackSize,
+                            items: unitList,
+                            itemBuilder: (s) => s,
+                            label: 'Pack Size (Drop)',
+                            hintText: 'Select',
+                            onChanged: (v) => setState(() => _selectedPackSize = v),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    Row(
+                      children: [
+                        Expanded(child: AppTextField(
+                          controller: _priceCtl, 
+                          label: 'Price', 
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState((){}),
+                        )),
+                        const SizedBox(width: 8),
+                        Expanded(child: AppTextField(
+                          controller: _discountCtl, 
+                          label: 'Discount', 
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => setState((){}),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    AppSmartDropdown<String>(
+                      value: _selectedTax,
+                      items: taxList,
+                      itemBuilder: (s) => s,
+                      label: 'Tax',
+                      hintText: taxesAsync.isLoading ? 'Loading...' : 'Select tax',
+                      onChanged: (v) => setState(() => _selectedTax = v),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    AppTextField(
+                      label: 'Amount',
+                      readOnly: true,
+                      hintText: calculatedAmount.toStringAsFixed(2),
+                    ),
+                    const SizedBox(height: 32),
+                    
+                    // Action Buttons (matching Jobcard)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: const Text('Add Item'),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
