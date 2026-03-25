@@ -110,6 +110,10 @@ class DrawerFilter extends StatefulWidget {
   /// Called when the user presses "Reset". Also closes the drawer.
   final VoidCallback? onReset;
 
+  /// Header title shown at the top of the filter drawer.
+  /// Defaults to 'Filter' when not provided.
+  final String title;
+
   const DrawerFilter({
     super.key,
     required this.users,
@@ -117,6 +121,7 @@ class DrawerFilter extends StatefulWidget {
     required this.onApply,
     this.initialValue,
     this.onReset,
+    this.title = 'Filter',
   });
 
   @override
@@ -547,7 +552,7 @@ class _DrawerFilterState extends State<DrawerFilter> {
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
-                    'Filter Jobcards',
+                    widget.title,
                     style: TextStyle(
                       fontSize: 17.sp,
                       fontWeight: FontWeight.bold,
@@ -776,7 +781,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
                     controller: _customerCtrl,
                     hintText: 'Filter by customer',
                     onChanged: (v) => _customer = v,
-                    prefixIcon: Icon(LucideIcons.user, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                    prefixIcon: Icon(
+                      LucideIcons.user,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -787,7 +796,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
                     controller: _vehicleCtrl,
                     hintText: 'Filter by vehicle',
                     onChanged: (v) => _vehicle = v,
-                    prefixIcon: Icon(LucideIcons.truck, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                    prefixIcon: Icon(
+                      LucideIcons.truck,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -798,7 +811,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
                     controller: _pickupCtrl,
                     hintText: 'Filter by pickup location',
                     onChanged: (v) => _pickup = v,
-                    prefixIcon: Icon(LucideIcons.mapPin, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                    prefixIcon: Icon(
+                      LucideIcons.mapPin,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -809,7 +826,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
                     controller: _deliveryCtrl,
                     hintText: 'Filter by delivery location',
                     onChanged: (v) => _delivery = v,
-                    prefixIcon: Icon(LucideIcons.mapPin, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                    prefixIcon: Icon(
+                      LucideIcons.mapPin,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
                   ),
                   SizedBox(height: 16.h),
 
@@ -820,7 +841,11 @@ class _DrawerFilterState extends State<DrawerFilter> {
                     controller: _departureCtrl,
                     hintText: 'Filter by departure',
                     onChanged: (v) => _departure = v,
-                    prefixIcon: Icon(LucideIcons.navigation, size: 16.r, color: AppColors.primary.withOpacity(0.7)),
+                    prefixIcon: Icon(
+                      LucideIcons.navigation,
+                      size: 16.r,
+                      color: AppColors.primary.withOpacity(0.7),
+                    ),
                   ),
                   SizedBox(height: 24.h),
                 ],

@@ -22,8 +22,8 @@ import '../widgets/order_tile.dart';
 import 'sales_view_page.dart';
 import '../../../../core/themes/app_icons.dart';
 import '../../../../core/widgets/drawer_filter.dart';
+import '../../../../core/widgets/google_nav_bar.dart';
 import '../../../jobcard/presentation/providers/jobcard_providers.dart';
-
 
 import '../../../pfi/presentation/providers/pfi_providers.dart';
 import '../../../pfi/presentation/state/pfi_state.dart';
@@ -36,7 +36,8 @@ class SalesPage extends ConsumerStatefulWidget {
   ConsumerState<SalesPage> createState() => _SalesPageState();
 }
 
-class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProviderStateMixin {
+class _SalesPageState extends ConsumerState<SalesPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
@@ -44,7 +45,6 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
   bool _showStats = true;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   DrawerFilterValue? _activeFilter;
-
 
   @override
   void initState() {
@@ -57,7 +57,9 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
     });
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(salesNotifierProvider.notifier).loadOrders(_mapFilterToParams(_activeFilter));
+      ref
+          .read(salesNotifierProvider.notifier)
+          .loadOrders(_mapFilterToParams(_activeFilter));
       ref.read(pfiNotifierProvider.notifier).loadPfis();
     });
   }
@@ -92,7 +94,9 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF8F9FC),
+        backgroundColor: isDark
+            ? const Color(0xFF0A0E21)
+            : const Color(0xFFF8F9FC),
         appBar: CustomAppBar(
           title: "Sales",
           actions: [
@@ -121,7 +125,9 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
               icon: Icon(
                 AppIcons.filter,
                 size: 20.r,
-                color: _activeFilter != null && !_activeFilter!.isEmpty ? Colors.yellow : Colors.white,
+                color: _activeFilter != null && !_activeFilter!.isEmpty
+                    ? Colors.yellow
+                    : Colors.white,
               ),
               onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
             ),
@@ -129,6 +135,9 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         ),
         key: _scaffoldKey,
         endDrawer: DrawerFilter(
+          title: _tabController.index == 0
+              ? 'Filter Sales Orders'
+              : 'Filter PFIs',
           users: ref.watch(jobcardUsersProvider).valueOrNull ?? [],
           statuses: [
             {'id': 'pending', 'name': 'Pending', 'color': '#FFA500'},
@@ -140,11 +149,15 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
           initialValue: _activeFilter,
           onApply: (v) {
             setState(() => _activeFilter = v);
-            ref.read(salesNotifierProvider.notifier).loadOrders(_mapFilterToParams(v));
+            ref
+                .read(salesNotifierProvider.notifier)
+                .loadOrders(_mapFilterToParams(v));
           },
           onReset: () {
             setState(() => _activeFilter = null);
-            ref.read(salesNotifierProvider.notifier).loadOrders(_mapFilterToParams(null));
+            ref
+                .read(salesNotifierProvider.notifier)
+                .loadOrders(_mapFilterToParams(null));
           },
         ),
 
@@ -161,10 +174,15 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
               ),
               child: _isSearching
                   ? Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                          color: isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(16.r),
                           boxShadow: [
                             BoxShadow(
@@ -178,9 +196,13 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
                           controller: _searchController,
                           autofocus: true,
                           decoration: InputDecoration(
-                            hintText: _tabController.index == 0 ? 'Search orders...' : 'Search PFIs...',
+                            hintText: _tabController.index == 0
+                                ? 'Search orders...'
+                                : 'Search PFIs...',
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.white38 : Colors.grey.shade500,
+                              color: isDark
+                                  ? Colors.white38
+                                  : Colors.grey.shade500,
                               fontSize: 14.sp,
                             ),
                             prefixIcon: Icon(
@@ -189,7 +211,11 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
                               size: 18.r,
                             ),
                             suffixIcon: IconButton(
-                              icon: Icon(AppIcons.x, color: isDark ? Colors.white54 : primaryColor, size: 18.r),
+                              icon: Icon(
+                                AppIcons.x,
+                                color: isDark ? Colors.white54 : primaryColor,
+                                size: 18.r,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _searchController.clear();
@@ -198,10 +224,15 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
                               },
                             ),
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 12.h,
+                            ),
                           ),
                           style: TextStyle(
-                            color: isDark ? Colors.white : const Color(0xFF1A2634),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
                             fontSize: 14.sp,
                           ),
                           onChanged: (value) => setState(() {}),
@@ -214,18 +245,20 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
             // Stats Header
             DashboardStatsRow(
               visible: _showStats,
-              cards: _tabController.index == 0 
-                ? _buildOrderStats(salesState, isDark)
-                : _buildPfiStats(pfiState, isDark),
+              cards: _tabController.index == 0
+                  ? _buildOrderStats(salesState, isDark)
+                  : _buildPfiStats(pfiState, isDark),
             ),
-            
+
             SizedBox(height: 16.h),
 
             // Tab Bar
             Container(
               margin: EdgeInsets.symmetric(horizontal: 16.w),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(16.r),
               ),
               child: TabBar(
@@ -235,9 +268,14 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
                   Tab(text: "PFIs"),
                 ],
                 labelColor: primaryColor,
-                labelStyle: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600),
+                labelStyle: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                ),
                 unselectedLabelStyle: TextStyle(fontSize: 13.sp),
-                unselectedLabelColor: isDark ? Colors.white54 : Colors.grey.shade600,
+                unselectedLabelColor: isDark
+                    ? Colors.white54
+                    : Colors.grey.shade600,
                 indicator: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.r),
                   color: primaryColor.withOpacity(0.15),
@@ -274,7 +312,27 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
           label: _tabController.index == 0 ? 'New Order' : 'New PFI',
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+        ),
+        bottomNavigationBar: AppGoogleNavBar(
+          selectedIndex: 0,
+          onTabChange: (idx) {
+            if (idx == 1) {
+              Navigator.pushReplacementNamed(context, '/sales/settings');
+            }
+          },
+          items: const [
+            AppGoogleNavBarItem(label: 'Sales', icon: AppIcons.shoppingCart),
+            AppGoogleNavBarItem(label: 'Settings', icon: AppIcons.settings),
+          ],
+          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
+          activeTabBackgroundColor: isDark
+              ? Colors.white12
+              : AppColors.primary.withOpacity(0.15),
+          activeColor: AppColors.primary,
+          color: isDark ? Colors.white60 : Colors.grey.shade600,
         ),
       ),
     );
@@ -284,7 +342,10 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
     return [
       DashboardStatCard(
         label: 'Total Orders',
-        count: state.maybeWhen(loaded: (orders, _, __) => orders.length, orElse: () => 0),
+        count: state.maybeWhen(
+          loaded: (orders, _, __) => orders.length,
+          orElse: () => 0,
+        ),
         icon: Icons.shopping_cart_rounded,
         borderColor: AppColors.primary,
       ),
@@ -292,7 +353,10 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         label: 'Grand Total',
         valueText: state.maybeWhen(
           loaded: (orders, _, __) {
-            final sum = orders.fold<double>(0, (prev, o) => prev + (o.amount ?? 0));
+            final sum = orders.fold<double>(
+              0,
+              (prev, o) => prev + (o.amount ?? 0),
+            );
             return NumberFormat.compact().format(sum);
           },
           orElse: () => '0',
@@ -303,7 +367,11 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
       DashboardStatCard(
         label: 'Pending',
         count: state.maybeWhen(
-          loaded: (orders, _, __) => orders.where((o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'pending').length,
+          loaded: (orders, _, __) => orders
+              .where(
+                (o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'pending',
+              )
+              .length,
           orElse: () => 0,
         ),
         icon: Icons.pending_actions_rounded,
@@ -312,7 +380,11 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
       DashboardStatCard(
         label: 'Completed',
         count: state.maybeWhen(
-          loaded: (orders, _, __) => orders.where((o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'completed').length,
+          loaded: (orders, _, __) => orders
+              .where(
+                (o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'completed',
+              )
+              .length,
           orElse: () => 0,
         ),
         icon: Icons.check_circle_rounded,
@@ -353,17 +425,26 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         separatorBuilder: (_, __) => SizedBox(height: 12.h),
         itemBuilder: (_, __) => _buildOrderSkeleton(isDark),
       ),
-      error: (msg) => _buildError(msg, isDark, () => ref.read(salesNotifierProvider.notifier).loadOrders()),
+      error: (msg) => _buildError(
+        msg,
+        isDark,
+        () => ref.read(salesNotifierProvider.notifier).loadOrders(),
+      ),
       loaded: (orders, isLoadingMore, hasMore) {
         final filtered = _searchController.text.isEmpty
             ? orders
             : orders.where((o) {
                 final q = _searchController.text.toLowerCase();
                 return (o.orderNumber?.toLowerCase().contains(q) ?? false) ||
-                       (o.customer?.name?.toLowerCase().contains(q) ?? false);
+                    (o.customer?.name?.toLowerCase().contains(q) ?? false);
               }).toList();
 
-        if (filtered.isEmpty) return _buildEmptyState(isDark, _searchController.text.isNotEmpty || (_activeFilter != null && !_activeFilter!.isEmpty));
+        if (filtered.isEmpty)
+          return _buildEmptyState(
+            isDark,
+            _searchController.text.isNotEmpty ||
+                (_activeFilter != null && !_activeFilter!.isEmpty),
+          );
 
         // Apply Drawer Filter to Orders
         var finalFiltered = filtered;
@@ -379,24 +460,36 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
               if (o.user?.id != _activeFilter!.staffId) return false;
             }
             // Date filter
-            if (_activeFilter!.dateFrom != null || _activeFilter!.dateTo != null) {
+            if (_activeFilter!.dateFrom != null ||
+                _activeFilter!.dateTo != null) {
               final dateStr = o.createdAt ?? o.startDate;
               if (dateStr == null) return false;
               final dt = DateTime.tryParse(dateStr.replaceAll(' ', 'T'));
               if (dt == null) return false;
-              if (_activeFilter!.dateFrom != null && dt.isBefore(_activeFilter!.dateFrom!)) return false;
-              if (_activeFilter!.dateTo != null && dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1)))) return false;
+              if (_activeFilter!.dateFrom != null &&
+                  dt.isBefore(_activeFilter!.dateFrom!))
+                return false;
+              if (_activeFilter!.dateTo != null &&
+                  dt.isAfter(
+                    _activeFilter!.dateTo!.add(const Duration(days: 1)),
+                  ))
+                return false;
             }
             // Customer filter
-            if (_activeFilter!.customer != null && _activeFilter!.customer!.isNotEmpty) {
+            if (_activeFilter!.customer != null &&
+                _activeFilter!.customer!.isNotEmpty) {
               final name = o.customer?.name?.toLowerCase() ?? '';
-              if (!name.contains(_activeFilter!.customer!.toLowerCase())) return false;
+              if (!name.contains(_activeFilter!.customer!.toLowerCase()))
+                return false;
             }
             // Vehicle filter
-            if (_activeFilter!.vehicle != null && _activeFilter!.vehicle!.isNotEmpty) {
-               // Assuming order might have vehicle info, checking if available
-               final vName = o.truckList?.firstOrNull?.vehicleName?.toLowerCase() ?? '';
-               if (!vName.contains(_activeFilter!.vehicle!.toLowerCase())) return false;
+            if (_activeFilter!.vehicle != null &&
+                _activeFilter!.vehicle!.isNotEmpty) {
+              // Assuming order might have vehicle info, checking if available
+              final vName =
+                  o.truckList?.firstOrNull?.vehicleName?.toLowerCase() ?? '';
+              if (!vName.contains(_activeFilter!.vehicle!.toLowerCase()))
+                return false;
             }
             return true;
           }).toList();
@@ -405,18 +498,34 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         if (finalFiltered.isEmpty) return _buildEmptyState(isDark, true);
 
         return RefreshIndicator(
-          onRefresh: () => ref.read(salesNotifierProvider.notifier).loadOrders(_mapFilterToParams(_activeFilter)),
+          onRefresh: () => ref
+              .read(salesNotifierProvider.notifier)
+              .loadOrders(_mapFilterToParams(_activeFilter)),
           child: ListView.builder(
             controller: _scrollController,
             padding: EdgeInsets.all(16.r),
-            itemCount: finalFiltered.length + (state.maybeWhen(loaded: (_, isLoadingMore, __) => isLoadingMore ? 1 : 0, orElse: () => 0)),
+            itemCount:
+                finalFiltered.length +
+                (state.maybeWhen(
+                  loaded: (_, isLoadingMore, __) => isLoadingMore ? 1 : 0,
+                  orElse: () => 0,
+                )),
             itemBuilder: (ctx, i) {
               if (i >= finalFiltered.length) {
-                return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
               }
               return OrderTile(
                 order: finalFiltered[i],
-                onTap: () => Navigator.pushNamed(context, '/sales/orders/view', arguments: finalFiltered[i]),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/sales/orders/view',
+                  arguments: finalFiltered[i],
+                ),
               );
             },
           ),
@@ -434,17 +543,27 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         itemBuilder: (_, __) => _buildPfiSkeleton(isDark),
       );
     }
-    if (state.error != null && state.pfis.isEmpty) return _buildError(state.error!, isDark, () => ref.read(pfiNotifierProvider.notifier).loadPfis());
-    
+    if (state.error != null && state.pfis.isEmpty)
+      return _buildError(
+        state.error!,
+        isDark,
+        () => ref.read(pfiNotifierProvider.notifier).loadPfis(),
+      );
+
     final filtered = _searchController.text.isEmpty
         ? state.pfis
         : state.pfis.where((p) {
             final q = _searchController.text.toLowerCase();
             return (p.proposalNumber?.toLowerCase().contains(q) ?? false) ||
-                   (p.subject?.toLowerCase().contains(q) ?? false);
+                (p.subject?.toLowerCase().contains(q) ?? false);
           }).toList();
 
-    if (filtered.isEmpty) return _buildEmptyState(isDark, _searchController.text.isNotEmpty || (_activeFilter != null && !_activeFilter!.isEmpty));
+    if (filtered.isEmpty)
+      return _buildEmptyState(
+        isDark,
+        _searchController.text.isNotEmpty ||
+            (_activeFilter != null && !_activeFilter!.isEmpty),
+      );
 
     // Apply Drawer Filter to PFIs
     var finalFiltered = filtered;
@@ -465,8 +584,12 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
         if (_activeFilter!.dateFrom != null || _activeFilter!.dateTo != null) {
           final dt = p.createdAt;
           if (dt == null) return false;
-          if (_activeFilter!.dateFrom != null && dt.isBefore(_activeFilter!.dateFrom!)) return false;
-          if (_activeFilter!.dateTo != null && dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1)))) return false;
+          if (_activeFilter!.dateFrom != null &&
+              dt.isBefore(_activeFilter!.dateFrom!))
+            return false;
+          if (_activeFilter!.dateTo != null &&
+              dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1))))
+            return false;
         }
         return true;
       }).toList();
@@ -490,9 +613,18 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(AppIcons.errorOutlineRounded, size: 48.r, color: Colors.red.shade300),
+          Icon(
+            AppIcons.errorOutlineRounded,
+            size: 48.r,
+            color: Colors.red.shade300,
+          ),
           SizedBox(height: 16.h),
-          Text(msg, style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade700)),
+          Text(
+            msg,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.grey.shade700,
+            ),
+          ),
           SizedBox(height: 16.h),
           AppButton(text: "Retry", onPressed: onRetry),
         ],
@@ -505,39 +637,56 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(isSearching ? AppIcons.searchOffRounded : AppIcons.file,
-              size: 64.r, color: isDark ? Colors.white24 : Colors.grey.shade300),
+          Icon(
+            isSearching ? AppIcons.searchOffRounded : AppIcons.file,
+            size: 64.r,
+            color: isDark ? Colors.white24 : Colors.grey.shade300,
+          ),
           SizedBox(height: 16.h),
-          Text(isSearching ? "No results found" : "No items found",
-              style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white54 : Colors.grey.shade600)),
+          Text(
+            isSearching ? "No results found" : "No items found",
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white54 : Colors.grey.shade600,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Map<String, dynamic> _mapFilterToParams(DrawerFilterValue? filter) {
-    final now = DateTime.now();
-    final df = filter?.dateFrom ?? DateTime(2000, 1, 1);
-    final dt = filter?.dateTo ?? DateTime(2100, 12, 31, 23, 59, 59);
+    // Default to today's full day when no date filter is set.
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+    final df = filter?.dateFrom ?? todayStart;
+    final dt = filter?.dateTo ?? todayEnd;
 
     final startStr = DateFormat('yyyy-MM-dd').format(df);
     final endStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
 
     return {
-      "draw": "1",
-      "search[value]": _searchController.text,
-      "search[regex]": "false",
-      "start_date": startStr,
-      "end_date": endStr,
-      "user": filter?.staffId?.toString() ?? "All",
-      "customer": filter?.customer ?? "All",
-      "vehicle": filter?.vehicle ?? "All",
-      "pickup": filter?.pickup ?? "All",
-      "delivery": filter?.delivery ?? "All",
-      "departure": filter?.departure ?? "All"
+      'draw': '1',
+      'search[value]': _searchController.text,
+      'search[regex]': 'false',
+      'status': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      'start_date': startStr,
+      'end_date': endStr,
+      'user': filter?.staffId?.toString() ?? 'All',
+      'customer': filter?.customer?.isNotEmpty == true
+          ? filter!.customer!
+          : 'All',
+      'vehicle': filter?.vehicle?.isNotEmpty == true ? filter!.vehicle! : 'All',
+      'pickup': filter?.pickup?.isNotEmpty == true ? filter!.pickup! : 'All',
+      'delivery': filter?.delivery?.isNotEmpty == true
+          ? filter!.delivery!
+          : 'All',
+      'departure': filter?.departure?.isNotEmpty == true
+          ? filter!.departure!
+          : 'All',
     };
   }
 
@@ -554,16 +703,22 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
             Row(
               children: [
                 Container(
-                    width: 80.w,
-                    height: 14.h,
-                    decoration: BoxDecoration(
-                        color: base, borderRadius: BorderRadius.circular(6))),
+                  width: 80.w,
+                  height: 14.h,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
                 const Spacer(),
                 Container(
-                    width: 60.w,
-                    height: 14.h,
-                    decoration: BoxDecoration(
-                        color: base, borderRadius: BorderRadius.circular(6))),
+                  width: 60.w,
+                  height: 14.h,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
               ],
             ),
             SizedBox(height: 12.h),
@@ -575,18 +730,22 @@ class _SalesPageState extends ConsumerState<SalesPage> with SingleTickerProvider
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                          width: 150.w,
-                          height: 12.h,
-                          decoration: BoxDecoration(
-                              color: base,
-                              borderRadius: BorderRadius.circular(6))),
+                        width: 150.w,
+                        height: 12.h,
+                        decoration: BoxDecoration(
+                          color: base,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
                       SizedBox(height: 8.h),
                       Container(
-                          width: 100.w,
-                          height: 10.h,
-                          decoration: BoxDecoration(
-                              color: base,
-                              borderRadius: BorderRadius.circular(6))),
+                        width: 100.w,
+                        height: 10.h,
+                        decoration: BoxDecoration(
+                          color: base,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -609,22 +768,33 @@ class _PfiTile extends StatelessWidget {
 
   String _statusLabel(int? s) {
     switch (s) {
-      case 0: return 'Draft';
-      case 1: return 'Sent';
-      case 2: return 'Accepted';
-      case 3: return 'Invoiced';
-      case 4: return 'Declined';
-      default: return 'Unknown';
+      case 0:
+        return 'Draft';
+      case 1:
+        return 'Sent';
+      case 2:
+        return 'Accepted';
+      case 3:
+        return 'Invoiced';
+      case 4:
+        return 'Declined';
+      default:
+        return 'Unknown';
     }
   }
 
   Color _statusColor(int? s) {
     switch (s) {
-      case 0: return Colors.grey;
-      case 1: return Colors.orange;
-      case 2: return Colors.green;
-      case 4: return Colors.red;
-      default: return AppColors.primary;
+      case 0:
+        return Colors.grey;
+      case 1:
+        return Colors.orange;
+      case 2:
+        return Colors.green;
+      case 4:
+        return Colors.red;
+      default:
+        return AppColors.primary;
     }
   }
 
@@ -632,20 +802,28 @@ class _PfiTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppColors.primary;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF151A2E) : Colors.white,
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-             Navigator.pushNamed(context, '/sales/pfi/view', arguments: pfi);
+            Navigator.pushNamed(context, '/sales/pfi/view', arguments: pfi);
           },
           borderRadius: BorderRadius.circular(20.r),
           child: Padding(
@@ -661,12 +839,23 @@ class _PfiTile extends StatelessWidget {
                         children: [
                           Text(
                             pfi.proposalNumber ?? '#${pfi.id}',
-                            style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF1A2634)),
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
+                            ),
                           ),
                           SizedBox(height: 2.h),
                           Text(
                             pfi.subject ?? 'No subject',
-                            style: TextStyle(fontSize: 13.sp, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                            style: TextStyle(
+                              fontSize: 13.sp,
+                              color: isDark
+                                  ? Colors.white54
+                                  : Colors.grey.shade600,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -674,9 +863,22 @@ class _PfiTile extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(color: _statusColor(pfi.status).withOpacity(0.12), borderRadius: BorderRadius.circular(12.r)),
-                      child: Text(_statusLabel(pfi.status), style: TextStyle(color: _statusColor(pfi.status), fontWeight: FontWeight.bold, fontSize: 11.sp)),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _statusColor(pfi.status).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        _statusLabel(pfi.status),
+                        style: TextStyle(
+                          color: _statusColor(pfi.status),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11.sp,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -684,8 +886,13 @@ class _PfiTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      pfi.createdAt != null ? DateFormat.yMMMd().format(pfi.createdAt!) : 'No date',
-                      style: TextStyle(fontSize: 11.sp, color: isDark ? Colors.white38 : Colors.grey.shade500),
+                      pfi.createdAt != null
+                          ? DateFormat.yMMMd().format(pfi.createdAt!)
+                          : 'No date',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      ),
                     ),
                   ],
                 ),
@@ -696,5 +903,4 @@ class _PfiTile extends StatelessWidget {
       ),
     );
   }
-
 }

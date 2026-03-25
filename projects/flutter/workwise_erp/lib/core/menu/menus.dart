@@ -3,44 +3,43 @@ import 'menu_item.dart';
 
 const List<MenuItemModel> appMenus = [
   // Sales: requires CRM/pos dashboard permission (server names vary) — accept either
-  MenuItemModel(
-    id: 'sales',
-    title: 'Sales',
-    icon: Icons.shopping_cart_outlined,
-    iconSize: 55,
-    route: '/sales',
-    requiredPermissions: ['show crm dashboard', 'show pos dashboard'],
-  ),
+  // MenuItemModel(
+  //   id: 'sales',
+  //   title: 'Sales',
+  //   icon: Icons.shopping_cart_outlined,
+  //   route: '/sales',
+  //   requiredPermissions: ['show crm dashboard', 'show pos dashboard'],
+  // ),
 
-  MenuItemModel(
-    id: 'customer',
-    title: 'Customers',
-    icon: Icons.people_outline,
-    route: '/customers',
-  ),
+  // MenuItemModel(
+  //   id: 'customer',
+  //   title: 'Customers',
+  //   icon: Icons.people_outline,
+  //   route: '/customers',
+  // ),
 
-  MenuItemModel(
-    id: 'logistic',
-    title: 'Logistic',
-    icon: Icons.local_shipping,
-    route: '/logistic',
-    requiredPermissions: ['show logistic dashboard'],
-  ),
+  // MenuItemModel(
+  //   id: 'logistic',
+  //   title: 'Logistic',
+  //   icon: Icons.local_shipping,
+  //   route: '/logistic',
+  //   requiredPermissions: ['show logistic dashboard'],
+  // ),
 
-  MenuItemModel(
-    id: 'project',
-    title: 'Project',
-    icon: Icons.work_outline,
-    route: '/projects',
-    requiredPermissions: ['show project dashboard'],
-  ),
+  // MenuItemModel(
+  //   id: 'project',
+  //   title: 'Project',
+  //   icon: Icons.work_outline,
+  //   route: '/projects',
+  //   requiredPermissions: ['show project dashboard'],
+  // ),
 
-  MenuItemModel(
-    id: 'documents',
-    title: 'Documents',
-    icon: Icons.folder_open,
-    route: '/documents',
-  ),
+  // MenuItemModel(
+  //   id: 'documents',
+  //   title: 'Documents',
+  //   icon: Icons.folder_open,
+  //   route: '/documents',
+  // ),
 
   MenuItemModel(
     id: 'support',
@@ -50,14 +49,14 @@ const List<MenuItemModel> appMenus = [
     requiredPermissions: ['show crm dashboard'],
   ),
 
-  MenuItemModel(
-    id: 'hr',
-    title: 'HR',
-    icon: Icons.people_outline,
-    iconSize: 56,
-    route: '/hr',
-    requiredPermissions: ['show hrm dashboard'],
-  ),
+  // MenuItemModel(
+  //   id: 'hr',
+  //   title: 'HR',
+  //   icon: Icons.people_outline,
+  //   iconSize: 56,
+  //   route: '/hr',
+  //   requiredPermissions: ['show hrm dashboard'],
+  // ),
 
   MenuItemModel(
     id: 'jobcard',

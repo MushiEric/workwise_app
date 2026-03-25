@@ -18,6 +18,7 @@ class AppIcons {
   static const IconData print = LucideIcons.printer;
   static const IconData refreshCcwRounded = LucideIcons.refreshCcw;
   static const IconData uploadFileRounded = LucideIcons.uploadCloud;
+  static const IconData shoppingCart = LucideIcons.shoppingCart;
 
   // auth / profile icons
   static const IconData mail = LucideIcons.mail;

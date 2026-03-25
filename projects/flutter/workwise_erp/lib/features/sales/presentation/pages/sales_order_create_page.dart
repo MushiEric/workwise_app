@@ -4,27 +4,27 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../../../core/themes/app_colors.dart';
-import '../../../../core/themes/app_icons.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_textfields.dart';
 import '../../../../core/widgets/app_smart_dropdown.dart';
-import '../../../jobcard/presentation/widgets/searchable_dialog.dart';
-
 import '../../domain/entities/sales_order.dart';
 import '../../domain/entities/product_summary.dart';
-import '../../domain/entities/package_unit.dart';
 import '../../../customer/domain/entities/customer.dart';
+
+import 'package:dio/dio.dart';
 
 import '../../../customer/presentation/providers/customer_providers.dart';
 import '../providers/sales_providers.dart';
+import '../../domain/entities/sales_settings.dart';
 
 class SalesOrderCreatePage extends ConsumerStatefulWidget {
   final SalesOrder? order;
   const SalesOrderCreatePage({super.key, this.order});
 
   @override
-  ConsumerState<SalesOrderCreatePage> createState() => _SalesOrderCreatePageState();
+  ConsumerState<SalesOrderCreatePage> createState() =>
+      _SalesOrderCreatePageState();
 }
 
 class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
@@ -102,7 +102,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     if (widget.order != null) {
       _orderNumberCtl.text = widget.order!.orderNumber ?? '';
       _selectedCustomerId = widget.order!.customerId;
-      
+
       if (widget.order!.startDate != null) {
         final d = DateTime.tryParse(widget.order!.startDate!);
         if (d != null) {
@@ -112,7 +112,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     } else {
       _startDateCtl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
     }
-    
+
     _loadCustomers();
   }
 
@@ -219,17 +219,332 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Read typed settings for validation & payload building.
+    final settings =
+        ref.read(salesSettingsProvider).value ?? SalesSettings.defaults;
+
+    // Manual required-field checks (dropdowns aren't covered by Form validators).
+    if (settings.orderShowCustomer && _selectedCustomerId == null) {
+      _showError('Please select a customer');
+      return;
+    }
+    if (settings.orderShowAmount &&
+        settings.orderAmountRequired &&
+        _amountCtl.text.trim().isEmpty) {
+      _showError('Amount is required');
+      return;
+    }
+    if (settings.orderShowContract &&
+        settings.orderContractRequired &&
+        _selectedContract == null) {
+      _showError('Contract is required');
+      return;
+    }
+
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.order != null ? 'Order updated' : 'Order created'),
-          behavior: SnackBarBehavior.floating,
+    try {
+      // Use multipart FormData only when a file is attached; otherwise JSON.
+      final hasFiles =
+          _priorityFilePath != null ||
+          _lpoFilePath != null ||
+          _popFilePath != null;
+
+      final dynamic payload = hasFiles
+          ? await _buildFormData(settings)
+          : _buildJsonPayload(settings);
+
+      await ref.read(salesRemoteDataSourceProvider).saveOrder(payload);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.order != null
+                  ? 'Order updated successfully'
+                  : 'Order created successfully',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString().replaceAll('Exception: ', '').trim());
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Builds a plain JSON payload (no file attachments).
+  Map<String, dynamic> _buildJsonPayload(SalesSettings s) {
+    final m = <String, dynamic>{};
+
+    if (widget.order?.id != null) m['id'] = widget.order!.id;
+    if (s.orderShowCustomer && _selectedCustomerId != null) {
+      m['customer_id'] = _selectedCustomerId;
+    }
+    if (s.orderShowTitle && _titleCtl.text.isNotEmpty) {
+      m['title'] = _titleCtl.text;
+    }
+    if (s.orderShowCurrency) {
+      if (_selectedCurrency != null) m['currency_id'] = _selectedCurrency;
+      if (_exchangeRateCtl.text.isNotEmpty) {
+        m['exchange_rate'] = _exchangeRateCtl.text;
+      }
+    }
+    if (s.orderShowVehicleAllocation && _selectedVehicleId != null) {
+      m['vehicle_id'] = _selectedVehicleId;
+    }
+    if (s.orderShowCargo) {
+      m['cargo_value'] = _cargoValueCtl.text;
+      m['cargo_unit'] = _selectedCargoUnit ?? '';
+    }
+    m['start_date'] = _startDateCtl.text;
+    if (s.orderShowEndDate && _endDateCtl.text.isNotEmpty) {
+      m['end_date'] = _endDateCtl.text;
+    }
+    if (s.orderShowPriority && _selectedPriority != null) {
+      m['priority'] = _selectedPriority;
+    }
+    if (_selectedWarehouseId != null) m['warehouse_id'] = _selectedWarehouseId;
+    if (s.orderShowStatus && _selectedStatusId != null) {
+      m['status_id'] = _selectedStatusId;
+    }
+    if (s.orderShowUserAssignment && _assignUserId != null) {
+      m['assign_user_id'] = _assignUserId;
+    }
+    if (_orderNumberCtl.text.isNotEmpty) {
+      m['order_number'] = _orderNumberCtl.text;
+    }
+    if (s.orderShowAmount && _amountCtl.text.isNotEmpty) {
+      m['amount'] = _amountCtl.text;
+    }
+    if (s.orderShowPackage && _selectedPackageType != null) {
+      m['package_type'] = _selectedPackageType;
+    }
+    if (s.orderShowSenderReceiver) {
+      m['sender_name'] = _senderNameCtl.text;
+      m['sender_phone'] = _senderPhoneCtl.text;
+      m['receiver_name'] = _receiverNameCtl.text;
+      m['receiver_phone'] = _receiverPhoneCtl.text;
+      m['consignment_details'] = _consignmentDetailsCtl.text;
+    }
+    if (s.orderShowContract && _selectedContract != null) {
+      m['contract_id'] = _selectedContract;
+    }
+    if (s.orderShowRequest && _selectedRequest != null) {
+      m['request_id'] = _selectedRequest;
+    }
+    if (s.orderShowPfi && _selectedQuotation != null) {
+      m['quotation_id'] = _selectedQuotation;
+    }
+    if (s.orderShowLpo && _lpoNumberCtl.text.isNotEmpty) {
+      m['lpo_number'] = _lpoNumberCtl.text;
+    }
+    if (s.orderShowPaymentType && _selectedPaymentType != null) {
+      m['payment_type'] = _selectedPaymentType;
+    }
+
+    // Items
+    if (s.orderShowProductService && _items.isNotEmpty) {
+      m['items'] = _items
+          .map(
+            (item) => {
+              'item_id': item.itemId,
+              'qty': item.qty.toString(),
+              'pack_size': item.packSize ?? '',
+              'price': item.price.toString(),
+              'discount': item.discount.toString(),
+              'tax': item.tax ?? '',
+            },
+          )
+          .toList();
+    }
+
+    // Truck list
+    if (s.orderShowTruckList) {
+      final t = <String, dynamic>{
+        'vehicle_name': _transporterNameCtl.text,
+        'plate_number': _truckNumberCtl.text,
+        'trailer_number': _trailerNumberCtl.text,
+        'driver_name': _driverNameCtl.text,
+        'driver_phone': _driverPhoneCtl.text,
+        'driver_license': _driverLicenseCtl.text,
+        'truck_details': _truckDetailsCtl.text,
+      };
+      if (_selectedMyVehicleId != null) t['vehicle_id'] = _selectedMyVehicleId;
+      if (s.orderEnableVehicleCheckinCheckout &&
+          _checkinWeightCtl.text.isNotEmpty) {
+        t['checkin_weight'] = _checkinWeightCtl.text;
+      }
+      m['truck_list'] = [t];
+    }
+
+    if (s.orderShowLocation && _locationCtl.text.isNotEmpty) {
+      m['location'] = _locationCtl.text;
+    }
+    m['notify_email'] = _notifyEmail ? 1 : 0;
+    m['notify_sms'] = _notifySms ? 1 : 0;
+    m['notify_all'] = _notifyAll ? 1 : 0;
+    m['after_save'] = _afterSaveAction;
+    return m;
+  }
+
+  /// Builds a multipart [FormData] payload used when file(s) are attached.
+  Future<FormData> _buildFormData(SalesSettings s) async {
+    final fields = <MapEntry<String, String>>[];
+    final files = <MapEntry<String, MultipartFile>>[];
+
+    void f(String key, dynamic value) {
+      if (value != null) fields.add(MapEntry(key, value.toString()));
+    }
+
+    if (widget.order?.id != null) f('id', widget.order!.id);
+    if (s.orderShowCustomer && _selectedCustomerId != null) {
+      f('customer_id', _selectedCustomerId);
+    }
+    if (s.orderShowTitle) f('title', _titleCtl.text);
+    if (s.orderShowCurrency) {
+      if (_selectedCurrency != null) f('currency_id', _selectedCurrency);
+      if (_exchangeRateCtl.text.isNotEmpty) {
+        f('exchange_rate', _exchangeRateCtl.text);
+      }
+    }
+    if (s.orderShowVehicleAllocation && _selectedVehicleId != null) {
+      f('vehicle_id', _selectedVehicleId);
+    }
+    if (s.orderShowCargo) {
+      f('cargo_value', _cargoValueCtl.text);
+      f('cargo_unit', _selectedCargoUnit ?? '');
+    }
+    f('start_date', _startDateCtl.text);
+    if (s.orderShowEndDate && _endDateCtl.text.isNotEmpty) {
+      f('end_date', _endDateCtl.text);
+    }
+    if (s.orderShowPriority) {
+      if (_selectedPriority != null) f('priority', _selectedPriority);
+      if (_priorityFilePath != null) {
+        files.add(
+          MapEntry(
+            'priority_document',
+            await MultipartFile.fromFile(
+              _priorityFilePath!,
+              filename: _priorityFileName,
+            ),
+          ),
+        );
+      }
+    }
+    if (_selectedWarehouseId != null) f('warehouse_id', _selectedWarehouseId);
+    if (s.orderShowStatus && _selectedStatusId != null) {
+      f('status_id', _selectedStatusId);
+    }
+    if (s.orderShowUserAssignment && _assignUserId != null) {
+      f('assign_user_id', _assignUserId);
+    }
+    if (_orderNumberCtl.text.isNotEmpty)
+      f('order_number', _orderNumberCtl.text);
+    if (s.orderShowAmount && _amountCtl.text.isNotEmpty) {
+      f('amount', _amountCtl.text);
+    }
+    if (s.orderShowPackage && _selectedPackageType != null) {
+      f('package_type', _selectedPackageType);
+    }
+    if (s.orderShowSenderReceiver) {
+      f('sender_name', _senderNameCtl.text);
+      f('sender_phone', _senderPhoneCtl.text);
+      f('receiver_name', _receiverNameCtl.text);
+      f('receiver_phone', _receiverPhoneCtl.text);
+      f('consignment_details', _consignmentDetailsCtl.text);
+    }
+    if (s.orderShowContract && _selectedContract != null) {
+      f('contract_id', _selectedContract);
+    }
+    if (s.orderShowRequest && _selectedRequest != null) {
+      f('request_id', _selectedRequest);
+    }
+    if (s.orderShowPfi && _selectedQuotation != null) {
+      f('quotation_id', _selectedQuotation);
+    }
+    if (s.orderShowLpo) {
+      if (_lpoNumberCtl.text.isNotEmpty) f('lpo_number', _lpoNumberCtl.text);
+      if (_lpoFilePath != null) {
+        files.add(
+          MapEntry(
+            'lpo_document',
+            await MultipartFile.fromFile(_lpoFilePath!, filename: _lpoFileName),
+          ),
+        );
+      }
+    }
+    if (s.orderShowPaymentType && _selectedPaymentType != null) {
+      f('payment_type', _selectedPaymentType);
+    }
+    if (s.orderShowProf && _popFilePath != null) {
+      files.add(
+        MapEntry(
+          'proof_of_payment',
+          await MultipartFile.fromFile(_popFilePath!, filename: _popFileName),
         ),
       );
-      Navigator.pop(context, true);
     }
+
+    // Items (bracket notation for Laravel multipart)
+    if (s.orderShowProductService) {
+      for (int i = 0; i < _items.length; i++) {
+        f('items[$i][item_id]', _items[i].itemId);
+        f('items[$i][qty]', _items[i].qty);
+        f('items[$i][pack_size]', _items[i].packSize ?? '');
+        f('items[$i][price]', _items[i].price);
+        f('items[$i][discount]', _items[i].discount);
+        f('items[$i][tax]', _items[i].tax ?? '');
+      }
+    }
+
+    // Truck list
+    if (s.orderShowTruckList) {
+      if (_selectedMyVehicleId != null) {
+        f('truck_list[0][vehicle_id]', _selectedMyVehicleId);
+      }
+      f('truck_list[0][vehicle_name]', _transporterNameCtl.text);
+      f('truck_list[0][plate_number]', _truckNumberCtl.text);
+      f('truck_list[0][trailer_number]', _trailerNumberCtl.text);
+      f('truck_list[0][driver_name]', _driverNameCtl.text);
+      f('truck_list[0][driver_phone]', _driverPhoneCtl.text);
+      f('truck_list[0][driver_license]', _driverLicenseCtl.text);
+      f('truck_list[0][truck_details]', _truckDetailsCtl.text);
+      if (s.orderEnableVehicleCheckinCheckout &&
+          _checkinWeightCtl.text.isNotEmpty) {
+        f('truck_list[0][checkin_weight]', _checkinWeightCtl.text);
+      }
+    }
+
+    if (s.orderShowLocation && _locationCtl.text.isNotEmpty) {
+      f('location', _locationCtl.text);
+    }
+    f('notify_email', _notifyEmail ? 1 : 0);
+    f('notify_sms', _notifySms ? 1 : 0);
+    f('notify_all', _notifyAll ? 1 : 0);
+    f('after_save', _afterSaveAction);
+
+    final formData = FormData();
+    formData.fields.addAll(fields);
+    formData.files.addAll(files);
+    return formData;
   }
 
   bool _fieldEnabled(Map<String, dynamic> cfg, List<String> keys) {
@@ -243,7 +558,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
       if ({'1', 'true', 'yes', 'on', 'enabled'}.contains(s)) return true;
       if ({'0', 'false', 'no', 'off', 'disabled'}.contains(s)) return false;
     }
-    return true; 
+    return true;
   }
 
   Widget _buildSectionHeader(String title, {Widget? trailing}) {
@@ -271,7 +586,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settingsAsync = ref.watch(salesSettingsProvider);
+    final settingsAsync = ref.watch(salesSettingsConfigProvider);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
@@ -293,9 +608,14 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -326,39 +646,84 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     Widget Function(Map<String, dynamic>)? itemWidgetBuilder,
   }) {
     return asyncValue.when(
-      loading: () => _buildField(AppTextField(label: label, hintText: 'Loading...', readOnly: true)),
-      error: (e, _) => _buildField(AppTextField(label: label, hintText: 'Error loading', readOnly: true)),
+      loading: () => _buildField(
+        AppTextField(label: label, hintText: 'Loading...', readOnly: true),
+      ),
+      error: (e, _) => _buildField(
+        AppTextField(label: label, hintText: 'Error loading', readOnly: true),
+      ),
       data: (list) {
-        String? getId(Map m) => (m['id'] ?? m['uuid'] ?? m['quotation_id'] ?? m['request_id'] ?? m['contract_id'] ?? m['currency_id'] ?? m['pfi_id'] ?? m['form_number'])?.toString();
-        
-        final items = list.map((m) => getId(m)).where((s) => s != null).cast<String>().toList();
-        final selectedVal = items.contains(value?.toString()) ? value?.toString() : null;
+        String? getId(Map m) =>
+            (m['id'] ??
+                    m['uuid'] ??
+                    m['quotation_id'] ??
+                    m['request_id'] ??
+                    m['contract_id'] ??
+                    m['currency_id'] ??
+                    m['pfi_id'] ??
+                    m['form_number'])
+                ?.toString();
 
-        return _buildField(AppSmartDropdown<String>(
-          value: selectedVal,
-          items: items,
-          itemBuilder: (id) {
-            final m = list.firstWhere((e) => getId(e) == id, orElse: () => {});
-            final val = m[displayKey] ?? m['name'] ?? m['title'] ?? m['desc'] ?? m['customer_name'] ?? m['subject'] ?? m['currency_name'] ?? m['currency_symbol'] ?? m['currency_code'] ?? m['code'];
-            
-            final number = m['number'] ?? m['form_number'] ?? m['quotation_number'] ?? m['pfi_number'] ?? m['request_number'] ?? m['contract_number'];
-            if (number != null && val != null) return '$number - $val';
-            if (number != null) return number.toString();
-            
-            return val?.toString() ?? 'ID: $id';
-          },
-          itemWidgetBuilder: itemWidgetBuilder == null ? null : (id) {
-            final m = list.firstWhere((e) => getId(e) == id, orElse: () => {});
-            return itemWidgetBuilder(m);
-          },
-          label: label,
-          hintText: hintText,
-          onChanged: (v) {
-            if (v == null) return onChanged(null);
-            if (T == int) return onChanged(int.tryParse(v) as T);
-            onChanged(v as T);
-          },
-        ));
+        final items = list
+            .map((m) => getId(m))
+            .where((s) => s != null)
+            .cast<String>()
+            .toList();
+        final selectedVal = items.contains(value?.toString())
+            ? value?.toString()
+            : null;
+
+        return _buildField(
+          AppSmartDropdown<String>(
+            value: selectedVal,
+            items: items,
+            itemBuilder: (id) {
+              final m = list.firstWhere(
+                (e) => getId(e) == id,
+                orElse: () => {},
+              );
+              final val =
+                  m[displayKey] ??
+                  m['name'] ??
+                  m['title'] ??
+                  m['desc'] ??
+                  m['customer_name'] ??
+                  m['subject'] ??
+                  m['currency_name'] ??
+                  m['currency_symbol'] ??
+                  m['currency_code'] ??
+                  m['code'];
+
+              final number =
+                  m['number'] ??
+                  m['form_number'] ??
+                  m['quotation_number'] ??
+                  m['pfi_number'] ??
+                  m['request_number'] ??
+                  m['contract_number'];
+              if (number != null && val != null) return '$number - $val';
+              if (number != null) return number.toString();
+
+              return val?.toString() ?? 'ID: $id';
+            },
+            itemWidgetBuilder: itemWidgetBuilder == null
+                ? null
+                : (id) {
+                    final m = list.firstWhere(
+                      (e) => getId(e) == id,
+                      orElse: () => {},
+                    );
+                    return itemWidgetBuilder(m);
+                  },
+            label: label,
+            hintText: hintText,
+            onChanged: (v) {
+              if (v == null) return onChanged(null);
+              if (T == int) return onChanged(int.tryParse(v) as T);
+              onChanged(v as T);
+            },
+          ),
+        );
       },
     );
   }
@@ -372,21 +737,34 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Details Section
-            if (_fieldEnabled(cfg, ['show_details_section', 'enable_details_section'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_details_section',
+              'enable_details_section',
+            ])) ...[
               _buildSectionHeader('Details'),
-              if (_fieldEnabled(cfg, ['enable_title', 'show_title'])) 
-                _buildField(AppTextField(controller: _titleCtl, label: 'Title', hintText: 'Enter a order title')),
-              if (_fieldEnabled(cfg, ['enable_customer_id', 'enable_customer'])) 
-                _buildField(AppSmartDropdown<int>(
-                  value: _selectedCustomerId,
-                  items: _customers.map((c) => c.id!).toList(),
-                  itemBuilder: (id) => _customers.firstWhere((c) => c.id == id).name ?? 'Unknown',
-                  label: 'Customer *',
-                  hintText: 'Select Customer',
-                  enabled: _customers.isNotEmpty,
-                  onChanged: (id) => setState(() => _selectedCustomerId = id),
-                )),
-              if (_fieldEnabled(cfg, ['enable_currency', 'show_currency'])) 
+              if (_fieldEnabled(cfg, ['enable_title', 'show_title']))
+                _buildField(
+                  AppTextField(
+                    controller: _titleCtl,
+                    label: 'Title',
+                    hintText: 'Enter a order title',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, ['enable_customer_id', 'enable_customer']))
+                _buildField(
+                  AppSmartDropdown<int>(
+                    value: _selectedCustomerId,
+                    items: _customers.map((c) => c.id!).toList(),
+                    itemBuilder: (id) =>
+                        _customers.firstWhere((c) => c.id == id).name ??
+                        'Unknown',
+                    label: 'Customer *',
+                    hintText: 'Select Customer',
+                    enabled: _customers.isNotEmpty,
+                    onChanged: (id) => setState(() => _selectedCustomerId = id),
+                  ),
+                ),
+              if (_fieldEnabled(cfg, ['enable_currency', 'show_currency']))
                 _buildAsyncMapDropdown<String>(
                   asyncValue: ref.watch(salesCurrenciesProvider),
                   value: _selectedCurrency,
@@ -397,7 +775,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                     if (v != null) {
                       final id = int.tryParse(v);
                       if (id != null) {
-                        final rate = await ref.read(salesRemoteDataSourceProvider).getExchangeRate(id);
+                        final rate = await ref
+                            .read(salesRemoteDataSourceProvider)
+                            .getExchangeRate(id);
                         if (rate != null) {
                           _exchangeRateCtl.text = rate.toString();
                           setState(() {});
@@ -407,9 +787,22 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   },
                   displayKey: 'code',
                 ),
-              if (_fieldEnabled(cfg, ['enable_exchange_rate', 'show_exchange_rate'])) 
-                _buildField(AppTextField(controller: _exchangeRateCtl, label: 'Exchange rate', hintText: '1.00')),
-              if (_fieldEnabled(cfg, ['enable_vehicle_id', 'enable_vehicle_dropdowns', 'show_vehicle_dropdowns'])) 
+              if (_fieldEnabled(cfg, [
+                'enable_exchange_rate',
+                'show_exchange_rate',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _exchangeRateCtl,
+                    label: 'Exchange rate',
+                    hintText: '1.00',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_vehicle_id',
+                'enable_vehicle_dropdowns',
+                'show_vehicle_dropdowns',
+              ]))
                 _buildAsyncMapDropdown<int>(
                   asyncValue: ref.watch(salesVehiclesProvider),
                   value: _selectedVehicleId,
@@ -418,57 +811,89 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   onChanged: (v) => setState(() => _selectedVehicleId = v),
                   displayKey: 'plate_number',
                 ),
-              if (_fieldEnabled(cfg, ['enable_cargo_value', 'show_cargo_value'])) 
+              if (_fieldEnabled(cfg, [
+                'enable_cargo_value',
+                'show_cargo_value',
+              ]))
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 2,
-                      child: AppTextField(controller: _cargoValueCtl, label: 'Cargo Value *', hintText: 'Enter Cargo Value'),
+                      child: AppTextField(
+                        controller: _cargoValueCtl,
+                        label: 'Cargo Value *',
+                        hintText: 'Enter Cargo Value',
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 1,
                       child: AppSmartDropdown<String>(
                         value: _selectedCargoUnit,
-                        items: const ['kilograms(kg)', 'gramms(g)', 'litters', 'tonnes', 'pounds'],
+                        items: const [
+                          'kilograms(kg)',
+                          'gramms(g)',
+                          'litters',
+                          'tonnes',
+                          'pounds',
+                        ],
                         itemBuilder: (s) => s,
                         label: ' ',
                         hintText: 'Unit',
-                        onChanged: (v) => setState(() => _selectedCargoUnit = v),
+                        onChanged: (v) =>
+                            setState(() => _selectedCargoUnit = v),
                       ),
                     ),
                   ],
                 ),
-              if (_fieldEnabled(cfg, ['enable_cargo_value', 'show_cargo_value'])) const SizedBox(height: 12),
-              if (_fieldEnabled(cfg, ['enable_start_date', 'show_start_date'])) 
-                _buildField(AppTextField(
-                  controller: _startDateCtl, label: 'Start', hintText: 'YYYY-MM-DD',
-                  readOnly: true, onTap: () => _selectDate(_startDateCtl),
-                )),
-              if (_fieldEnabled(cfg, ['enable_end_date', 'show_end_date'])) 
-                _buildField(AppTextField(
-                  controller: _endDateCtl, label: 'End', hintText: 'Enter Date',
-                  readOnly: true, onTap: () => _selectDate(_endDateCtl),
-                )),
+              if (_fieldEnabled(cfg, [
+                'enable_cargo_value',
+                'show_cargo_value',
+              ]))
+                const SizedBox(height: 12),
+              if (_fieldEnabled(cfg, ['enable_start_date', 'show_start_date']))
+                _buildField(
+                  AppTextField(
+                    controller: _startDateCtl,
+                    label: 'Start',
+                    hintText: 'YYYY-MM-DD',
+                    readOnly: true,
+                    onTap: () => _selectDate(_startDateCtl),
+                  ),
+                ),
+              if (_fieldEnabled(cfg, ['enable_end_date', 'show_end_date']))
+                _buildField(
+                  AppTextField(
+                    controller: _endDateCtl,
+                    label: 'End',
+                    hintText: 'Enter Date',
+                    readOnly: true,
+                    onTap: () => _selectDate(_endDateCtl),
+                  ),
+                ),
               if (_fieldEnabled(cfg, ['enable_priority', 'show_priority'])) ...[
-                _buildField(AppSmartDropdown<String>(
-                  value: _selectedPriority,
-                  items: const ['Fragile (F)', 'High', 'Normal', 'Document'],
-                  itemBuilder: (s) => s,
-                  label: 'Priority',
-                  hintText: 'Select priority',
-                  onChanged: (v) => setState(() => _selectedPriority = v),
-                )),
-                _buildField(AppTextField(
-                  label: 'Priority Document', 
-                  hintText: _priorityFileName ?? 'Choose File', 
-                  readOnly: true, 
-                  suffixIcon: const Icon(Icons.attach_file),
-                  onTap: _pickPriorityFile,
-                )),
+                _buildField(
+                  AppSmartDropdown<String>(
+                    value: _selectedPriority,
+                    items: const ['Fragile (F)', 'High', 'Normal', 'Document'],
+                    itemBuilder: (s) => s,
+                    label: 'Priority',
+                    hintText: 'Select priority',
+                    onChanged: (v) => setState(() => _selectedPriority = v),
+                  ),
+                ),
+                _buildField(
+                  AppTextField(
+                    label: 'Priority Document',
+                    hintText: _priorityFileName ?? 'Choose File',
+                    readOnly: true,
+                    suffixIcon: const Icon(Icons.attach_file),
+                    onTap: _pickPriorityFile,
+                  ),
+                ),
               ],
-              if (_fieldEnabled(cfg, ['enable_warehouse', 'show_warehouse'])) 
+              if (_fieldEnabled(cfg, ['enable_warehouse', 'show_warehouse']))
                 _buildAsyncMapDropdown<int>(
                   asyncValue: ref.watch(salesWarehousesProvider),
                   value: _selectedWarehouseId,
@@ -480,9 +905,16 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
             ],
 
             // Other Details
-            if (_fieldEnabled(cfg, ['show_other_details', 'enable_other_details'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_other_details',
+              'enable_other_details',
+            ])) ...[
               _buildSectionHeader('Other Details'),
-              if (_fieldEnabled(cfg, ['enable_status_id', 'enable_status', 'show_status'])) 
+              if (_fieldEnabled(cfg, [
+                'enable_status_id',
+                'enable_status',
+                'show_status',
+              ]))
                 _buildAsyncMapDropdown<int>(
                   asyncValue: ref.watch(salesOrderStatusesProvider),
                   value: _selectedStatusId,
@@ -490,7 +922,10 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   hintText: 'Draft',
                   onChanged: (v) => setState(() => _selectedStatusId = v),
                 ),
-              if (_fieldEnabled(cfg, ['enable_assign_user', 'show_assign_user'])) 
+              if (_fieldEnabled(cfg, [
+                'enable_assign_user',
+                'show_assign_user',
+              ]))
                 _buildAsyncMapDropdown<int>(
                   asyncValue: ref.watch(salesUsersProvider),
                   value: _assignUserId,
@@ -501,7 +936,10 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
             ],
 
             // Sender & Receiver Information
-            if (_fieldEnabled(cfg, ['show_sender_receiver', 'enable_sender_receiver'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_sender_receiver',
+              'enable_sender_receiver',
+            ])) ...[
               _buildSectionHeader(
                 'Sender & Receiver Information',
                 trailing: TextButton.icon(
@@ -510,11 +948,29 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   label: const Text('Add Another Sender/Receiver'),
                 ),
               ),
-              if (_fieldEnabled(cfg, ['enable_order_number', 'show_order_number'])) 
-                _buildField(AppTextField(controller: _orderNumberCtl, label: 'Order Number *', hintText: 'ORD...')),
-              if (_fieldEnabled(cfg, ['enable_amount', 'show_amount'])) 
-                _buildField(AppTextField(controller: _amountCtl, label: 'Amount *', hintText: 'eg 5,000')),
-              if (_fieldEnabled(cfg, ['enable_package_type', 'show_package_type'])) 
+              if (_fieldEnabled(cfg, [
+                'enable_order_number',
+                'show_order_number',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _orderNumberCtl,
+                    label: 'Order Number *',
+                    hintText: 'ORD...',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, ['enable_amount', 'show_amount']))
+                _buildField(
+                  AppTextField(
+                    controller: _amountCtl,
+                    label: 'Amount *',
+                    hintText: 'eg 5,000',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_package_type',
+                'show_package_type',
+              ]))
                 _buildAsyncMapDropdown<String>(
                   asyncValue: ref.watch(salesPackageTypesProvider),
                   value: _selectedPackageType,
@@ -523,22 +979,75 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   onChanged: (v) => setState(() => _selectedPackageType = v),
                   displayKey: 'name',
                 ),
-              if (_fieldEnabled(cfg, ['enable_sender_name', 'show_sender_name'])) 
-                _buildField(AppTextField(controller: _senderNameCtl, label: 'Sender Name *', hintText: 'Enter Sender Name')),
-              if (_fieldEnabled(cfg, ['enable_sender_phone', 'show_sender_phone'])) 
-                _buildField(AppTextField(controller: _senderPhoneCtl, label: 'Sender Phone', hintText: 'Enter Sender Phone')),
-              if (_fieldEnabled(cfg, ['enable_receiver_name', 'show_receiver_name'])) 
-                _buildField(AppTextField(controller: _receiverNameCtl, label: 'Receiver Name *', hintText: 'Enter Receiver Name')),
-              if (_fieldEnabled(cfg, ['enable_receiver_phone', 'show_receiver_phone'])) 
-                _buildField(AppTextField(controller: _receiverPhoneCtl, label: 'Receiver Phone', hintText: 'Enter Receiver Phone')),
-              if (_fieldEnabled(cfg, ['enable_consignment_details', 'show_consignment_details'])) 
-                _buildField(AppTextField(controller: _consignmentDetailsCtl, label: 'Consignment Details', maxLines: 3)),
+              if (_fieldEnabled(cfg, [
+                'enable_sender_name',
+                'show_sender_name',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _senderNameCtl,
+                    label: 'Sender Name *',
+                    hintText: 'Enter Sender Name',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_sender_phone',
+                'show_sender_phone',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _senderPhoneCtl,
+                    label: 'Sender Phone',
+                    hintText: 'Enter Sender Phone',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_receiver_name',
+                'show_receiver_name',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _receiverNameCtl,
+                    label: 'Receiver Name *',
+                    hintText: 'Enter Receiver Name',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_receiver_phone',
+                'show_receiver_phone',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _receiverPhoneCtl,
+                    label: 'Receiver Phone',
+                    hintText: 'Enter Receiver Phone',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_consignment_details',
+                'show_consignment_details',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _consignmentDetailsCtl,
+                    label: 'Consignment Details',
+                    maxLines: 3,
+                  ),
+                ),
             ],
 
             // LPO and Documents
-            if (_fieldEnabled(cfg, ['show_contract_section', 'enable_contract_section', 'enable_contract', 'enable_request_id', 'enable_quotation', 'enable_lpo_number', 'enable_payment_type'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_contract_section',
+              'enable_contract_section',
+              'enable_contract',
+              'enable_request_id',
+              'enable_quotation',
+              'enable_lpo_number',
+              'enable_payment_type',
+            ])) ...[
               _buildSectionHeader('Contract & Quotation'),
-              if (_fieldEnabled(cfg, ['enable_contract', 'show_contract'])) 
+              if (_fieldEnabled(cfg, ['enable_contract', 'show_contract']))
                 _buildAsyncMapDropdown<String>(
                   asyncValue: ref.watch(salesContractsProvider),
                   value: _selectedContract,
@@ -546,7 +1055,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   hintText: 'Select Contract',
                   onChanged: (v) => setState(() => _selectedContract = v),
                 ),
-              if (_fieldEnabled(cfg, ['enable_request_id', 'show_request_id'])) 
+              if (_fieldEnabled(cfg, ['enable_request_id', 'show_request_id']))
                 _buildAsyncMapDropdown<String>(
                   asyncValue: ref.watch(salesRequestsProvider),
                   value: _selectedRequest,
@@ -554,7 +1063,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   hintText: 'Select Request',
                   onChanged: (v) => setState(() => _selectedRequest = v),
                 ),
-              if (_fieldEnabled(cfg, ['enable_quotation', 'show_quotation'])) 
+              if (_fieldEnabled(cfg, ['enable_quotation', 'show_quotation']))
                 _buildAsyncMapDropdown<String>(
                   asyncValue: ref.watch(salesQuotationsProvider),
                   value: _selectedQuotation,
@@ -562,62 +1071,104 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   hintText: 'Select PFI',
                   onChanged: (v) => setState(() => _selectedQuotation = v),
                   itemWidgetBuilder: (q) {
-                    final pfi = (q['quotation_number'] ?? q['pfi_number'] ?? '').toString();
-                    final subject = (q['subject'] ?? q['name'] ?? q['title'] ?? '').toString();
+                    final pfi = (q['quotation_number'] ?? q['pfi_number'] ?? '')
+                        .toString();
+                    final subject =
+                        (q['subject'] ?? q['name'] ?? q['title'] ?? '')
+                            .toString();
                     return RichText(
                       text: TextSpan(
                         style: TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey.shade800,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey.shade800,
                         ),
                         children: [
-                          TextSpan(text: pfi, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          if (pfi.isNotEmpty && subject.isNotEmpty) const TextSpan(text: ' - '),
+                          TextSpan(
+                            text: pfi,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (pfi.isNotEmpty && subject.isNotEmpty)
+                            const TextSpan(text: ' - '),
                           TextSpan(text: subject),
                         ],
                       ),
                     );
                   },
                 ),
-              if (_fieldEnabled(cfg, ['enable_lpo_number', 'show_lpo_number'])) 
-                _buildField(AppTextField(controller: _lpoNumberCtl, label: 'LPO Number', hintText: 'Enter lpo number')),
-              if (_fieldEnabled(cfg, ['enable_lpo_document', 'show_lpo_document'])) 
-                _buildField(AppTextField(
-                  label: 'LPO Document', 
-                  hintText: _lpoFileName ?? 'Choose File', 
-                  readOnly: true, 
-                  suffixIcon: const Icon(Icons.attach_file),
-                  onTap: _pickLpoFile,
-                )),
-              if (_fieldEnabled(cfg, ['enable_payment_type', 'show_payment_type'])) 
-                _buildField(AppSmartDropdown<String>(
-                  value: _selectedPaymentType,
-                  items: const ['Cash', 'Credit'],
-                  itemBuilder: (s) => s,
-                  label: 'Payment Type',
-                  hintText: 'Cash',
-                  onChanged: (v) => setState(() => _selectedPaymentType = v),
-                )),
-              if (_fieldEnabled(cfg, ['enable_prof_of_payment', 'show_prof_of_payment'])) 
-                _buildField(AppTextField(
-                  label: 'Prof Of Payment', 
-                  hintText: _popFileName ?? 'Choose File', 
-                  readOnly: true, 
-                  suffixIcon: const Icon(Icons.attach_file),
-                  onTap: _pickPopFile,
-                )),
+              if (_fieldEnabled(cfg, ['enable_lpo_number', 'show_lpo_number']))
+                _buildField(
+                  AppTextField(
+                    controller: _lpoNumberCtl,
+                    label: 'LPO Number',
+                    hintText: 'Enter lpo number',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_lpo_document',
+                'show_lpo_document',
+              ]))
+                _buildField(
+                  AppTextField(
+                    label: 'LPO Document',
+                    hintText: _lpoFileName ?? 'Choose File',
+                    readOnly: true,
+                    suffixIcon: const Icon(Icons.attach_file),
+                    onTap: _pickLpoFile,
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_payment_type',
+                'show_payment_type',
+              ]))
+                _buildField(
+                  AppSmartDropdown<String>(
+                    value: _selectedPaymentType,
+                    items: const ['Cash', 'Credit'],
+                    itemBuilder: (s) => s,
+                    label: 'Payment Type',
+                    hintText: 'Cash',
+                    onChanged: (v) => setState(() => _selectedPaymentType = v),
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_prof_of_payment',
+                'show_prof_of_payment',
+              ]))
+                _buildField(
+                  AppTextField(
+                    label: 'Prof Of Payment',
+                    hintText: _popFileName ?? 'Choose File',
+                    readOnly: true,
+                    suffixIcon: const Icon(Icons.attach_file),
+                    onTap: _pickPopFile,
+                  ),
+                ),
             ],
 
             // Items List
-            if (_fieldEnabled(cfg, ['show_items_section', 'enable_items_section', 'enable_items'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_items_section',
+              'enable_items_section',
+              'enable_items',
+            ])) ...[
               _buildSectionHeader('Items'),
               _buildItems(isDark, cfg),
             ],
 
             // Order Truck List
-            if (_fieldEnabled(cfg, ['show_trucks_section', 'enable_truck_details', 'enable_trucks', 'show_truck_list'])) ...[
-               _buildSectionHeader('Order Truck List'),
-               if (_fieldEnabled(cfg, ['enable_truck_vehicle_id', 'show_vehicle_dropdowns'])) ...[
+            if (_fieldEnabled(cfg, [
+              'show_trucks_section',
+              'enable_truck_details',
+              'enable_trucks',
+              'show_truck_list',
+            ])) ...[
+              _buildSectionHeader('Order Truck List'),
+              if (_fieldEnabled(cfg, [
+                'enable_truck_vehicle_id',
+                'show_vehicle_dropdowns',
+              ])) ...[
                 _buildAsyncMapDropdown<int>(
                   asyncValue: ref.watch(salesVehiclesProvider),
                   value: _selectedMyVehicleId,
@@ -626,74 +1177,178 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   onChanged: (v) => setState(() => _selectedMyVehicleId = v),
                   displayKey: 'plate_number',
                 ),
-               ],
-               if (_fieldEnabled(cfg, ['enable_vehicle_name', 'show_vehicle_name'])) 
-                 _buildField(AppTextField(controller: _transporterNameCtl, label: 'Transpoter Name')),
-               if (_fieldEnabled(cfg, ['enable_vehicle_plate_number', 'show_vehicle_plate_number'])) 
-                 _buildField(AppTextField(controller: _truckNumberCtl, label: 'Truck Number')),
-               if (_fieldEnabled(cfg, ['enable_vehicle_trailer_number', 'show_vehicle_trailer_number'])) 
-                 _buildField(AppTextField(controller: _trailerNumberCtl, label: 'Trailer Number')),
-               if (_fieldEnabled(cfg, ['enable_driver_name', 'show_driver_name'])) 
-                 _buildField(AppTextField(controller: _driverNameCtl, label: 'Driver Name')),
-               if (_fieldEnabled(cfg, ['enable_driver_phone', 'show_driver_phone'])) 
-                 _buildField(AppTextField(controller: _driverPhoneCtl, label: 'Driver Phone')),
-               if (_fieldEnabled(cfg, ['enable_driver_license_number', 'show_driver_license_number'])) 
-                 _buildField(AppTextField(controller: _driverLicenseCtl, label: 'Driver License')),
-               if (_fieldEnabled(cfg, ['enable_truck_details', 'show_truck_details'])) 
-                 _buildField(AppTextField(controller: _truckDetailsCtl, label: 'Truck Details', maxLines: 2)),
-               if (_fieldEnabled(cfg, ['enable_checkin_weight', 'show_checkin_weight'])) 
-                 _buildField(AppTextField(controller: _checkinWeightCtl, label: 'Check-in Weight', suffixIcon: TextButton(onPressed: () {}, child: const Text('Fetch from Weighbridge')))),
+              ],
+              if (_fieldEnabled(cfg, [
+                'enable_vehicle_name',
+                'show_vehicle_name',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _transporterNameCtl,
+                    label: 'Transpoter Name',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_vehicle_plate_number',
+                'show_vehicle_plate_number',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _truckNumberCtl,
+                    label: 'Truck Number',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_vehicle_trailer_number',
+                'show_vehicle_trailer_number',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _trailerNumberCtl,
+                    label: 'Trailer Number',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_driver_name',
+                'show_driver_name',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _driverNameCtl,
+                    label: 'Driver Name',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_driver_phone',
+                'show_driver_phone',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _driverPhoneCtl,
+                    label: 'Driver Phone',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_driver_license_number',
+                'show_driver_license_number',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _driverLicenseCtl,
+                    label: 'Driver License',
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_truck_details',
+                'show_truck_details',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _truckDetailsCtl,
+                    label: 'Truck Details',
+                    maxLines: 2,
+                  ),
+                ),
+              if (_fieldEnabled(cfg, [
+                'enable_checkin_weight',
+                'show_checkin_weight',
+              ]))
+                _buildField(
+                  AppTextField(
+                    controller: _checkinWeightCtl,
+                    label: 'Check-in Weight',
+                    suffixIcon: TextButton(
+                      onPressed: () {},
+                      child: const Text('Fetch from Weighbridge'),
+                    ),
+                  ),
+                ),
             ],
 
             // Location
             if (_fieldEnabled(cfg, ['enable_location', 'show_location'])) ...[
               _buildSectionHeader('Location'),
-              _buildField(AppTextField(
-                controller: _locationCtl,
-                label: '',
-                hintText: 'Enter location (optional)',
-                prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
-              )),
+              _buildField(
+                AppTextField(
+                  controller: _locationCtl,
+                  label: '',
+                  hintText: 'Enter location (optional)',
+                  prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
+                ),
+              ),
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Specify the order location', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                child: Text(
+                  'Specify the order location',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ),
               const SizedBox(height: 12),
             ],
 
             // Notifications
-            _buildSectionHeader('Notifications', trailing: const Icon(Icons.notifications_active_outlined, size: 18, color: Colors.grey)),
+            _buildSectionHeader(
+              'Notifications',
+              trailing: const Icon(
+                Icons.notifications_active_outlined,
+                size: 18,
+                color: Colors.grey,
+              ),
+            ),
             Row(
               children: [
-                Checkbox(value: _notifyEmail, onChanged: (v) => setState(() => _notifyEmail = v ?? false)),
+                Checkbox(
+                  value: _notifyEmail,
+                  onChanged: (v) => setState(() => _notifyEmail = v ?? false),
+                ),
                 const Text('Email'),
                 const SizedBox(width: 8),
-                Checkbox(value: _notifySms, onChanged: (v) => setState(() => _notifySms = v ?? false)),
+                Checkbox(
+                  value: _notifySms,
+                  onChanged: (v) => setState(() => _notifySms = v ?? false),
+                ),
                 const Text('SMS'),
                 const SizedBox(width: 8),
-                Checkbox(value: _notifyAll, onChanged: (v) => setState(() => _notifyAll = v ?? false)),
+                Checkbox(
+                  value: _notifyAll,
+                  onChanged: (v) => setState(() => _notifyAll = v ?? false),
+                ),
                 const Text('All'),
               ],
             ),
 
             // After Save Order
-            _buildSectionHeader('After Save Order', trailing: const Icon(Icons.article_outlined, size: 18, color: Colors.grey)),
+            _buildSectionHeader(
+              'After Save Order',
+              trailing: const Icon(
+                Icons.article_outlined,
+                size: 18,
+                color: Colors.grey,
+              ),
+            ),
             Wrap(
               spacing: 16,
-              children: ['Create Trip', 'Create Task', 'Create Receipt', 'Nothing'].map((val) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Radio<String>(
-                      value: val,
-                      groupValue: _afterSaveAction,
-                      onChanged: (v) => setState(() => _afterSaveAction = v ?? 'Nothing'),
-                      activeColor: Colors.blueAccent,
-                    ),
-                    Text(val),
-                  ],
-                );
-              }).toList(),
+              children:
+                  [
+                    'Create Trip',
+                    'Create Task',
+                    'Create Receipt',
+                    'Nothing',
+                  ].map((val) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<String>(
+                          value: val,
+                          groupValue: _afterSaveAction,
+                          onChanged: (v) =>
+                              setState(() => _afterSaveAction = v ?? 'Nothing'),
+                          activeColor: Colors.blueAccent,
+                        ),
+                        Text(val),
+                      ],
+                    );
+                  }).toList(),
             ),
 
             const SizedBox(height: 32),
@@ -704,10 +1359,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   }
 
   Widget _buildField(Widget child) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: child,
-    );
+    return Padding(padding: const EdgeInsets.only(bottom: 12.0), child: child);
   }
 
   Widget _buildItems(bool isDark, Map<String, dynamic> cfg) {
@@ -720,7 +1372,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
       subTotal += item.amount;
       if (item.tax != null && item.tax!.toLowerCase().contains('vat')) {
         final percentMatch = RegExp(r'(\d+)\s*%').firstMatch(item.tax!);
-        final percent = double.tryParse(percentMatch?.group(1) ?? '0') ?? 18.0; // Default to 18 if 'VAT' present but no %
+        final percent =
+            double.tryParse(percentMatch?.group(1) ?? '0') ??
+            18.0; // Default to 18 if 'VAT' present but no %
         totalVat += (item.amount * percent / 100);
       }
     }
@@ -762,7 +1416,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                             color: Colors.black.withOpacity(0.02),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
-                          )
+                          ),
                         ],
                 ),
                 child: Row(
@@ -770,7 +1424,10 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   children: [
                     Container(
                       margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -794,7 +1451,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
-                              color: isDark ? Colors.white : const Color(0xFF1A2634),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1A2634),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -803,11 +1462,19 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                             runSpacing: 4,
                             children: [
                               _buildItemTag(isDark, 'Qty: ${item.qty}'),
-                              if (item.packSize != null) _buildItemTag(isDark, 'Pack: ${item.packSize}'),
-                              _buildItemTag(isDark, 'Price: ${NumberFormat.decimalPattern().format(item.price)}'),
-                              if (item.tax != null) _buildItemTag(isDark, 'Tax: ${item.tax}'),
+                              if (item.packSize != null)
+                                _buildItemTag(isDark, 'Pack: ${item.packSize}'),
+                              _buildItemTag(
+                                isDark,
+                                'Price: ${NumberFormat.decimalPattern().format(item.price)}',
+                              ),
+                              if (item.tax != null)
+                                _buildItemTag(isDark, 'Tax: ${item.tax}'),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
@@ -837,23 +1504,30 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                         color: Colors.red.shade400,
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                   ],
                 ),
               );
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Totals Summary (Matching Jobcard feel but adjusted for Sales)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.04) : Colors.grey.shade50,
+              color: isDark
+                  ? Colors.white.withOpacity(0.04)
+                  : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+              border: Border.all(
+                color: isDark ? Colors.white10 : Colors.grey.shade200,
+              ),
             ),
             child: Column(
               children: [
@@ -864,14 +1538,19 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(height: 1),
                 ),
-                _buildSummaryRow('Grand Total', grandTotal, isDark, isTotal: true),
+                _buildSummaryRow(
+                  'Grand Total',
+                  grandTotal,
+                  isDark,
+                  isTotal: true,
+                ),
               ],
             ),
           ),
         ],
-        
+
         const SizedBox(height: 16),
-        
+
         InkWell(
           onTap: () async {
             final result = await showModalBottomSheet<_DraftItem>(
@@ -902,7 +1581,11 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_circle_outline_rounded, size: 20, color: primaryColor),
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 20,
+                  color: primaryColor,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   _items.isEmpty ? 'Add Item' : 'Add another item',
@@ -920,7 +1603,12 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, double value, bool isDark, {bool isTotal = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    double value,
+    bool isDark, {
+    bool isTotal = false,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -929,7 +1617,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
           style: TextStyle(
             fontSize: isTotal ? 16 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-            color: isTotal ? (isDark ? Colors.white : Colors.black) : (isDark ? Colors.white60 : Colors.grey.shade600),
+            color: isTotal
+                ? (isDark ? Colors.white : Colors.black)
+                : (isDark ? Colors.white60 : Colors.grey.shade600),
           ),
         ),
         Text(
@@ -937,7 +1627,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
           style: TextStyle(
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isTotal ? AppColors.primary : (isDark ? Colors.white : Colors.black87),
+            color: isTotal
+                ? AppColors.primary
+                : (isDark ? Colors.white : Colors.black87),
           ),
         ),
       ],
@@ -997,15 +1689,15 @@ class _AddItemDrawer extends ConsumerStatefulWidget {
 
 class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
   final _itemNameCtl = TextEditingController(); // For custom entry
-  final _qtyCtl = TextEditingController(text: '1');
+  final _qtyCtl = TextEditingController();
   final _packSizeInputCtl = TextEditingController();
   final _priceCtl = TextEditingController();
   final _discountCtl = TextEditingController(text: '0');
-  
+
   ProductSummary? _selectedProduct;
   String? _selectedUnit;
   String? _selectedPackSize;
-  double _availableStock = 0; 
+  double _availableStock = 0;
   String? _selectedTax;
 
   @override
@@ -1047,24 +1739,61 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
     final unitsAsync = ref.watch(salesPackageUnitsProvider);
     final taxesAsync = ref.watch(salesTaxesProvider);
 
+    // When enable_auto_qty_unit_capture == 1: qty auto-fills to 1 on product
+    // selection and remains editable. When 0: no auto-fill, field is disabled.
+    final autoQtyCapture =
+        (widget.cfg['enable_auto_qty_unit_capture'] as int? ?? 1) != 0;
+
     final qty = double.tryParse(_qtyCtl.text) ?? 1;
     final price = double.tryParse(_priceCtl.text) ?? 0;
     final discount = double.tryParse(_discountCtl.text) ?? 0;
     final calculatedAmount = (qty * price) - discount;
 
     final productCandidates = productsAsync.value ?? [];
-    final unitList = (unitsAsync.value ?? []).map((u) => u.name ?? 'Unit').toList()
-      ..addAll(['PCS', 'LITERS', 'tonne', 'kgs', 'Bags', 'drum', 'BOX', 'Pair', 'bottles']
-      .where((d) => !(unitsAsync.value ?? []).any((e) => e.name?.toLowerCase() == d.toLowerCase())));
+    final unitList =
+        (unitsAsync.value ?? []).map((u) => u.name ?? 'Unit').toList()..addAll(
+          [
+            'PCS',
+            'LITERS',
+            'tonne',
+            'kgs',
+            'Bags',
+            'drum',
+            'BOX',
+            'Pair',
+            'bottles',
+          ].where(
+            (d) => !(unitsAsync.value ?? []).any(
+              (e) => e.name?.toLowerCase() == d.toLowerCase(),
+            ),
+          ),
+        );
     if (_selectedUnit != null && !unitList.contains(_selectedUnit)) {
       unitList.add(_selectedUnit!);
     }
-    
-    final taxList = (taxesAsync.value ?? []).map((e) =>
-      e['name']?.toString() ?? e['title']?.toString() ?? e['tax_name']?.toString() ?? e['desc']?.toString() ?? e['value']?.toString() ?? ''
-    ).where((s) => s.isNotEmpty).toList()
-      ..addAll(['No Tax', 'VAT 18%']
-      .where((d) => !(taxesAsync.value ?? []).any((e) => (e['name']??'').toString().toLowerCase() == d.toLowerCase())));
+
+    final taxList =
+        (taxesAsync.value ?? [])
+            .map(
+              (e) =>
+                  e['name']?.toString() ??
+                  e['title']?.toString() ??
+                  e['tax_name']?.toString() ??
+                  e['desc']?.toString() ??
+                  e['value']?.toString() ??
+                  '',
+            )
+            .where((s) => s.isNotEmpty)
+            .toList()
+          ..addAll(
+            ['No Tax', 'VAT 18%'].where(
+              (d) => !(taxesAsync.value ?? []).any(
+                (e) =>
+                    (e['name'] ?? '').toString().toLowerCase() ==
+                    d.toLowerCase(),
+              ),
+            ),
+          );
     if (_selectedTax != null && !taxList.contains(_selectedTax)) {
       taxList.add(_selectedTax!);
     }
@@ -1118,24 +1847,34 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                         const SizedBox(width: 12),
                         const Text(
                           'Add Material',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const Spacer(),
                         IconButton(
-                          icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: isDark
+                                ? Colors.white54
+                                : Colors.grey.shade600,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Material selection using AppSmartDropdown (matching other form fields)
                     AppSmartDropdown<ProductSummary>(
                       value: _selectedProduct,
                       items: productCandidates,
                       itemBuilder: (p) => p.name ?? 'Unknown',
                       label: 'Material',
-                      hintText: productsAsync.isLoading ? 'Loading materials...' : 'Select material',
+                      hintText: productsAsync.isLoading
+                          ? 'Loading materials...'
+                          : 'Select material',
                       onChanged: (p) {
                         if (p != null) {
                           setState(() {
@@ -1143,20 +1882,26 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                             _itemNameCtl.text = p.name ?? '';
                             _priceCtl.text = p.salePrice?.toString() ?? '0';
                             _availableStock = 100; // Mock available balance
-                            
+
+                            // Auto-populate qty to 1 only when capture is enabled.
+                            if (autoQtyCapture) _qtyCtl.text = '1';
+
                             // Auto-populate unit from product
                             if (p.unitName != null && p.unitName!.isNotEmpty) {
                               final match = unitList.firstWhere(
-                                (u) => u.toLowerCase() == p.unitName!.toLowerCase(),
+                                (u) =>
+                                    u.toLowerCase() ==
+                                    p.unitName!.toLowerCase(),
                                 orElse: () => p.unitName!,
                               );
                               _selectedUnit = match;
                             }
-                            
+
                             // Auto-populate tax from product
                             if (p.taxName != null && p.taxName!.isNotEmpty) {
                               final match = taxList.firstWhere(
-                                (t) => t.toLowerCase() == p.taxName!.toLowerCase(),
+                                (t) =>
+                                    t.toLowerCase() == p.taxName!.toLowerCase(),
                                 orElse: () => p.taxName!,
                               );
                               _selectedTax = match;
@@ -1166,21 +1911,28 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    
+
                     if (_selectedProduct == null) ...[
-                      AppTextField(controller: _itemNameCtl, label: 'Custom Material Name', hintText: 'Enter name manually'),
+                      AppTextField(
+                        controller: _itemNameCtl,
+                        label: 'Custom Material Name',
+                        hintText: 'Enter name manually',
+                      ),
                       const SizedBox(height: 12),
                     ],
-                    
+
                     Row(
                       children: [
-                        Expanded(child: AppTextField(
-                          controller: _qtyCtl, 
-                          label: 'Qty', 
-                          isRequired: true,
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => setState((){}),
-                        )),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _qtyCtl,
+                            label: 'Qty',
+                            isRequired: true,
+                            enabled: autoQtyCapture,
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: AppSmartDropdown<String>(
@@ -1195,10 +1947,16 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     Row(
                       children: [
-                        Expanded(child: AppTextField(controller: _packSizeInputCtl, label: 'Pack Size (Input)', hintText: 'eg. 50')),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _packSizeInputCtl,
+                            label: 'Pack Size (Input)',
+                            hintText: 'eg. 50',
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: AppSmartDropdown<String>(
@@ -1207,49 +1965,56 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                             itemBuilder: (s) => s,
                             label: 'Pack Size (Drop)',
                             hintText: 'Select',
-                            onChanged: (v) => setState(() => _selectedPackSize = v),
+                            onChanged: (v) =>
+                                setState(() => _selectedPackSize = v),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     Row(
                       children: [
-                        Expanded(child: AppTextField(
-                          controller: _priceCtl, 
-                          label: 'Price', 
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => setState((){}),
-                        )),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _priceCtl,
+                            label: 'Price',
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: AppTextField(
-                          controller: _discountCtl, 
-                          label: 'Discount', 
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => setState((){}),
-                        )),
+                        Expanded(
+                          child: AppTextField(
+                            controller: _discountCtl,
+                            label: 'Discount',
+                            keyboardType: TextInputType.number,
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     AppSmartDropdown<String>(
                       value: _selectedTax,
                       items: taxList,
                       itemBuilder: (s) => s,
                       label: 'Tax',
-                      hintText: taxesAsync.isLoading ? 'Loading...' : 'Select tax',
+                      hintText: taxesAsync.isLoading
+                          ? 'Loading...'
+                          : 'Select tax',
                       onChanged: (v) => setState(() => _selectedTax = v),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     AppTextField(
                       label: 'Amount',
                       readOnly: true,
                       hintText: calculatedAmount.toStringAsFixed(2),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Action Buttons (matching Jobcard)
                     Row(
                       children: [
@@ -1258,7 +2023,9 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                             onPressed: () => Navigator.pop(context),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             child: const Text('Cancel'),
                           ),
@@ -1271,13 +2038,15 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             child: const Text('Add Item'),
                           ),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),

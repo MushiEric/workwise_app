@@ -126,14 +126,44 @@ class _SplashPageState extends ConsumerState<SplashPage>
           FadeTransition(
             opacity: _fadeAnim,
             child: Center(
-              child: Image.asset(
-                'assets/images/home.png',
-                fit: BoxFit.contain,
-                width: MediaQuery.of(context).size.width * 0.85,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/home.png',
+                    fit: BoxFit.contain,
+                    width: MediaQuery.of(context).size.width * 0.85,
+                  ),
+                  const SizedBox(height: 12),
+                  RichText(
+                    text: const TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Work Smarter, ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Stay Organized',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          
+
           // Subtle overlay only at the bottom for loading text readability
           Positioned(
             bottom: 0,
@@ -162,9 +192,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
             child: FadeTransition(
               opacity: _fadeAnim,
               child: const Center(
-                child: CupertinoActivityIndicator(
-                  radius: 16,
-                ),
+                child: CupertinoActivityIndicator(radius: 16),
               ),
             ),
           ),

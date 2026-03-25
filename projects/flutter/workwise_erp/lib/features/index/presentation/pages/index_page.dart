@@ -13,6 +13,7 @@ import '../../../../core/themes/app_colors.dart';
 import '../../../../core/extensions/l10n_extension.dart';
 
 import '../../../../core/widgets/app_bar.dart';
+import '../../../../core/widgets/app_circle_avatar.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../notification/presentation/providers/notification_providers.dart';
 
@@ -235,6 +236,27 @@ class _IndexPageState extends ConsumerState<IndexPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
 
+    // Extract user info for the profile avatar in the app bar
+    String profileInitials = 'U';
+    String? profileAvatarUrl;
+    ref
+        .watch(authNotifierProvider)
+        .maybeWhen(
+          authenticated: (u) {
+            final name = (u.name ?? '').trim();
+            final parts = name.split(RegExp(r'\s+'));
+            if (parts.isNotEmpty && parts.first.isNotEmpty) {
+              profileInitials = parts.length == 1
+                  ? parts.first[0].toUpperCase()
+                  : '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+            }
+            profileAvatarUrl = (u.avatar != null && u.avatar!.isNotEmpty)
+                ? u.avatar
+                : null;
+          },
+          orElse: () {},
+        );
+
     // Filter menus based on permissions
     final visibleMenus = appMenus.where((m) {
       if (m.requiredPermissions != null && m.requiredPermissions!.isNotEmpty) {
@@ -364,9 +386,11 @@ class _IndexPageState extends ConsumerState<IndexPage>
             IconButton(
               key: _profileKey,
               onPressed: () => Navigator.pushNamed(context, '/profile'),
-              icon: Icon(
-                LucideIcons.user,
-                color: isDark ? Colors.white : AppColors.white,
+              icon: AppCircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white24,
+                initials: profileInitials,
+                imageUrl: profileAvatarUrl,
               ),
             ),
           ],
@@ -746,9 +770,13 @@ class _ModuleTileState extends State<_ModuleTile>
       case 'customer':
         return 'assets/icons/customer.svg';
       case 'project':
-        return 'assets/icons/project.svg';
+        return 'assets/icons/Projects.svg';
       case 'documents':
-        return 'assets/icons/documents.svg';
+        return 'assets/icons/document.svg';
+      case 'sales':
+        return 'assets/icons/sales.svg';
+      case 'hr':
+        return 'assets/icons/users.svg';
       default:
         return null;
     }

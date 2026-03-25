@@ -19,6 +19,7 @@ import '../../features/notification/presentation/pages/notifications_page.dart';
 import '../../features/hr/presentation/pages/hr_page.dart';
 import '../../features/sales/presentation/pages/sales_order_create_page.dart';
 import '../../features/sales/presentation/pages/pfi_create_page.dart';
+import '../../features/sales/presentation/pages/sales_settings_page.dart';
 import '../../features/sales/presentation/pages/sales_view_page.dart';
 import '../../features/sales/presentation/pages/pfi_view_page.dart';
 import '../../features/sales/domain/entities/sales_order.dart';
@@ -39,6 +40,7 @@ class AppRouter {
 
     '/index': (_) => const IndexPage(),
     '/sales': (_) => const SalesPage(),
+    '/sales/settings': (_) => const SalesSettingsPage(),
     '/sales/orders/create': (_) => const SalesOrderCreatePage(),
     '/sales/orders/edit': (ctx) {
       final order = ModalRoute.of(ctx)!.settings.arguments as SalesOrder;

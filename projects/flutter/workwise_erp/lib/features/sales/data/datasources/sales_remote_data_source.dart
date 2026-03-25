@@ -12,57 +12,60 @@ class SalesRemoteDataSource {
   final Dio client;
   SalesRemoteDataSource(this.client);
 
-  /// GET /order/getRecentOrders
-  Future<List<OrderModel>> getRecentOrders([Map<String, dynamic>? params]) async {
+  /// GET /order/getSaleOrder
+  Future<List<OrderModel>> getRecentOrders([
+    Map<String, dynamic>? params,
+  ]) async {
     try {
-      final defaultData = {
-        "draw": "1",
-        "start": "0",
-        "length": "5000",
-        "search[value]": "",
-        "search[regex]": "false",
-        "start_date": "2000-01-01",
-        "end_date": "2100-12-31 23:59:59",
-        "user": "All",
-        "customer": "All",
-        "vehicle": "All",
-        "pickup": "All",
-        "delivery": "All",
-        "departure": "All"
+      final defaultStatus = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+
+      final defaultData = <String, dynamic>{
+        'draw': '1',
+        'start': '0',
+        'length': '5000',
+        'search[value]': '',
+        'search[regex]': 'false',
+        'start_date': '2000-01-01',
+        'end_date': '2100-12-31 23:59:59',
+        'user': 'All',
+        'customer': 'All',
+        'vehicle': 'All',
+        'pickup': 'All',
+        'delivery': 'All',
+        'departure': 'All',
       };
 
-      final queryParams = params != null ? Map<String, dynamic>.from(params) : Map<String, dynamic>.from(defaultData);
-      
-      // Ensure start and length are present as strings if not provided
+      final queryParams = params != null
+          ? Map<String, dynamic>.from(params)
+          : Map<String, dynamic>.from(defaultData);
+
       queryParams.putIfAbsent('start', () => '0');
       queryParams.putIfAbsent('length', () => '5000');
 
-      // Expand with common pagination synonyms to be robust against backend variations
-      final start = queryParams['start'].toString();
-      final length = queryParams['length'].toString();
-      final int startInt = int.tryParse(start) ?? 0;
-      final int lengthInt = int.tryParse(length) ?? 500;
-      final int page = (lengthInt > 0) ? (startInt ~/ lengthInt) + 1 : 1;
+      // Include status array if not already provided.
+      if (!queryParams.containsKey('status')) {
+        queryParams['status'] = defaultStatus;
+      }
 
-      queryParams.addAll({
-        'page': page,
-        'per_page': length,
-        'perPage': length,
-        'pageSize': length,
-        'page_size': length,
-        'page_length': length,
-        'pageLength': length,
-        'limit_page_length': length,
-        'limit_start': start,
-        'limit': length,
-        'offset': start,
-        'count': length,
-        'row_count': length,
-        'size': length,
-      });
+      // Also send flat search keys alongside any nested search object so
+      // the server accepts either format.
+      final searchObj = queryParams['search'];
+      if (searchObj is Map) {
+        queryParams.putIfAbsent(
+          'search[value]',
+          () => searchObj['value'] ?? '',
+        );
+        queryParams.putIfAbsent(
+          'search[regex]',
+          () => searchObj['regex'] ?? 'false',
+        );
+      } else {
+        queryParams.putIfAbsent('search[value]', () => '');
+        queryParams.putIfAbsent('search[regex]', () => 'false');
+      }
 
       final resp = await client.get(
-        '/order/getRecentOrders',
+        '/order/getSaleOrder',
         queryParameters: queryParams,
       );
       final raw = resp.data;
@@ -70,8 +73,10 @@ class SalesRemoteDataSource {
       // helper to extract list from common envelope shapes
       List<Map<String, dynamic>> items = _extractList(raw);
 
-      if (items.isEmpty && raw is Map && (raw['total'] != null || raw['recordsTotal'] != null)) {
-         return [];
+      if (items.isEmpty &&
+          raw is Map &&
+          (raw['total'] != null || raw['recordsTotal'] != null)) {
+        return [];
       }
 
       final List<OrderModel> models = [];
@@ -100,8 +105,10 @@ class SalesRemoteDataSource {
     if (v is String) return v;
     if (v is num || v is bool) return v.toString();
     if (v is Map) {
-      if (v.containsKey('name') && v['name'] is String) return v['name'] as String;
-      if (v.containsKey('title') && v['title'] is String) return v['title'] as String;
+      if (v.containsKey('name') && v['name'] is String)
+        return v['name'] as String;
+      if (v.containsKey('title') && v['title'] is String)
+        return v['title'] as String;
     }
     return v.toString();
   }
@@ -131,21 +138,36 @@ class SalesRemoteDataSource {
   List<Map<String, dynamic>> _asListOfMaps(dynamic v) {
     if (v == null) return <Map<String, dynamic>>[];
     if (v is List) {
-      return v.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+      return v
+          .map(
+            (e) =>
+                e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{},
+          )
+          .toList();
     }
     return <Map<String, dynamic>>[];
   }
 
   Map<String, dynamic> _normalizeOrderJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
-    final stringFields = ['order_number', 'title', 'quotation', 'start_date', 'end_date', 'created_at', 'updated_at'];
+    final stringFields = [
+      'order_number',
+      'title',
+      'quotation',
+      'start_date',
+      'end_date',
+      'created_at',
+      'updated_at',
+    ];
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
     }
     if (out.containsKey('id')) out['id'] = _asInt(out['id']);
-    if (out.containsKey('customer_id')) out['customer_id'] = _asInt(out['customer_id']);
+    if (out.containsKey('customer_id'))
+      out['customer_id'] = _asInt(out['customer_id']);
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
-    if (out.containsKey('payment_status')) out['payment_status'] = _asInt(out['payment_status']);
+    if (out.containsKey('payment_status'))
+      out['payment_status'] = _asInt(out['payment_status']);
 
     out['customer'] = _asMap(out['customer']);
     out['user'] = _asMap(out['user']);
@@ -180,41 +202,94 @@ class SalesRemoteDataSource {
 
   Map<String, dynamic> _normalizeProductJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
-    out['id'] = _asInt(src['id'] ?? src['uuid'] ?? src['product_id'] ?? src['item_id']);
-    out['name'] = _asString(src['name'] ?? src['title'] ?? src['subject'] ?? src['label'] ?? src['item_name']);
+    out['id'] = _asInt(
+      src['id'] ?? src['uuid'] ?? src['product_id'] ?? src['item_id'],
+    );
+    out['name'] = _asString(
+      src['name'] ??
+          src['title'] ??
+          src['subject'] ??
+          src['label'] ??
+          src['item_name'],
+    );
     out['type'] = _asString(src['type'] ?? src['item_type']);
     out['item_type'] = _asString(src['item_type'] ?? src['type']);
-    out['sale_price'] = _asString(src['sale_price'] ?? src['salePrice'] ?? src['price'] ?? src['rate']);
-    out['purchase_price'] = _asString(src['purchase_price'] ?? src['purchasePrice']);
-    out['item_number'] = _asString(src['item_number'] ?? src['sku'] ?? src['code'] ?? src['number']);
+    out['sale_price'] = _asString(
+      src['sale_price'] ?? src['salePrice'] ?? src['price'] ?? src['rate'],
+    );
+    out['purchase_price'] = _asString(
+      src['purchase_price'] ?? src['purchasePrice'],
+    );
+    out['item_number'] = _asString(
+      src['item_number'] ?? src['sku'] ?? src['code'] ?? src['number'],
+    );
     out['category_id'] = _asInt(src['category_id']);
-    
+
     // Improved unit and tax normalization
-    final rawUnit = src['unit'] ?? src['uom'] ?? src['package_unit'] ?? src['measurement_unit'];
+    final rawUnit =
+        src['unit'] ??
+        src['uom'] ??
+        src['package_unit'] ??
+        src['measurement_unit'];
     if (rawUnit is Map) {
-      out['unit_id'] = _asInt(rawUnit['id'] ?? rawUnit['uuid'] ?? rawUnit['unit_id'] ?? src['unit_id'] ?? src['uom_id']);
-      out['unit_name'] = _asString(rawUnit['name'] ?? rawUnit['title'] ?? rawUnit['short_name'] ?? rawUnit['unit_name'] ?? rawUnit['unit'] ?? rawUnit['uom'] ?? src['unit_name'] ?? src['unit']);
+      out['unit_id'] = _asInt(
+        rawUnit['id'] ??
+            rawUnit['uuid'] ??
+            rawUnit['unit_id'] ??
+            src['unit_id'] ??
+            src['uom_id'],
+      );
+      out['unit_name'] = _asString(
+        rawUnit['name'] ??
+            rawUnit['title'] ??
+            rawUnit['short_name'] ??
+            rawUnit['unit_name'] ??
+            rawUnit['unit'] ??
+            rawUnit['uom'] ??
+            src['unit_name'] ??
+            src['unit'],
+      );
     } else {
       out['unit_id'] = _asInt(src['unit_id'] ?? src['uom_id']);
-      out['unit_name'] = _asString(src['unit_name'] ?? src['unit'] ?? src['uom']);
+      out['unit_name'] = _asString(
+        src['unit_name'] ?? src['unit'] ?? src['uom'],
+      );
     }
 
     final rawTax = src['tax'] ?? src['tax_rate'] ?? src['tax_row'];
     if (rawTax is Map) {
-      out['tax_id'] = _asInt(rawTax['id'] ?? rawTax['tax_id'] ?? rawTax['tax_rate_id'] ?? src['tax_id'] ?? src['tax_rate_id']);
-      out['tax_name'] = _asString(rawTax['name'] ?? rawTax['title'] ?? rawTax['tax_name'] ?? rawTax['tax_label'] ?? rawTax['rate'] ?? src['tax_name'] ?? src['tax']);
+      out['tax_id'] = _asInt(
+        rawTax['id'] ??
+            rawTax['tax_id'] ??
+            rawTax['tax_rate_id'] ??
+            src['tax_id'] ??
+            src['tax_rate_id'],
+      );
+      out['tax_name'] = _asString(
+        rawTax['name'] ??
+            rawTax['title'] ??
+            rawTax['tax_name'] ??
+            rawTax['tax_label'] ??
+            rawTax['rate'] ??
+            src['tax_name'] ??
+            src['tax'],
+      );
     } else {
       out['tax_id'] = _asInt(src['tax_id'] ?? src['tax_rate_id']);
-      out['tax_name'] = _asString(src['tax_name'] ?? src['tax'] ?? src['tax_label']);
+      out['tax_name'] = _asString(
+        src['tax_name'] ?? src['tax'] ?? src['tax_label'],
+      );
     }
-    
+
     return out;
   }
 
   Map<String, dynamic> _normalizePackageUnitJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
     out['id'] = _asInt(src['id'] ?? src['unit_id']);
-    out['name'] = _asString(src['name'] ?? src['unit_name'] ?? src['label'] ?? src['title']);
+    out['name'] = _asString(
+      src['name'] ?? src['unit_name'] ?? src['label'] ?? src['title'],
+    );
     out['short_name'] = _asString(src['short_name']);
     return out;
   }
@@ -258,15 +333,45 @@ class SalesRemoteDataSource {
   List<Map<String, dynamic>> _extractList(dynamic raw) {
     if (raw == null) return [];
     if (raw is List) {
-      return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     if (raw is Map) {
-      final possibleInners = ['data', 'payload', 'items', 'records', 'materials', 'products', 'units', 'statuses', 'settings', 'contracts', 'requests', 'quotations', 'currencies', 'exchange_rates', 'sale_order_requests', 'rates', 'currency', 'contract', 'request', 'form_numbers', 'pfi', 'order', 'status'];
-      
+      final possibleInners = [
+        'data',
+        'payload',
+        'items',
+        'records',
+        'materials',
+        'products',
+        'units',
+        'statuses',
+        'settings',
+        'contracts',
+        'requests',
+        'quotations',
+        'currencies',
+        'exchange_rates',
+        'sale_order_requests',
+        'rates',
+        'currency',
+        'contract',
+        'request',
+        'form_numbers',
+        'pfi',
+        'order',
+        'status',
+      ];
+
       // 1. check direct keys
       for (final key in possibleInners) {
         if (raw[key] is List) {
-          return (raw[key] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          return (raw[key] as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
       }
 
@@ -275,7 +380,10 @@ class SalesRemoteDataSource {
         final inner = raw['data'] as Map;
         for (final key in possibleInners) {
           if (inner[key] is List) {
-            return (inner[key] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+            return (inner[key] as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
           }
         }
       }
@@ -285,7 +393,10 @@ class SalesRemoteDataSource {
         final inner = raw['payload'] as Map;
         for (final key in possibleInners) {
           if (inner[key] is List) {
-            return (inner[key] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+            return (inner[key] as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
           }
         }
       }
@@ -305,7 +416,9 @@ class SalesRemoteDataSource {
   Future<List<OrderStatusModel>> getOrderStatuses() async {
     try {
       final resp = await client.get('/order/getOrderStatus');
-      return _extractList(resp.data).map((m) => OrderStatusModel.fromJson(m)).toList();
+      return _extractList(
+        resp.data,
+      ).map((m) => OrderStatusModel.fromJson(m)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -368,51 +481,65 @@ class SalesRemoteDataSource {
     try {
       final resp = await client.get('/order/getPackageType');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getWarehouses() async {
     try {
       final resp = await client.get('/warehouse/getWarehouse');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getQuotations() async {
     try {
       final resp = await client.get('/sales/getSaleOrderPFI');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getContracts() async {
     try {
       final resp = await client.get('/contract/getSaleOrderContract');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getRequests() async {
     try {
       final resp = await client.get('/sales/getSaleOrderRequest');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTaxes() async {
     try {
       final resp = await client.get('/sales/getTaxes');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getCurrencies() async {
     try {
       final resp = await client.get('/logistic/getCurrency');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
-  
+
   Future<double?> getExchangeRate(int currencyId) async {
     try {
       final resp = await client.get('/logistic/getExchangeRate/$currencyId');
@@ -423,7 +550,8 @@ class SalesRemoteDataSource {
         return raw.toDouble();
       } else if (raw is String) {
         final decoded = json.decode(raw);
-        if (decoded is Map && decoded.containsKey('rate')) return double.tryParse(decoded['rate'].toString());
+        if (decoded is Map && decoded.containsKey('rate'))
+          return double.tryParse(decoded['rate'].toString());
       }
     } catch (_) {}
     return null;
@@ -433,11 +561,17 @@ class SalesRemoteDataSource {
     try {
       final resp = await client.get('/user/getUsers');
       return _extractList(resp.data);
-    } catch (_) { return []; }
+    } catch (_) {
+      return [];
+    }
   }
 
   /// POST /order/saveOrder
-  Future<Map<String, dynamic>> saveOrder(Map<String, dynamic> payload) async {
+  ///
+  /// [payload] can be either a plain `Map<String, dynamic>` (sent as JSON) or
+  /// a `FormData` instance (sent as multipart/form-data when file uploads are
+  /// included such as priority_document, lpo_document, or proof_of_payment).
+  Future<Map<String, dynamic>> saveOrder(dynamic payload) async {
     try {
       final resp = await client.post('/order/saveOrder', data: payload);
       final raw = resp.data;

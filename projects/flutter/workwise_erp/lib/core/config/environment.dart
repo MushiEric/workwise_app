@@ -36,34 +36,29 @@ class EnvConfig {
     }
   }
 
-  /// Read at compile-time using `--dart-define=APP_ENV=prod` or
-  /// `--dart-define=RUNTIME_ENV=dev` (default: staging).
-  ///
-  /// `RUNTIME_ENV` takes precedence when both are defined. This makes it easy
-  /// for developers to point the app at a different endpoint without modifying
-  /// the production configuration or adding extra files.
   static final AppEnvironment currentEnv = _envFromString(
     String.fromEnvironment(
       'RUNTIME_ENV',
-      defaultValue: String.fromEnvironment('APP_ENV', defaultValue: 'staging'),
+      defaultValue: String.fromEnvironment('APP_ENV', defaultValue: 'prod'),
     ),
   );
 
-  /// Optional Sentry DSN passed at build-time: --dart-define=SENTRY_DSN=\"...\"
-  static final String sentryDsn = const String.fromEnvironment(
-    'SENTRY_DSN',
-    defaultValue: '',
-  );
+  static const String _prodSentryDsn =
+      'https://6f13134346dd0d35c1727ec20d725d8c@o4510437339299840.ingest.us.sentry.io/4510437340479488';
+  static const String _stagingSentryDsn = '';
 
-  // --- Runtime override support -------------------------------------------------
-  // Call `EnvConfig.init(AppEnvironment.dev)` early in `main()` to override the
-  // compile-time environment for local/testing runs. `resetOverride()` clears
-  // the runtime override.
+  static String get sentryDsn {
+    const override = String.fromEnvironment('SENTRY_DSN');
+    if (override.isNotEmpty) return override;
+    return switch (currentEnv) {
+      AppEnvironment.prod => _prodSentryDsn,
+      AppEnvironment.staging => _stagingSentryDsn,
+      AppEnvironment.dev => '',
+    };
+  }
+
   static AppEnvironment? _runtimeOverride;
 
-  /// Programmatically set the active environment at runtime. Useful for local
-  /// testing where you want to switch endpoints without rebuilding with
-  /// `--dart-define`.
   static void init(AppEnvironment env) => _runtimeOverride = env;
 
   /// Clear any runtime override and fall back to compile-time `APP_ENV`.
@@ -72,9 +67,6 @@ class EnvConfig {
   /// Parse a string into an [AppEnvironment] (public wrapper for tests/usage).
   static AppEnvironment parseEnv(String s) => _envFromString(s);
 
-  // For local/dev testing we allow overriding the host at build-time with
-  // `--dart-define=DEV_API_HOST=192.168.0.10` (or similar). The default is
-  // the Android emulator localhost alias (10.0.2.2).
   static final String _devApiHost = String.fromEnvironment(
     '192.168.1.120',
     defaultValue: '192.168.1.120',
