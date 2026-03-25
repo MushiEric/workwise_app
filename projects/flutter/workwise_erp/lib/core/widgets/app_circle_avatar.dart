@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:workwise_erp/core/utils/image_utils.dart';
 
 /// A circular avatar that gracefully falls back to initials when the network
-/// image fails (e.g. 404). Uses [Image.network] with [errorBuilder] so that
-/// failed requests are never propagated to Flutter's error reporter.
+/// image fails (e.g. 404). Uses [imageProviderFromUrl] so that server-relative
+/// avatars (e.g. "/storage/..." or "/profile/...) are correctly resolved.
 class AppCircleAvatar extends StatelessWidget {
   const AppCircleAvatar({
     super.key,
@@ -22,7 +23,9 @@ class AppCircleAvatar extends StatelessWidget {
     final effectiveRadius = radius ?? 20.0;
     final diameter = effectiveRadius * 2;
     final url = imageUrl;
-    final hasImage = url != null && url.isNotEmpty;
+    final imageProvider = url != null && url.isNotEmpty
+        ? imageProviderFromUrl(url)
+        : null;
 
     return ClipOval(
       child: Container(
@@ -30,9 +33,9 @@ class AppCircleAvatar extends StatelessWidget {
         height: diameter,
         color: backgroundColor,
         alignment: Alignment.center,
-        child: hasImage
-            ? Image.network(
-                url,
+        child: imageProvider != null
+            ? Image(
+                image: imageProvider,
                 width: diameter,
                 height: diameter,
                 fit: BoxFit.cover,

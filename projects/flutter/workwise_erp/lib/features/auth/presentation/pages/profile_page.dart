@@ -723,7 +723,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             icon: AppIcons.bell,
             label: context.l10n.notificationSettings,
             subtitle: context.l10n.manageNotifications,
-            color: Colors.green,
+            color: Colors.amber,
             onTap: () {},
             isDark: isDark,
           ),

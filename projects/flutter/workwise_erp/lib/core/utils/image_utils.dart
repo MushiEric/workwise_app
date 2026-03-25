@@ -12,7 +12,7 @@ import 'package:workwise_erp/core/constants/api_constant.dart';
 /// or cannot be interpreted. This prevents passing invalid URIs to `NetworkImage`.
 ImageProvider? imageProviderFromUrl(String? src) {
   if (src == null) return null;
-  final s = src.trim();
+  var s = src.trim();
   if (s.isEmpty) return null;
 
   // data URI (base64)
@@ -65,7 +65,11 @@ ImageProvider? imageProviderFromUrl(String? src) {
     }
   }
 
-  // server-relative path like: /storage/avatar.png --> prefix host (remove trailing /api from base)
+  // server-relative path like: /storage/avatar.png or /profile/profile/... --> prefix host
+  if (s.startsWith('/profile/')) {
+    s = s.replaceFirst('/profile/', '/storage/');
+  }
+
   if (s.startsWith('/')) {
     final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     return NetworkImage('$base$s');
