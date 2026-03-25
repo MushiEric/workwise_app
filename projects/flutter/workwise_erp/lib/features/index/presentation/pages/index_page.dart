@@ -833,7 +833,7 @@ class _ModuleTileState extends State<_ModuleTile>
                       child: _buildMenuIcon(
                         menu.id,
                         _accentForIndex(widget.index),
-                        size: 80,
+                        size: menu.iconSize ?? 80,
                       ),
                     ),
                   ),

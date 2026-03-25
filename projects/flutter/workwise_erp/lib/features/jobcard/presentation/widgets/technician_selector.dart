@@ -46,20 +46,29 @@ class TechnicianSelector extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // ── Label above field ────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(
-            'Assigned Staff',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-              color: hasError
-                  ? Colors.red.shade400
-                  : (isDark ? Colors.white70 : const Color(0xFF374151)),
-            ),
-          ),
+        // ── Label above field with required star ────────────────────────────────────────
+Padding(
+  padding: const EdgeInsets.only(left: 4, bottom: 6),
+  child: RichText(
+    text: TextSpan(
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+        color: hasError
+            ? Colors.red.shade400
+            : (isDark ? Colors.white70 : const Color(0xFF374151)),
+      ),
+      children: [
+        const TextSpan(text: 'Assigned Staff'),
+        const TextSpan(
+          text: ' *',
+          style: TextStyle(color: Colors.red),
         ),
+      ],
+    ),
+  ),
+),
 
         // ── Tappable field ────────────────────────────────────────────
         GestureDetector(

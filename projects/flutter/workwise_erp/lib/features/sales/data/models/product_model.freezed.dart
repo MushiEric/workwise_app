@@ -23,6 +23,9 @@ ProductModel _$ProductModelFromJson(Map<String, dynamic> json) {
 mixin _$ProductModel {
   int? get id => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
+  String? get type => throw _privateConstructorUsedError;
+  @JsonKey(name: 'item_type')
+  String? get itemType => throw _privateConstructorUsedError;
   @JsonKey(name: 'sale_price')
   String? get salePrice => throw _privateConstructorUsedError;
   @JsonKey(name: 'purchase_price')
@@ -31,6 +34,14 @@ mixin _$ProductModel {
   String? get itemNumber => throw _privateConstructorUsedError;
   @JsonKey(name: 'category_id')
   int? get categoryId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'unit_id')
+  int? get unitId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'unit_name')
+  String? get unitName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tax_id')
+  int? get taxId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'tax_name')
+  String? get taxName => throw _privateConstructorUsedError;
 
   /// Serializes this ProductModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -52,10 +63,16 @@ abstract class $ProductModelCopyWith<$Res> {
   $Res call({
     int? id,
     String? name,
+    String? type,
+    @JsonKey(name: 'item_type') String? itemType,
     @JsonKey(name: 'sale_price') String? salePrice,
     @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'item_number') String? itemNumber,
     @JsonKey(name: 'category_id') int? categoryId,
+    @JsonKey(name: 'unit_id') int? unitId,
+    @JsonKey(name: 'unit_name') String? unitName,
+    @JsonKey(name: 'tax_id') int? taxId,
+    @JsonKey(name: 'tax_name') String? taxName,
   });
 }
 
@@ -76,10 +93,16 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? type = freezed,
+    Object? itemType = freezed,
     Object? salePrice = freezed,
     Object? purchasePrice = freezed,
     Object? itemNumber = freezed,
     Object? categoryId = freezed,
+    Object? unitId = freezed,
+    Object? unitName = freezed,
+    Object? taxId = freezed,
+    Object? taxName = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -90,6 +113,14 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
             name: freezed == name
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            type: freezed == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            itemType: freezed == itemType
+                ? _value.itemType
+                : itemType // ignore: cast_nullable_to_non_nullable
                       as String?,
             salePrice: freezed == salePrice
                 ? _value.salePrice
@@ -107,6 +138,22 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
                 ? _value.categoryId
                 : categoryId // ignore: cast_nullable_to_non_nullable
                       as int?,
+            unitId: freezed == unitId
+                ? _value.unitId
+                : unitId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            unitName: freezed == unitName
+                ? _value.unitName
+                : unitName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            taxId: freezed == taxId
+                ? _value.taxId
+                : taxId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            taxName: freezed == taxName
+                ? _value.taxName
+                : taxName // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -125,10 +172,16 @@ abstract class _$$ProductModelImplCopyWith<$Res>
   $Res call({
     int? id,
     String? name,
+    String? type,
+    @JsonKey(name: 'item_type') String? itemType,
     @JsonKey(name: 'sale_price') String? salePrice,
     @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'item_number') String? itemNumber,
     @JsonKey(name: 'category_id') int? categoryId,
+    @JsonKey(name: 'unit_id') int? unitId,
+    @JsonKey(name: 'unit_name') String? unitName,
+    @JsonKey(name: 'tax_id') int? taxId,
+    @JsonKey(name: 'tax_name') String? taxName,
   });
 }
 
@@ -148,10 +201,16 @@ class __$$ProductModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? type = freezed,
+    Object? itemType = freezed,
     Object? salePrice = freezed,
     Object? purchasePrice = freezed,
     Object? itemNumber = freezed,
     Object? categoryId = freezed,
+    Object? unitId = freezed,
+    Object? unitName = freezed,
+    Object? taxId = freezed,
+    Object? taxName = freezed,
   }) {
     return _then(
       _$ProductModelImpl(
@@ -162,6 +221,14 @@ class __$$ProductModelImplCopyWithImpl<$Res>
         name: freezed == name
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        type: freezed == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        itemType: freezed == itemType
+            ? _value.itemType
+            : itemType // ignore: cast_nullable_to_non_nullable
                   as String?,
         salePrice: freezed == salePrice
             ? _value.salePrice
@@ -179,6 +246,22 @@ class __$$ProductModelImplCopyWithImpl<$Res>
             ? _value.categoryId
             : categoryId // ignore: cast_nullable_to_non_nullable
                   as int?,
+        unitId: freezed == unitId
+            ? _value.unitId
+            : unitId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        unitName: freezed == unitName
+            ? _value.unitName
+            : unitName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        taxId: freezed == taxId
+            ? _value.taxId
+            : taxId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        taxName: freezed == taxName
+            ? _value.taxName
+            : taxName // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -190,10 +273,16 @@ class _$ProductModelImpl implements _ProductModel {
   const _$ProductModelImpl({
     this.id,
     this.name,
+    this.type,
+    @JsonKey(name: 'item_type') this.itemType,
     @JsonKey(name: 'sale_price') this.salePrice,
     @JsonKey(name: 'purchase_price') this.purchasePrice,
     @JsonKey(name: 'item_number') this.itemNumber,
     @JsonKey(name: 'category_id') this.categoryId,
+    @JsonKey(name: 'unit_id') this.unitId,
+    @JsonKey(name: 'unit_name') this.unitName,
+    @JsonKey(name: 'tax_id') this.taxId,
+    @JsonKey(name: 'tax_name') this.taxName,
   });
 
   factory _$ProductModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -203,6 +292,11 @@ class _$ProductModelImpl implements _ProductModel {
   final int? id;
   @override
   final String? name;
+  @override
+  final String? type;
+  @override
+  @JsonKey(name: 'item_type')
+  final String? itemType;
   @override
   @JsonKey(name: 'sale_price')
   final String? salePrice;
@@ -215,10 +309,22 @@ class _$ProductModelImpl implements _ProductModel {
   @override
   @JsonKey(name: 'category_id')
   final int? categoryId;
+  @override
+  @JsonKey(name: 'unit_id')
+  final int? unitId;
+  @override
+  @JsonKey(name: 'unit_name')
+  final String? unitName;
+  @override
+  @JsonKey(name: 'tax_id')
+  final int? taxId;
+  @override
+  @JsonKey(name: 'tax_name')
+  final String? taxName;
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, name: $name, salePrice: $salePrice, purchasePrice: $purchasePrice, itemNumber: $itemNumber, categoryId: $categoryId)';
+    return 'ProductModel(id: $id, name: $name, type: $type, itemType: $itemType, salePrice: $salePrice, purchasePrice: $purchasePrice, itemNumber: $itemNumber, categoryId: $categoryId, unitId: $unitId, unitName: $unitName, taxId: $taxId, taxName: $taxName)';
   }
 
   @override
@@ -228,6 +334,9 @@ class _$ProductModelImpl implements _ProductModel {
             other is _$ProductModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.itemType, itemType) ||
+                other.itemType == itemType) &&
             (identical(other.salePrice, salePrice) ||
                 other.salePrice == salePrice) &&
             (identical(other.purchasePrice, purchasePrice) ||
@@ -235,7 +344,12 @@ class _$ProductModelImpl implements _ProductModel {
             (identical(other.itemNumber, itemNumber) ||
                 other.itemNumber == itemNumber) &&
             (identical(other.categoryId, categoryId) ||
-                other.categoryId == categoryId));
+                other.categoryId == categoryId) &&
+            (identical(other.unitId, unitId) || other.unitId == unitId) &&
+            (identical(other.unitName, unitName) ||
+                other.unitName == unitName) &&
+            (identical(other.taxId, taxId) || other.taxId == taxId) &&
+            (identical(other.taxName, taxName) || other.taxName == taxName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -244,10 +358,16 @@ class _$ProductModelImpl implements _ProductModel {
     runtimeType,
     id,
     name,
+    type,
+    itemType,
     salePrice,
     purchasePrice,
     itemNumber,
     categoryId,
+    unitId,
+    unitName,
+    taxId,
+    taxName,
   );
 
   /// Create a copy of ProductModel
@@ -268,10 +388,16 @@ abstract class _ProductModel implements ProductModel {
   const factory _ProductModel({
     final int? id,
     final String? name,
+    final String? type,
+    @JsonKey(name: 'item_type') final String? itemType,
     @JsonKey(name: 'sale_price') final String? salePrice,
     @JsonKey(name: 'purchase_price') final String? purchasePrice,
     @JsonKey(name: 'item_number') final String? itemNumber,
     @JsonKey(name: 'category_id') final int? categoryId,
+    @JsonKey(name: 'unit_id') final int? unitId,
+    @JsonKey(name: 'unit_name') final String? unitName,
+    @JsonKey(name: 'tax_id') final int? taxId,
+    @JsonKey(name: 'tax_name') final String? taxName,
   }) = _$ProductModelImpl;
 
   factory _ProductModel.fromJson(Map<String, dynamic> json) =
@@ -281,6 +407,11 @@ abstract class _ProductModel implements ProductModel {
   int? get id;
   @override
   String? get name;
+  @override
+  String? get type;
+  @override
+  @JsonKey(name: 'item_type')
+  String? get itemType;
   @override
   @JsonKey(name: 'sale_price')
   String? get salePrice;
@@ -293,6 +424,18 @@ abstract class _ProductModel implements ProductModel {
   @override
   @JsonKey(name: 'category_id')
   int? get categoryId;
+  @override
+  @JsonKey(name: 'unit_id')
+  int? get unitId;
+  @override
+  @JsonKey(name: 'unit_name')
+  String? get unitName;
+  @override
+  @JsonKey(name: 'tax_id')
+  int? get taxId;
+  @override
+  @JsonKey(name: 'tax_name')
+  String? get taxName;
 
   /// Create a copy of ProductModel
   /// with the given fields replaced by the non-null parameter values.

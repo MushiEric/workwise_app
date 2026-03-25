@@ -76,29 +76,30 @@ class _AppTextFieldState extends State<AppTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildLabel(),
+        _buildLabel(isDark),
         const SizedBox(height: 8),
         _buildTextField(isDark),
         const SizedBox(height: 4),
       ],
     );
   }
-
-  Widget _buildLabel() {
-    return RichText(
-      text: TextSpan(
-        style: AppTypography.labelStyle,
-        children: [
-          TextSpan(text: widget.label),
-          if (widget.isRequired)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: AppColors.error),
-            ),
-        ],
+Widget _buildLabel(bool isDark) {
+  return RichText(
+    text: TextSpan(
+      style: AppTypography.labelStyle.copyWith(
+        color: isDark ? Colors.white70 : Colors.black87,
       ),
-    );
-  }
+      children: [
+        TextSpan(text: widget.label),
+        if (widget.isRequired)
+          const TextSpan(
+            text: ' *',
+            style: TextStyle(color: AppColors.error),
+          ),
+      ],
+    ),
+  );
+}
 
   Widget _buildTextField(bool isDark) {
     final effectiveBg = isDark ? Colors.white.withOpacity(0.05) : AppColors.greyFill;

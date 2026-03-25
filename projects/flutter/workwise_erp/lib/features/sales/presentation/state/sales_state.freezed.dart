@@ -21,21 +21,32 @@ mixin _$SalesState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SalesOrder> orders) loaded,
+    required TResult Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SalesOrder> orders)? loaded,
+    TResult? Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SalesOrder> orders)? loaded,
+    TResult Function(List<SalesOrder> orders, bool isLoadingMore, bool hasMore)?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) => throw _privateConstructorUsedError;
@@ -130,7 +141,12 @@ class _$InitialImpl implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SalesOrder> orders) loaded,
+    required TResult Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return initial();
@@ -141,7 +157,12 @@ class _$InitialImpl implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SalesOrder> orders)? loaded,
+    TResult? Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return initial?.call();
@@ -152,7 +173,8 @@ class _$InitialImpl implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SalesOrder> orders)? loaded,
+    TResult Function(List<SalesOrder> orders, bool isLoadingMore, bool hasMore)?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -249,7 +271,12 @@ class _$LoadingImpl implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SalesOrder> orders) loaded,
+    required TResult Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return loading();
@@ -260,7 +287,12 @@ class _$LoadingImpl implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SalesOrder> orders)? loaded,
+    TResult? Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return loading?.call();
@@ -271,7 +303,8 @@ class _$LoadingImpl implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SalesOrder> orders)? loaded,
+    TResult Function(List<SalesOrder> orders, bool isLoadingMore, bool hasMore)?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
@@ -330,7 +363,7 @@ abstract class _$$LoadedImplCopyWith<$Res> {
     $Res Function(_$LoadedImpl) then,
   ) = __$$LoadedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<SalesOrder> orders});
+  $Res call({List<SalesOrder> orders, bool isLoadingMore, bool hasMore});
 }
 
 /// @nodoc
@@ -346,13 +379,25 @@ class __$$LoadedImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? orders = null}) {
+  $Res call({
+    Object? orders = null,
+    Object? isLoadingMore = null,
+    Object? hasMore = null,
+  }) {
     return _then(
       _$LoadedImpl(
         null == orders
             ? _value._orders
             : orders // ignore: cast_nullable_to_non_nullable
                   as List<SalesOrder>,
+        isLoadingMore: null == isLoadingMore
+            ? _value.isLoadingMore
+            : isLoadingMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        hasMore: null == hasMore
+            ? _value.hasMore
+            : hasMore // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -361,7 +406,11 @@ class __$$LoadedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadedImpl implements _Loaded {
-  const _$LoadedImpl(final List<SalesOrder> orders) : _orders = orders;
+  const _$LoadedImpl(
+    final List<SalesOrder> orders, {
+    this.isLoadingMore = false,
+    this.hasMore = true,
+  }) : _orders = orders;
 
   final List<SalesOrder> _orders;
   @override
@@ -372,8 +421,15 @@ class _$LoadedImpl implements _Loaded {
   }
 
   @override
+  @JsonKey()
+  final bool isLoadingMore;
+  @override
+  @JsonKey()
+  final bool hasMore;
+
+  @override
   String toString() {
-    return 'SalesState.loaded(orders: $orders)';
+    return 'SalesState.loaded(orders: $orders, isLoadingMore: $isLoadingMore, hasMore: $hasMore)';
   }
 
   @override
@@ -381,12 +437,19 @@ class _$LoadedImpl implements _Loaded {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LoadedImpl &&
-            const DeepCollectionEquality().equals(other._orders, _orders));
+            const DeepCollectionEquality().equals(other._orders, _orders) &&
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore) &&
+            (identical(other.hasMore, hasMore) || other.hasMore == hasMore));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_orders));
+  int get hashCode => Object.hash(
+    runtimeType,
+    const DeepCollectionEquality().hash(_orders),
+    isLoadingMore,
+    hasMore,
+  );
 
   /// Create a copy of SalesState
   /// with the given fields replaced by the non-null parameter values.
@@ -401,10 +464,15 @@ class _$LoadedImpl implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SalesOrder> orders) loaded,
+    required TResult Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
-    return loaded(orders);
+    return loaded(orders, isLoadingMore, hasMore);
   }
 
   @override
@@ -412,10 +480,15 @@ class _$LoadedImpl implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SalesOrder> orders)? loaded,
+    TResult? Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
-    return loaded?.call(orders);
+    return loaded?.call(orders, isLoadingMore, hasMore);
   }
 
   @override
@@ -423,12 +496,13 @@ class _$LoadedImpl implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SalesOrder> orders)? loaded,
+    TResult Function(List<SalesOrder> orders, bool isLoadingMore, bool hasMore)?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(orders);
+      return loaded(orders, isLoadingMore, hasMore);
     }
     return orElse();
   }
@@ -472,9 +546,15 @@ class _$LoadedImpl implements _Loaded {
 }
 
 abstract class _Loaded implements SalesState {
-  const factory _Loaded(final List<SalesOrder> orders) = _$LoadedImpl;
+  const factory _Loaded(
+    final List<SalesOrder> orders, {
+    final bool isLoadingMore,
+    final bool hasMore,
+  }) = _$LoadedImpl;
 
   List<SalesOrder> get orders;
+  bool get isLoadingMore;
+  bool get hasMore;
 
   /// Create a copy of SalesState
   /// with the given fields replaced by the non-null parameter values.
@@ -555,7 +635,12 @@ class _$ErrorImpl implements _Error {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<SalesOrder> orders) loaded,
+    required TResult Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )
+    loaded,
     required TResult Function(String message) error,
   }) {
     return error(message);
@@ -566,7 +651,12 @@ class _$ErrorImpl implements _Error {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<SalesOrder> orders)? loaded,
+    TResult? Function(
+      List<SalesOrder> orders,
+      bool isLoadingMore,
+      bool hasMore,
+    )?
+    loaded,
     TResult? Function(String message)? error,
   }) {
     return error?.call(message);
@@ -577,7 +667,8 @@ class _$ErrorImpl implements _Error {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<SalesOrder> orders)? loaded,
+    TResult Function(List<SalesOrder> orders, bool isLoadingMore, bool hasMore)?
+    loaded,
     TResult Function(String message)? error,
     required TResult orElse(),
   }) {

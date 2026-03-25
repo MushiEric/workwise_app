@@ -6,6 +6,7 @@ class MenuItemModel {
   final String title;
   final IconData icon;
   final String route;
+  final double? iconSize;
   final List<String>? requiredPermissions; // optional list of permission names (server canonical)
 
   const MenuItemModel({
@@ -13,6 +14,7 @@ class MenuItemModel {
     required this.title,
     required this.icon,
     required this.route,
+    this.iconSize,
     this.requiredPermissions,
   });
 }

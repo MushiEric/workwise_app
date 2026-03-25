@@ -18,17 +18,18 @@ class SalesRepositoryImpl implements SalesRepository {
   SalesRepositoryImpl(this.remote);
 
   @override
-  Future<Either<Failure, List<domain.SalesOrder>>> getRecentOrders() async {
+  Future<Either<Failure, List<domain.SalesOrder>>> getRecentOrders([Map<String, dynamic>? params]) async {
     try {
       final now = DateTime.now();
-      if (_cache != null &&
+      if (params == null &&
+          _cache != null &&
           _lastFetch != null &&
           now.difference(_lastFetch!) < _cacheTtl) {
         final list = _cache!.map((m) => m.toDomain()).toList();
         return Either.right(list);
       }
 
-      final List<OrderModel> models = await remote.getRecentOrders();
+      final List<OrderModel> models = await remote.getRecentOrders(params);
       _cache = models;
       _lastFetch = DateTime.now();
 

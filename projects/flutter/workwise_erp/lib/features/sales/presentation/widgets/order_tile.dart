@@ -49,6 +49,12 @@ class OrderTile extends StatelessWidget {
     final statusName = order.statusRow?.name ?? order.paymentStatusRow?.name;
     final statusColor = _colorFromHex(order.statusRow?.color ?? order.paymentStatusRow?.color) ?? primary;
 
+    final allStatusNames = [
+      order.statusRow?.name ?? '',
+      order.paymentStatusRow?.name ?? '',
+    ];
+    final isInvoiced = allStatusNames.any((s) => s.toLowerCase().contains('invoice'));
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -85,28 +91,7 @@ class OrderTile extends StatelessWidget {
                     Expanded(
                       child: Row(
                         children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  primary.withOpacity(0.12),
-                                  primary.withOpacity(0.04),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: primary.withOpacity(0.15), width: 1),
-                            ),
-                            child: Icon(
-                              Icons.shopping_cart_outlined,
-                              color: primary,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
+                          // Removed icon container
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,20 +143,9 @@ class OrderTile extends StatelessWidget {
                               color: statusColor.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  statusName,
-                                  style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12),
-                                ),
-                              ],
+                            child: Text(
+                              statusName,
+                              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12),
                             ),
                           ),
                       ],
@@ -179,11 +153,7 @@ class OrderTile extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 12),
-
-                Container(height: 1, color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
-
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 // Footer: date, items count
                 Row(
@@ -194,13 +164,7 @@ class OrderTile extends StatelessWidget {
                         color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today_rounded, size: 12, color: isDark ? Colors.white38 : Colors.grey.shade500),
-                          const SizedBox(width: 4),
-                          Text(_formatDate(order.createdAt), style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600)),
-                        ],
-                      ),
+                      child: Text(_formatDate(order.createdAt), style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600)),
                     ),
 
                     const SizedBox(width: 8),
@@ -212,19 +176,27 @@ class OrderTile extends StatelessWidget {
                           color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.inventory_2_rounded, size: 12, color: isDark ? Colors.white38 : Colors.grey.shade500),
-                            const SizedBox(width: 4),
-                            Text('${order.items!.length} item${order.items!.length > 1 ? 's' : ''}', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600)),
-                          ],
-                        ),
+                        child: Text('${order.items!.length} item${order.items!.length > 1 ? 's' : ''}', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600)),
                       ),
 
                     const Spacer(),
 
-                    if (order.customer?.phone != null)
-                      Text(order.customer!.phone!, style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey.shade600)),
+                    if (isInvoiced)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Invoiced',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green.shade600,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],

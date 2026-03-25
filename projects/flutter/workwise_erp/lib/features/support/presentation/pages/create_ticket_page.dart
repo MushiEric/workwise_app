@@ -490,7 +490,7 @@ class _CreateTicketPageState extends ConsumerState<CreateTicketPage> {
                 'Attachments',
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white70 : const Color(0xFF374151),
                   letterSpacing: 0.3,
                 ),

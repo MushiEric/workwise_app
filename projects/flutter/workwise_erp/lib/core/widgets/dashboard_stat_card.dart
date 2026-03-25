@@ -11,13 +11,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class DashboardStatCard extends StatelessWidget {
   final String label;
   final int count;
+  final String? valueText;
   final IconData icon;
   final Color borderColor;
 
   const DashboardStatCard({
     super.key,
     required this.label,
-    required this.count,
+    this.count = 0,
+    this.valueText,
     required this.icon,
     required this.borderColor,
   });
@@ -73,7 +75,7 @@ class DashboardStatCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  count.toString(),
+                  valueText ?? count.toString(),
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
