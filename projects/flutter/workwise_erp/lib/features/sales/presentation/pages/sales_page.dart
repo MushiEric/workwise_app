@@ -339,58 +339,76 @@ class _SalesPageState extends ConsumerState<SalesPage>
   }
 
   List<Widget> _buildOrderStats(SalesState state, bool isDark) {
-    return [
-      DashboardStatCard(
-        label: 'Total Orders',
-        count: state.maybeWhen(
-          loaded: (orders, _, __) => orders.length,
-          orElse: () => 0,
-        ),
-        icon: Icons.shopping_cart_rounded,
-        borderColor: AppColors.primary,
+    return state.maybeWhen(
+      loaded: (orders, _, __) {
+        final Map<String, int> counts = {};
+        final Map<String, String?> colors = {};
+
+        for (var o in orders) {
+          final sName = o.statusRow?.name ?? 'Unknown';
+          counts[sName] = (counts[sName] ?? 0) + 1;
+          if (!colors.containsKey(sName)) {
+            colors[sName] = o.statusRow?.color;
+          }
+        }
+
+        final cards = <Widget>[];
+        // 1. Total Card
+        cards.add(
+          DashboardStatCard(
+            label: 'Total Orders',
+            count: orders.length,
+            icon: Icons.shopping_cart_rounded,
+            borderColor: AppColors.primary,
+          ),
+        );
+
+        // 2. Status Cards (Dynamic)
+        final sortedKeys = counts.keys.toList()..sort();
+        for (var statusName in sortedKeys) {
+          cards.add(
+            DashboardStatCard(
+              label: statusName,
+              count: counts[statusName]!,
+              icon: _getStatusIcon(statusName),
+              borderColor: _parseColor(colors[statusName]),
+            ),
+          );
+        }
+        return cards;
+      },
+      loading: () => List.generate(
+        4,
+        (_) => const DashboardStatCardSkeleton(),
       ),
-      DashboardStatCard(
-        label: 'Grand Total',
-        valueText: state.maybeWhen(
-          loaded: (orders, _, __) {
-            final sum = orders.fold<double>(
-              0,
-              (prev, o) => prev + (o.amount ?? 0),
-            );
-            return NumberFormat.compact().format(sum);
-          },
-          orElse: () => '0',
-        ),
-        icon: Icons.monetization_on_rounded,
-        borderColor: Colors.blueAccent,
-      ),
-      DashboardStatCard(
-        label: 'Pending',
-        count: state.maybeWhen(
-          loaded: (orders, _, __) => orders
-              .where(
-                (o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'pending',
-              )
-              .length,
-          orElse: () => 0,
-        ),
-        icon: Icons.pending_actions_rounded,
-        borderColor: Colors.orange,
-      ),
-      DashboardStatCard(
-        label: 'Completed',
-        count: state.maybeWhen(
-          loaded: (orders, _, __) => orders
-              .where(
-                (o) => (o.statusRow?.name?.toLowerCase() ?? '') == 'completed',
-              )
-              .length,
-          orElse: () => 0,
-        ),
-        icon: Icons.check_circle_rounded,
-        borderColor: Colors.green,
-      ),
-    ];
+      orElse: () => [],
+    );
+  }
+
+  IconData _getStatusIcon(String status) {
+    final s = status.toLowerCase();
+    if (s.contains('pending')) return Icons.pending_actions_rounded;
+    if (s.contains('complete')) return Icons.check_circle_rounded;
+    if (s.contains('process')) return Icons.hourglass_top_rounded;
+    if (s.contains('cancel')) return Icons.cancel_rounded;
+    if (s.contains('draft')) return Icons.edit_note_rounded;
+    if (s.contains('invoice')) return Icons.receipt_long_rounded;
+    if (s.contains('approve')) return Icons.assignment_turned_in_rounded;
+    return Icons.shopping_bag_rounded; // Default
+  }
+
+  Color _parseColor(String? hex) {
+    if (hex == null || hex.isEmpty) return AppColors.primary;
+    try {
+      final clean = hex.replaceFirst('#', '');
+      final value = int.parse(
+        clean.length == 6 ? 'FF$clean' : clean,
+        radix: 16,
+      );
+      return Color(value);
+    } catch (_) {
+      return AppColors.primary;
+    }
   }
 
   List<Widget> _buildPfiStats(PfiState state, bool isDark) {
@@ -657,37 +675,44 @@ class _SalesPageState extends ConsumerState<SalesPage>
   }
 
   Map<String, dynamic> _mapFilterToParams(DrawerFilterValue? filter) {
-    // Default to today's full day when no date filter is set.
-    final today = DateTime.now();
-    final todayStart = DateTime(today.year, today.month, today.day);
-    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+    final startStr = filter?.dateFrom != null
+        ? DateFormat('yyyy-MM-dd').format(filter!.dateFrom!)
+        : '2000-01-01';
+    final endStr = filter?.dateTo != null
+        ? DateFormat('yyyy-MM-dd HH:mm:ss').format(filter!.dateTo!)
+        : '2100-12-31 23:59:59';
 
-    final df = filter?.dateFrom ?? todayStart;
-    final dt = filter?.dateTo ?? todayEnd;
-
-    final startStr = DateFormat('yyyy-MM-dd').format(df);
-    final endStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(dt);
-
-    return {
+    final map = <String, dynamic>{
       'draw': '1',
       'search[value]': _searchController.text,
       'search[regex]': 'false',
-      'status': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
       'start_date': startStr,
       'end_date': endStr,
-      'user': filter?.staffId?.toString() ?? 'All',
-      'customer': filter?.customer?.isNotEmpty == true
-          ? filter!.customer!
-          : 'All',
-      'vehicle': filter?.vehicle?.isNotEmpty == true ? filter!.vehicle! : 'All',
-      'pickup': filter?.pickup?.isNotEmpty == true ? filter!.pickup! : 'All',
-      'delivery': filter?.delivery?.isNotEmpty == true
-          ? filter!.delivery!
-          : 'All',
-      'departure': filter?.departure?.isNotEmpty == true
-          ? filter!.departure!
-          : 'All',
     };
+
+    if (filter?.staffId != null) {
+      map['user'] = filter!.staffId!.toString();
+    }
+    if (filter?.customer?.isNotEmpty == true) {
+      map['customer'] = filter!.customer!;
+    }
+    if (filter?.vehicle?.isNotEmpty == true) {
+      map['vehicle'] = filter!.vehicle!;
+    }
+    if (filter?.pickup?.isNotEmpty == true) {
+      map['pickup'] = filter!.pickup!;
+    }
+    if (filter?.delivery?.isNotEmpty == true) {
+      map['delivery'] = filter!.delivery!;
+    }
+    if (filter?.departure?.isNotEmpty == true) {
+      map['departure'] = filter!.departure!;
+    }
+    if (filter?.statusId?.isNotEmpty == true) {
+      map['status_id'] = filter!.statusId!;
+    }
+
+    return map;
   }
 
   Widget _buildOrderSkeleton(bool isDark) {

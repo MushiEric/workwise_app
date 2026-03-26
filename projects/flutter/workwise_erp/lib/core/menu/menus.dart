@@ -3,13 +3,13 @@ import 'menu_item.dart';
 
 const List<MenuItemModel> appMenus = [
   // Sales: requires CRM/pos dashboard permission (server names vary) — accept either
-  // MenuItemModel(
-  //   id: 'sales',
-  //   title: 'Sales',
-  //   icon: Icons.shopping_cart_outlined,
-  //   route: '/sales',
-  //   requiredPermissions: ['show crm dashboard', 'show pos dashboard'],
-  // ),
+  MenuItemModel(
+    id: 'sales',
+    title: 'Sales',
+    icon: Icons.shopping_cart_outlined,
+    route: '/sales',
+    requiredPermissions: ['show crm dashboard', 'show pos dashboard'],
+  ),
 
   // MenuItemModel(
   //   id: 'customer',

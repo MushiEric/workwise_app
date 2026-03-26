@@ -22,7 +22,7 @@ class SalesRemoteDataSource {
       final defaultData = <String, dynamic>{
         'draw': '1',
         'start': '0',
-        'length': '5000',
+        'length': '1000',
         'search[value]': '',
         'search[regex]': 'false',
         'start_date': '2000-01-01',
@@ -39,29 +39,28 @@ class SalesRemoteDataSource {
           ? Map<String, dynamic>.from(params)
           : Map<String, dynamic>.from(defaultData);
 
-      queryParams.putIfAbsent('start', () => '0');
-      queryParams.putIfAbsent('length', () => '5000');
+      // Robust pagination parameters (mirroring Jobcard implementation for compatibility)
+      final lengthVal = queryParams['length'] ?? '1000';
+      final startVal = queryParams['start'] ?? '0';
 
-      // Include status array if not already provided.
-      if (!queryParams.containsKey('status')) {
-        queryParams['status'] = defaultStatus;
-      }
+      queryParams.putIfAbsent('length', () => lengthVal);
+      queryParams.putIfAbsent('limit', () => lengthVal);
+      queryParams.putIfAbsent('per_page', () => lengthVal);
+      queryParams.putIfAbsent('page_length', () => lengthVal);
+      queryParams.putIfAbsent('limit_page_length', () => lengthVal);
 
-      // Also send flat search keys alongside any nested search object so
-      // the server accepts either format.
+      queryParams.putIfAbsent('start', () => startVal);
+      queryParams.putIfAbsent('offset', () => startVal);
+      queryParams.putIfAbsent('limit_start', () => startVal);
+
+      // Handle search parameters
       final searchObj = queryParams['search'];
       if (searchObj is Map) {
-        queryParams.putIfAbsent(
-          'search[value]',
-          () => searchObj['value'] ?? '',
-        );
-        queryParams.putIfAbsent(
-          'search[regex]',
-          () => searchObj['regex'] ?? 'false',
-        );
-      } else {
-        queryParams.putIfAbsent('search[value]', () => '');
-        queryParams.putIfAbsent('search[regex]', () => 'false');
+        queryParams.putIfAbsent('search[value]', () => searchObj['value'] ?? '');
+        queryParams.putIfAbsent('search[regex]', () => searchObj['regex'] ?? 'false');
+      } else if (!queryParams.containsKey('search[value]')) {
+        queryParams['search[value]'] = '';
+        queryParams['search[regex]'] = 'false';
       }
 
       final resp = await client.get(
