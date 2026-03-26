@@ -41,16 +41,25 @@ class OrderTile extends StatelessWidget {
     final primary = AppColors.primary;
 
     final customerName = order.customer?.name ?? order.user?.name ?? '';
-    final orderNum = order.orderNumber ?? '-';
+    
+    final orderNum = (order.orderNumber ?? '-').replaceAll(RegExp(r'\s*unpaid\s*', caseSensitive: false), '').trim();
+    
     final amountText = order.amount != null
         ? NumberFormat.decimalPattern().format(order.amount)
         : '';
 
     final statusName = order.statusRow?.name;
-    final statusColor = _colorFromHex(order.statusRow?.color) ?? primary;
+    Color statusColor = _colorFromHex(order.statusRow?.color) ?? primary;
+    if (statusName != null && statusName.toLowerCase().contains('invoice')) {
+      statusColor = Colors.green.shade600;
+    }
 
+    // Payment status handling: color it green if it contains "Invoiced"
     final paymentStatusName = order.paymentStatusRow?.name;
-    final hasPaymentStatus = paymentStatusName != null && paymentStatusName.isNotEmpty;
+    final isPaymentInvoiced = paymentStatusName != null &&
+        paymentStatusName.toLowerCase().contains('invoice');
+    final showPaymentStatus = paymentStatusName != null &&
+        paymentStatusName.toLowerCase() != 'unpaid';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -105,15 +114,31 @@ class OrderTile extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                // Order number (secondary)
-                                Text(
-                                  orderNum,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? Colors.white54 : Colors.grey.shade600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                // Order number + optional Invoiced badge on same line
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: _buildHighlightedText(orderNum, 'invoiced', isDark),
+                                    ),
+                                    if (showPaymentStatus) ...[  
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: (isPaymentInvoiced ? Colors.green : Colors.grey).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          paymentStatusName,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: isPaymentInvoiced ? Colors.green.shade700 : Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                             ),
@@ -134,7 +159,7 @@ class OrderTile extends StatelessWidget {
                           ),
                         const SizedBox(height: 6),
                         // Order status chip
-                        if (statusName != null)
+                        if (statusName != null && statusName.toLowerCase() != 'unpaid')
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -150,25 +175,6 @@ class OrderTile extends StatelessWidget {
                               ),
                             ),
                           ),
-                        // Invoice / payment status chip — always green
-                        if (hasPaymentStatus) ...[  
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              paymentStatusName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ],
@@ -207,6 +213,62 @@ class OrderTile extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHighlightedText(String text, String highlight, bool isDark) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    
+    final pattern = RegExp(RegExp.escape(highlight), caseSensitive: false);
+    final matches = pattern.allMatches(text);
+    
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? Colors.white54 : Colors.grey.shade600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+    
+    final List<TextSpan> spans = [];
+    int start = 0;
+    
+    for (final match in matches) {
+      if (match.start > start) {
+        spans.add(TextSpan(text: text.substring(start, match.start)));
+      }
+      // Add a clear space before the highlighted word if not at the beginning
+      if (match.start > 0) {
+        spans.add(const TextSpan(text: ' '));
+      }
+      spans.add(TextSpan(
+        text: text.substring(match.start, match.end),
+        style: TextStyle(
+          color: Colors.green.shade600,
+          fontWeight: FontWeight.bold,
+        ),
+      ));
+      start = match.end;
+    }
+    
+    if (start < text.length) {
+      spans.add(TextSpan(text: text.substring(start)));
+    }
+    
+    return RichText(
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 13,
+          color: isDark ? Colors.white54 : Colors.grey.shade600,
+        ),
+        children: spans,
       ),
     );
   }
