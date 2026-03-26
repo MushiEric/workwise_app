@@ -41,7 +41,12 @@ class CustomerRemoteDataSource {
   /// GET /customer/getCustomers
   Future<List<CustomerModel>> getCustomers() async {
     try {
-      final resp = await client.get('/customer/getCustomers');
+      final resp = await client.get('/customer/getCustomers', queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       final list = _extractList(resp.data);
       final models = <CustomerModel>[];
       for (final raw in list) {
@@ -62,7 +67,12 @@ class CustomerRemoteDataSource {
   /// GET /customer/getCustomerContact/{id}
   Future<List<CustomerContactModel>> getCustomerContacts(int customerId) async {
     try {
-      final resp = await client.get('/customer/getCustomerContact/$customerId');
+      final resp = await client.get('/customer/getCustomerContact/$customerId', queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       final list = _extractList(resp.data);
       final models = <CustomerContactModel>[];
       for (final raw in list) {

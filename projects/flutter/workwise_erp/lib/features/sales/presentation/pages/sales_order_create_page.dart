@@ -661,7 +661,27 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                     m['contract_id'] ??
                     m['currency_id'] ??
                     m['pfi_id'] ??
-                    m['form_number'])
+                    m['ticket_id'] ??
+                    m['job_id'] ??
+                    m['project_id'] ??
+                    m['trip_id'] ??
+                    m['warehouse_id'] ??
+                    m['user_id'] ??
+                    m['agent_id'] ??
+                    m['sales_agent_id'] ??
+                    m['payment_term_id'] ??
+                    m['payment_method_id'] ??
+                    m['tax_id'] ??
+                    m['unit_id'] ??
+                    m['measure_unit_id'] ??
+                    m['priority_id'] ??
+                    m['payment_type_id'] ??
+                    m['duration_id'] ??
+                    m['form_number'] ??
+                    m['job_number'] ??
+                    m['jobcard_number'] ??
+                    m['ticket_code'] ??
+                    m['trip_number'])
                 ?.toString();
 
         final items = list
@@ -682,17 +702,33 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                 (e) => getId(e) == id,
                 orElse: () => {},
               );
+              // Assemble full name for user records
+              if (m['first_name'] != null || m['last_name'] != null) {
+                final full =
+                    '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'.trim();
+                if (full.isNotEmpty) return full;
+              }
               final val =
                   m[displayKey] ??
                   m['name'] ??
                   m['title'] ??
                   m['desc'] ??
+                  m['label'] ??
+                  m['priority'] ??
+                  m['unit'] ??
+                  m['unit_name'] ??
+                  m['short_name'] ??
                   m['customer_name'] ??
                   m['subject'] ??
+                  m['type'] ??
+                  m['value'] ??
+                  m['discount_type'] ??
                   m['currency_name'] ??
                   m['currency_symbol'] ??
                   m['currency_code'] ??
-                  m['code'];
+                  m['code'] ??
+                  m['email'] ??
+                  m['username'];
 
               final number =
                   m['number'] ??
@@ -700,8 +736,13 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   m['quotation_number'] ??
                   m['pfi_number'] ??
                   m['request_number'] ??
-                  m['contract_number'];
-              if (number != null && val != null) return '$number - $val';
+                  m['contract_number'] ??
+                  m['ticket_code'];
+              if (number != null &&
+                  val != null &&
+                  number.toString() != val.toString()) {
+                return '$number - $val';
+              }
               if (number != null) return number.toString();
 
               return val?.toString() ?? 'ID: $id';
@@ -829,16 +870,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 1,
-                      child: AppSmartDropdown<String>(
+                      child: _buildAsyncMapDropdown<String>(
+                        asyncValue: ref.watch(salesCargoUnitsProvider),
                         value: _selectedCargoUnit,
-                        items: const [
-                          'kilograms(kg)',
-                          'gramms(g)',
-                          'litters',
-                          'tonnes',
-                          'pounds',
-                        ],
-                        itemBuilder: (s) => s,
                         label: ' ',
                         hintText: 'Unit',
                         onChanged: (v) =>
@@ -873,15 +907,12 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   ),
                 ),
               if (_fieldEnabled(cfg, ['enable_priority', 'show_priority'])) ...[
-                _buildField(
-                  AppSmartDropdown<String>(
-                    value: _selectedPriority,
-                    items: const ['Fragile (F)', 'High', 'Normal', 'Document'],
-                    itemBuilder: (s) => s,
-                    label: 'Priority',
-                    hintText: 'Select priority',
-                    onChanged: (v) => setState(() => _selectedPriority = v),
-                  ),
+                _buildAsyncMapDropdown<String>(
+                  asyncValue: ref.watch(salesPrioritiesProvider),
+                  value: _selectedPriority,
+                  label: 'Priority',
+                  hintText: 'Select priority',
+                  onChanged: (v) => setState(() => _selectedPriority = v),
                 ),
                 _buildField(
                   AppTextField(
@@ -1122,15 +1153,12 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                 'enable_payment_type',
                 'show_payment_type',
               ]))
-                _buildField(
-                  AppSmartDropdown<String>(
-                    value: _selectedPaymentType,
-                    items: const ['Cash', 'Credit'],
-                    itemBuilder: (s) => s,
-                    label: 'Payment Type',
-                    hintText: 'Cash',
-                    onChanged: (v) => setState(() => _selectedPaymentType = v),
-                  ),
+                _buildAsyncMapDropdown<String>(
+                  asyncValue: ref.watch(salesPaymentTypesProvider),
+                  value: _selectedPaymentType,
+                  label: 'Payment Type',
+                  hintText: 'Select',
+                  onChanged: (v) => setState(() => _selectedPaymentType = v),
                 ),
               if (_fieldEnabled(cfg, [
                 'enable_prof_of_payment',

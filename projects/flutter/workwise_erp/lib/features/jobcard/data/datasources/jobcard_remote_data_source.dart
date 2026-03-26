@@ -571,7 +571,12 @@ class JobcardRemoteDataSource {
   /// GET /vehicle/getVehicle
   Future<List<Map<String, dynamic>>> getVehicles() async {
     try {
-      final resp = await client.get('/vehicle/getVehicle');
+      final resp = await client.get('/vehicle/getVehicle', queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       return _extractList(resp.data);
     } on DioException catch (e) {
       throw ServerException(friendlyDioError(e));
@@ -583,7 +588,12 @@ class JobcardRemoteDataSource {
   /// GET /user/getUsers
   Future<List<Map<String, dynamic>>> getUsers() async {
     try {
-      final resp = await client.get('/user/getUsers');
+      final resp = await client.get('/user/getUsers', queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       return _extractList(resp.data);
     } on DioException catch (e) {
       throw ServerException(friendlyDioError(e));
@@ -597,7 +607,13 @@ class JobcardRemoteDataSource {
     try {
       final resp = await client.get(
         '/product/getItem',
-        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+        queryParameters: {
+          if (creatorId != null) 'creatorId': creatorId,
+          'length': '1000',
+          'limit': '1000',
+          'per_page': '1000',
+          'all': '1',
+        },
       );
       return _extractList(resp.data);
     } on DioException catch (e) {
@@ -612,7 +628,13 @@ class JobcardRemoteDataSource {
     try {
       final resp = await client.get(
         '/product/getProductUnit',
-        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+        queryParameters: {
+          if (creatorId != null) 'creatorId': creatorId,
+          'length': '1000',
+          'limit': '1000',
+          'per_page': '1000',
+          'all': '1',
+        },
       );
       return _extractList(resp.data);
     } on DioException catch (e) {
@@ -639,7 +661,12 @@ class JobcardRemoteDataSource {
         default:
           endpoint = '/logistic/getReceiverNames/$type';
       }
-      final resp = await client.get(endpoint);
+      final resp = await client.get(endpoint, queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       return _extractList(resp.data);
     } on DioException catch (e) {
       throw ServerException(friendlyDioError(e));
@@ -651,7 +678,12 @@ class JobcardRemoteDataSource {
   /// GET /customer/getCustomers
   Future<List<Map<String, dynamic>>> getCustomers() async {
     try {
-      final resp = await client.get('/customer/getCustomers');
+      final resp = await client.get('/customer/getCustomers', queryParameters: {
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      });
       return _extractList(resp.data);
     } on DioException catch (e) {
       throw ServerException(friendlyDioError(e));
