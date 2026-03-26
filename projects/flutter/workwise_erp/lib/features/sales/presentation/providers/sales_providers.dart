@@ -183,3 +183,69 @@ final salesUsersProvider = FutureProvider<List<Map<String, dynamic>>>((
 ) async {
   return await ref.watch(salesRemoteDataSourceProvider).getUsers();
 });
+
+final salesJobcardsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getJobCards();
+});
+
+final salesSupportTicketsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getSupportTickets();
+});
+
+final salesProjectsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getProjects();
+});
+
+final salesTripsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getTrips();
+});
+
+final salesPaymentTermsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getPaymentTerms();
+});
+
+final salesPaymentMethodProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getPaymentMethods();
+});
+final salesPrioritiesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getPriorities();
+});
+
+final salesCargoUnitsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getCargoUnits();
+});
+
+final salesPaymentTypesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getPaymentTypes();
+});
+
+final salesDiscountTypesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getDiscountTypes();
+});
+
+final salesSubscriptionDurationsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+      return await ref
+          .watch(salesRemoteDataSourceProvider)
+          .getSubscriptionDurations();
+    });

@@ -138,14 +138,8 @@ class _SalesPageState extends ConsumerState<SalesPage>
           title: _tabController.index == 0
               ? 'Filter Sales Orders'
               : 'Filter PFIs',
-          users: ref.watch(jobcardUsersProvider).valueOrNull ?? [],
-          statuses: [
-            {'id': 'pending', 'name': 'Pending', 'color': '#FFA500'},
-            {'id': 'sent', 'name': 'Sent', 'color': '#FFA500'},
-            {'id': 'completed', 'name': 'Completed', 'color': '#008000'},
-            {'id': 'accepted', 'name': 'Accepted', 'color': '#008000'},
-            {'id': 'cancelled', 'name': 'Cancelled', 'color': '#FF0000'},
-          ],
+          users: ref.watch(salesUsersProvider).valueOrNull ?? [],
+          statuses: ref.watch(salesOrderStatusesProvider).valueOrNull ?? [],
           initialValue: _activeFilter,
           onApply: (v) {
             setState(() => _activeFilter = v);
