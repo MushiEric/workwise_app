@@ -433,6 +433,11 @@ class SalesRemoteDataSource {
         'tickets',
         'support_tickets',
         'jobcards',
+        'jobcard',
+        'job_cards',
+        'job_card',
+        'job-cards',
+        'job-card',
         'warehouses',
         'warehouse',
         'users',
@@ -441,8 +446,10 @@ class SalesRemoteDataSource {
         'tax',
         'projects',
         'project',
+        'project_list',
         'trips',
         'trip',
+        'trip_list',
         'payment_terms',
         'payment_term',
         'payment_methods',
@@ -524,20 +531,8 @@ class SalesRemoteDataSource {
   /// Internal helper to get raw product maps
   Future<List<Map<String, dynamic>>> getRawProducts({int? creatorId}) async {
     try {
-      final resp = await client.get(
-        '/product/getItem',
-        queryParameters: {
-          if (creatorId != null) 'creatorId': creatorId,
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        },
-      );
-      final list = _extractList(resp.data);
+      final list = await _getMetadata('/product/getItem');
       return list.map((m) => _normalizeProductJson(m)).toList();
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -546,21 +541,10 @@ class SalesRemoteDataSource {
   /// GET /product/getProductUnit
   Future<List<PackageUnitModel>> getPackageUnits({int? creatorId}) async {
     try {
-      final resp = await client.get(
-        '/product/getProductUnit',
-        queryParameters: {
-          if (creatorId != null) 'creatorId': creatorId,
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        },
-      );
-      return _extractList(resp.data)
+      final list = await _getMetadata('/product/getProductUnit');
+      return list
           .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
           .toList();
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -568,103 +552,31 @@ class SalesRemoteDataSource {
 
   /// GET /vehicle/getVehicle
   Future<List<Map<String, dynamic>>> getVehicles() async {
-    try {
-      final resp = await client.get('/vehicle/getVehicle', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
+    return _getMetadata('/vehicle/getVehicle');
   }
 
   Future<List<Map<String, dynamic>>> getPackageTypes() async {
-    try {
-      final resp = await client.get('/order/getPackageType', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/order/getPackageType');
   }
 
   Future<List<Map<String, dynamic>>> getWarehouses() async {
-    try {
-      final resp = await client.get('/warehouse/getWarehouse', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/warehouse/getWarehouse');
   }
 
   Future<List<Map<String, dynamic>>> getQuotations() async {
-    try {
-      final resp = await client.get('/sales/getSaleOrderPFI', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/sales/getSaleOrderPFI');
   }
 
   Future<List<Map<String, dynamic>>> getContracts() async {
-    try {
-      final resp = await client.get('/contract/getSaleOrderContract', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/contract/getSaleOrderContract');
   }
 
   Future<List<Map<String, dynamic>>> getRequests() async {
-    try {
-      final resp = await client.get('/sales/getSaleOrderRequest', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/sales/getSaleOrderRequest');
   }
 
   Future<List<Map<String, dynamic>>> getTaxes() async {
-    try {
-      final resp = await client.get('/sales/getTaxes', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return _getMetadata('/sales/getTaxes');
   }
 
   Future<List<Map<String, dynamic>>> getProjects() async {
@@ -676,13 +588,7 @@ class SalesRemoteDataSource {
     ];
     for (final p in paths) {
       try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
+        final list = await _getMetadata(p);
         if (list.isNotEmpty) return list;
       } catch (_) {}
     }
@@ -697,13 +603,7 @@ class SalesRemoteDataSource {
     ];
     for (final p in paths) {
       try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
+        final list = await _getMetadata(p);
         if (list.isNotEmpty) return list;
       } catch (_) {}
     }
@@ -718,13 +618,7 @@ class SalesRemoteDataSource {
     ];
     for (final p in paths) {
       try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
+        final list = await _getMetadata(p);
         if (list.isNotEmpty) return list;
       } catch (_) {}
     }
@@ -739,13 +633,7 @@ class SalesRemoteDataSource {
     ];
     for (final p in paths) {
       try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
+        final list = await _getMetadata(p);
         if (list.isNotEmpty) return list;
       } catch (_) {}
     }
@@ -901,20 +789,100 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> _getMetadata(String path) async {
     try {
-      final resp = await client.get(
-        path,
-        queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'page_length': '1000',
-          'all': '1',
-          'draw': '1',
-          'start': '0',
-        },
-      );
-      return _extractList(resp.data);
-    } catch (_) {
+      final List<Map<String, dynamic>> allItems = [];
+      int currentPage = 1;
+      int lastPage = 1;
+      const int pageSize = 50; 
+
+      do {
+        final resp = await client.get(
+          path,
+          queryParameters: {
+            'page': currentPage,
+            'length': pageSize.toString(),
+            'limit': pageSize.toString(),
+            'per_page': pageSize.toString(),
+            'page_length': pageSize.toString(),
+            'limit_page_length': pageSize.toString(),
+            'all': '1',
+            'draw': '1',
+            'start': (currentPage - 1) * pageSize,
+            'offset': (currentPage - 1) * pageSize,
+          },
+          options: Options(validateStatus: (s) => s != null && s < 500),
+        );
+
+        if (resp.statusCode != 200) break;
+
+        final raw = resp.data;
+        final pageItems = _extractList(raw);
+        if (pageItems.isEmpty) break;
+
+        allItems.addAll(pageItems);
+
+        // Robust pagination metadata detection
+        if (raw is Map) {
+          final paginator = raw['data'] is Map
+              ? raw['data'] as Map
+              : (raw['payload'] is Map ? raw['payload'] as Map : raw);
+
+          final lp = paginator['last_page'] ??
+              paginator['lastPage'] ??
+              paginator['total_pages'] ??
+              paginator['totalPages'] ??
+              raw['total_pages'] ??
+              raw['last_page'];
+
+          if (lp is num) {
+            lastPage = lp.toInt();
+          } else if (lp is String) {
+            lastPage = int.tryParse(lp) ?? 1;
+          } else {
+            final totalRaw = paginator['total'] ??
+                paginator['recordsTotal'] ??
+                paginator['records_total'] ??
+                raw['total'] ??
+                raw['recordsTotal'] ??
+                raw['records_total'];
+
+            final perPageRaw = paginator['per_page'] ??
+                paginator['perPage'] ??
+                paginator['limit'] ??
+                raw['per_page'] ??
+                raw['limit'] ??
+                pageSize;
+
+            int? total;
+            if (totalRaw is num) total = totalRaw.toInt();
+            else if (totalRaw is String) total = int.tryParse(totalRaw);
+
+            int? perPage;
+            if (perPageRaw is num) perPage = perPageRaw.toInt();
+            else if (perPageRaw is String) perPage = int.tryParse(perPageRaw);
+
+            if (total != null && perPage != null && perPage > 0) {
+              lastPage = (total / perPage).ceil();
+            } else {
+              // OPTIMISTIC FALLBACK: If we got items but no metadata, 
+              // try to fetch the next page regardless until we get empty list or hit cap.
+              if (pageItems.length > 0) {
+                lastPage = currentPage + 1;
+              } else {
+                lastPage = 1;
+              }
+            }
+          }
+        } else {
+          lastPage = 1;
+        }
+
+        currentPage++;
+      } while (currentPage <= lastPage && lastPage > 1 && allItems.length < 10000);
+
+      return allItems;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[SalesDataSource] _getMetadata error for $path: $e');
       return [];
     }
   }
