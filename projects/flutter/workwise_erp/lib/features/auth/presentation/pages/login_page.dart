@@ -1,10 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // centralise icon tokens for easy re-themeing
 import '../../../../core/themes/app_icons.dart';
 
-import 'package:workwise_erp/core/widgets/app_dialog.dart';
 import 'package:workwise_erp/core/widgets/app_textfield.dart';
 import 'package:workwise_erp/features/auth/presentation/providers/auth_providers.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
@@ -72,9 +72,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
     final notifier = ref.read(authNotifierProvider.notifier);
 
-    // show loading dialog
-    showAppLoadingDialog(context, message: context.l10n.signingIn);
-
     await notifier.login(
       email: _emailCtrl.text.trim(),
       password: _passCtrl.text,
@@ -84,9 +81,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     if (!mounted) return;
 
     final state = ref.read(authNotifierProvider);
-
-    // hide loading
-    hideAppLoadingDialog(context);
 
     state.when(
       initial: () => null,
@@ -236,20 +230,59 @@ class _LoginPageState extends ConsumerState<LoginPage>
             Positioned(
               top: 12,
               left: 12,
-              child: IconButton(
-                onPressed: _showLanguageSelection,
-                tooltip: 'Change language',
-                padding: const EdgeInsets.all(8),
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white10
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(AppIcons.globe, size: 20),
-                ),
+              child: Consumer(
+                builder: (context, ref, _) {
+                  final code = ref.watch(appLocaleProvider);
+                  final flag = languageFlag(code) ?? '🌐';
+                  final name = languageLabel(code);
+                  final isDarkBtn =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return GestureDetector(
+                    onTap: _showLanguageSelection,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDarkBtn
+                            ? Colors.white10
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDarkBtn
+                              ? Colors.white12
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(flag, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isDarkBtn
+                                  ? Colors.white70
+                                  : const Color(0xFF1A2634),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            size: 16,
+                            color: isDarkBtn
+                                ? Colors.white54
+                                : Colors.grey.shade600,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
             Center(
@@ -361,15 +394,28 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       ),
                                     ),
                                     child: isLoading
-                                        ? SizedBox(
-                                            height: 24,
-                                            width: 24,
-                                            // child: CircularProgressIndicator(
-                                            //   strokeWidth: 2.5,
-                                            //   valueColor: AlwaysStoppedAnimation<Color>(
-                                            //     isDark ? const Color(0xFF1A2634) : Colors.white,
-                                            //   ),
-                                            // ),
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const SizedBox(
+                                                height: 20,
+                                                width: 20,
+                                                child:
+                                                    CupertinoActivityIndicator(
+                                                      radius: 10,
+                                                    ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                context.l10n.signingIn,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           )
                                         : Text(
                                             context.l10n.signIn,

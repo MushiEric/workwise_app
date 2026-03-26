@@ -22,6 +22,7 @@ import 'package:workwise_erp/core/provider/locale_provider.dart';
 import 'package:workwise_erp/core/provider/theme_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -824,7 +825,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: const CupertinoActivityIndicator(
+                child: CupertinoActivityIndicator(
                   radius: 12,
                   color: AppColors.muted,
                 ),
@@ -1012,7 +1013,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     return _buildMenuTile(
                       icon: AppIcons.moon,
                       label: context.l10n.darkMode,
-                      trailing: Switch(
+                      trailing: CupertinoSwitch(
                         value: isDarkMode,
                         onChanged: (value) {
                           ref
@@ -1021,7 +1022,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                                 value ? ThemeMode.dark : ThemeMode.light,
                               );
                         },
-                        activeThumbColor: AppColors.primary,
+                        activeColor: AppColors.primary,
                       ),
                     );
                   },
@@ -1048,10 +1049,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 _buildMenuTile(
                   icon: AppIcons.volume,
                   label: context.l10n.sound,
-                  trailing: Switch(
+                  trailing: CupertinoSwitch(
                     value: true,
                     onChanged: (value) {},
-                    activeThumbColor: AppColors.primary,
+                    activeColor: AppColors.primary,
                   ),
                 ),
                 // _buildMenuTile(
@@ -1063,6 +1064,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 //     _showSwitchWorkspaceConfirmation();
                 //   },
                 // ),
+                _buildMenuTile(
+                  icon: Icons.description_outlined,
+                  label: context.l10n.termsOfService,
+                  subtitle: context.l10n.termsOfServiceSubtitle,
+                  onTap: () {
+                    Navigator.pop(context);
+                    launchUrl(
+                      Uri.parse('https://workwise.africa/terms-of-service/'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                ),
+                _buildMenuTile(
+                  icon: Icons.privacy_tip_outlined,
+                  label: context.l10n.privacyPolicy,
+                  subtitle: context.l10n.privacyPolicySubtitle,
+                  onTap: () {
+                    Navigator.pop(context);
+                    launchUrl(
+                      Uri.parse('https://workwise.africa/privacy-policy/'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  },
+                ),
                 _buildMenuTile(
                   icon: AppIcons.logOut,
                   label: context.l10n.signOut,

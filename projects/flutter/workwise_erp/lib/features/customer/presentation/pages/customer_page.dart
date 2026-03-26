@@ -150,7 +150,6 @@ class _CustomerPageState extends ConsumerState<CustomerPage> {
 
 class _CustomerListTab extends ConsumerWidget {
   const _CustomerListTab({
-    super.key,
     required this.query,
     required this.searchCtrl,
     required this.onQueryChanged,

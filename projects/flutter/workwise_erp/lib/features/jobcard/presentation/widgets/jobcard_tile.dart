@@ -55,14 +55,18 @@ class JobcardTile extends StatelessWidget {
     if (lower.contains('open')) return const Color(0xFF4A6FA5);
     if (lower.contains('completed') ||
         lower.contains('done') ||
-        lower.contains('closed'))
+        lower.contains('closed')) {
       return Colors.green;
-    if (lower.contains('pending') || lower.contains('waiting'))
+    }
+    if (lower.contains('pending') || lower.contains('waiting')) {
       return Colors.orange;
-    if (lower.contains('in progress') || lower.contains('processing'))
+    }
+    if (lower.contains('in progress') || lower.contains('processing')) {
       return Colors.blue;
-    if (lower.contains('cancelled') || lower.contains('rejected'))
+    }
+    if (lower.contains('cancelled') || lower.contains('rejected')) {
       return Colors.red;
+    }
     return AppColors.primary;
   }
 
@@ -191,7 +195,7 @@ class JobcardTile extends StatelessWidget {
       builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
+        child: SizedBox(
           width: MediaQuery.of(ctx).size.width,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -280,7 +284,7 @@ class JobcardTile extends StatelessWidget {
       builder: (ctx) => Dialog(
         backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
+        child: SizedBox(
           width: MediaQuery.of(ctx).size.width,
           child: Column(
             mainAxisSize: MainAxisSize.min,

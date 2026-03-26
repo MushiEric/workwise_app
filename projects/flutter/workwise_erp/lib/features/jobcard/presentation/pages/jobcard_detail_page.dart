@@ -1700,7 +1700,7 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
               // 4. dependent[name]      — role / approver name
               // 5. approval[user_name] / approval[username]
               // 6. Fall back to "User #<id>"
-              String? _findName(Map<String, dynamic>? m, List<String> keys) {
+              String? findName(Map<String, dynamic>? m, List<String> keys) {
                 if (m == null) return null;
                 for (final k in keys) {
                   final v = m[k];
@@ -1721,10 +1721,10 @@ class _JobcardDetailPageState extends ConsumerState<JobcardDetailPage>
 
               final userId = approval['user_id']?.toString();
               final displayName =
-                  _findName(userObj, ['name', 'full_name', 'username']) ??
-                  _findName(approverObj, ['name', 'full_name', 'username']) ??
-                  _findName(depUserObj, ['name', 'full_name', 'username']) ??
-                  _findName(dependent, ['name']) ??
+                  findName(userObj, ['name', 'full_name', 'username']) ??
+                  findName(approverObj, ['name', 'full_name', 'username']) ??
+                  findName(depUserObj, ['name', 'full_name', 'username']) ??
+                  findName(dependent, ['name']) ??
                   (approval['user_name']?.toString().isNotEmpty == true
                       ? approval['user_name'].toString()
                       : null) ??

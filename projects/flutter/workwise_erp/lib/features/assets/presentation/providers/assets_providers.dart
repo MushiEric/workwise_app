@@ -6,7 +6,6 @@ import 'package:workwise_erp/core/errors/failure.dart';
 import '../../data/datasources/asset_remote_data_source.dart';
 import '../../data/datasources/asset_mock_data_source.dart';
 import '../../data/repositories/asset_repository_impl.dart';
-import '../../domain/entities/asset.dart';
 import '../../domain/repositories/asset_repository.dart';
 import '../../domain/usecases/get_assets.dart';
 import '../notifier/assets_notifier.dart';

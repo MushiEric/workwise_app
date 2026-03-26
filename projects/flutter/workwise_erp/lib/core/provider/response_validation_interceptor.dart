@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:workwise_erp/core/errors/sentry_error_reporter.dart';
 
 /// Ensures API responses expected to be JSON actually are JSON.
 ///
@@ -61,7 +61,7 @@ class ResponseValidationInterceptor extends Interceptor {
 
       // record telemetry for investigation (best-effort)
       try {
-        Sentry.captureException(err, stackTrace: err.stackTrace);
+         SentryErrorReporter().captureException(err, err.stackTrace ?? StackTrace.current);
       } catch (_) {}
 
       return handler.reject(err);

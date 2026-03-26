@@ -322,7 +322,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     }
 
     // Known app routes — push by name only if the route is registered.
-    const _knownRoutes = {
+    const knownRoutes = {
       '/jobcards',
       '/jobcards/detail',
       '/jobcards/create',
@@ -334,7 +334,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       '/profile',
     };
     final cleanPath = uri?.path ?? link;
-    if (_knownRoutes.contains(cleanPath)) {
+    if (knownRoutes.contains(cleanPath)) {
       Navigator.pushNamed(context, cleanPath);
     }
     // Silently ignore unknown server-side paths to avoid a crash.

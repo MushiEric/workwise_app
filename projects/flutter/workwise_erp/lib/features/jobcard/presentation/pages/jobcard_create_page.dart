@@ -1099,7 +1099,7 @@ class _JobcardCreatePageState extends ConsumerState<JobcardCreatePage>
               TextSpan(
                 children: [
                   TextSpan(
-                    text: '${parts[0]}',
+                    text: parts[0],
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   TextSpan(text: ' - ${parts.sublist(1).join(' - ')}'),

@@ -9,7 +9,6 @@ import 'package:workwise_erp/features/auth/domain/usecases/get_current_user.dart
 import 'package:workwise_erp/features/auth/domain/usecases/update_profile.dart';
 import 'package:workwise_erp/features/auth/presentation/notifier/auth_notifier.dart';
 import 'package:workwise_erp/features/auth/domain/entities/permission.dart';
-import 'package:workwise_erp/features/auth/domain/entities/permission.dart';
 import 'package:workwise_erp/features/auth/presentation/state/auth_state.dart';
 
 class MockRepo extends Mock implements AuthRepository {}

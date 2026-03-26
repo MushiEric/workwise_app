@@ -19,7 +19,7 @@ class AppButton extends StatelessWidget {
   final bool isSticky; // New flag added
 
   const AppButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.backgroundColor,
@@ -33,7 +33,7 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.enabled = true,
     this.isSticky = false, // New flag with default false
-  }) : super(key: key);
+  });
 
   factory AppButton.primary({
     required String text,

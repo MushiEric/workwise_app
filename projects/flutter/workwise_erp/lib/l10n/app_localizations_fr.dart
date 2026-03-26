@@ -310,6 +310,19 @@ class AppLocalizationsFr extends AppLocalizations {
       'Êtes-vous sûr de vouloir vous déconnecter de votre compte?';
 
   @override
+  String get termsOfService => 'Conditions d\'Utilisation';
+
+  @override
+  String get termsOfServiceSubtitle => 'Consultez nos conditions générales';
+
+  @override
+  String get privacyPolicy => 'Politique de Confidentialité';
+
+  @override
+  String get privacyPolicySubtitle =>
+      'Comment nous protégeons votre vie privée';
+
+  @override
   String get shareApp => 'Partager Workwise';
 
   @override
@@ -429,4 +442,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String timeDays(int count) {
     return '${count}j';
   }
+
+  @override
+  String get developerOptionsBlockedTitle => 'Alerte de Sécurité';
+
+  @override
+  String get developerOptionsBlockedMessage =>
+      'Nous avons détecté que les Options développeur sont activées sur votre appareil. Veuillez les désactiver pour protéger vos données et continuer à utiliser l\'application Workwise en toute sécurité.';
+
+  @override
+  String get exitApp => 'Quitter';
 }

@@ -8,6 +8,9 @@ import '../providers/project_providers.dart';
 import '../state/project_state.dart';
 import '../../../../core/widgets/app_bar.dart';
 import '../../../../core/widgets/app_dialog.dart';
+import '../../../../core/widgets/dashboard_stat_card.dart';
+import '../../../../core/widgets/dashboard_stats_row.dart';
+import '../../../../core/widgets/shimmer.dart';
 import '../../domain/entities/project.dart';
 import '../../../../core/themes/app_icons.dart';
   
@@ -22,6 +25,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isSearching = false;
+  bool _showStats = true;
 
   // Track whether the loading dialog is currently visible to avoid duplicate dialogs
   bool _isLoadingDialogVisible = false;
@@ -45,7 +49,6 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(projectNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = AppColors.primary;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -72,7 +75,15 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
               ),
             IconButton(
               icon: Icon(
-                AppIcons.slidersHorizontal,
+                _showStats ? AppIcons.eye : AppIcons.eyeOff,
+                size: 20,
+                color: isDark ? Colors.white70 : AppColors.white,
+              ),
+              onPressed: () => setState(() => _showStats = !_showStats),
+            ),
+            IconButton(
+              icon: Icon(
+                AppIcons.filter,
                 size: 20,
                 color: isDark ? Colors.white70 : AppColors.white,
               ),
@@ -147,43 +158,8 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
                 ),
               ),
 
-            // Stats Header
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Projects',
-                      _getProjectCount(state),
-                      Icons.folder_rounded,
-                      primaryColor,
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Active',
-                      _getActiveCount(state),
-                      Icons.play_circle_rounded,
-                      Colors.orange,
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Completed',
-                      _getCompletedCount(state),
-                      Icons.check_circle_rounded,
-                      Colors.green,
-                      isDark,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Stats Row — shimmer while loading, real cards when loaded
+            _buildStatsRow(state, isDark),
 
             // Main Content
             Expanded(child: _buildBody(state, isDark)),
@@ -197,7 +173,7 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
           },
           icon: const Icon(Icons.add_rounded),
           label: const Text('New Project'),
-          backgroundColor: primaryColor,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -207,18 +183,60 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
     );
   }
 
+  Widget _buildStatsRow(ProjectState state, bool isDark) {
+    final isLoading = state.maybeWhen(loading: () => true, initial: () => true, orElse: () => false);
+
+    if (isLoading) {
+      return DashboardStatsRow(
+        visible: _showStats,
+        cards: List.generate(
+          3,
+          (_) => Shimmer(
+            baseColor: isDark ? Colors.white12 : Colors.grey.shade200,
+            highlightColor: isDark ? Colors.white24 : Colors.grey.shade100,
+            child: const DashboardStatCardSkeleton(),
+          ),
+        ),
+      );
+    }
+
+    return DashboardStatsRow(
+      visible: _showStats,
+      cards: [
+        DashboardStatCard(
+          label: 'Total Projects',
+          count: _getProjectCount(state),
+          icon: Icons.folder_rounded,
+          borderColor: AppColors.primary,
+        ),
+        DashboardStatCard(
+          label: 'Active',
+          count: _getActiveCount(state),
+          icon: Icons.play_circle_rounded,
+          borderColor: Colors.orange,
+        ),
+        DashboardStatCard(
+          label: 'Completed',
+          count: _getCompletedCount(state),
+          icon: AppIcons.checkCircleRounded,
+          borderColor: Colors.green,
+        ),
+      ],
+    );
+  }
+
   Widget _buildBody(ProjectState state, bool isDark) {
     return state.when(
       initial: () => const SizedBox.shrink(),
       loading: () {
-        // show global loading dialog instead of inline spinner
+        // Dismiss any stale loading dialog and show shimmer inline
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_isLoadingDialogVisible) {
-            showAppLoadingDialog(context, message: 'Loading projects...');
-            _isLoadingDialogVisible = true;
+          if (_isLoadingDialogVisible) {
+            hideAppLoadingDialog(context);
+            _isLoadingDialogVisible = false;
           }
         });
-        return const SizedBox.shrink();
+        return _buildShimmerList(isDark);
       },
       error: (msg) {
         // ensure any loading dialog is dismissed when we reach error state
@@ -632,64 +650,106 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    int count,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      height:
-          96, // fixed height so Column(spaceBetween) has bounded constraints
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border(left: BorderSide(color: color, width: 3)),
+  /// Shimmer placeholder list shown while projects are loading.
+  Widget _buildShimmerList(bool isDark) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      itemCount: 6,
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Shimmer(
+          baseColor: isDark ? Colors.white12 : Colors.grey.shade200,
+          highlightColor: isDark ? Colors.white24 : Colors.grey.shade100,
+          child: _buildProjectCardSkeleton(isDark),
+        ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Text block (label on top, number at bottom)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
+    );
+  }
 
-                // number placed visually at the bottom of the text column
-                Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A2634),
-                  ),
+  Widget _buildProjectCardSkeleton(bool isDark) {
+    final base = isDark ? Colors.white12 : Colors.grey.shade200;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF151A2E) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: base,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: base,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 11,
+                      width: 80,
+                      decoration: BoxDecoration(
+                        color: base,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 64,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: base,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 8,
+            decoration: BoxDecoration(
+              color: base,
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-
-          const SizedBox(width: 8),
-
-          // faint icon on the right
-          Opacity(opacity: 0.12, child: Icon(icon, size: 40, color: color)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(color: base, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 100,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: base,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -741,7 +801,6 @@ class _ProjectsPageState extends ConsumerState<ProjectsPage> {
       case 'on hold':
       case 'paused':
         return Colors.grey;
-      case 'cancelled':
       case 'cancelled':
         return Colors.red;
       default:

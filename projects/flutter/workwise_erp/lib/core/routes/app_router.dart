@@ -4,8 +4,6 @@ import '../../features/auth/presentation/routes/auth_router.dart';
 import '../../features/logistic/presentation/routes/logistic_router.dart';
 import '../../features/jobcard/presentation/routes/jobcard_router.dart';
 import '../../features/support/presentation/routes/support_router.dart';
-
-// Remaining feature pages not yet split into their own routers
 import '../../features/index/presentation/pages/index_page.dart';
 import '../../features/sales/presentation/pages/sales_page.dart';
 import '../../features/pfi/presentation/pages/pfi_page.dart';
@@ -24,8 +22,8 @@ import '../../features/sales/presentation/pages/sales_view_page.dart';
 import '../../features/sales/presentation/pages/pfi_view_page.dart';
 import '../../features/sales/domain/entities/sales_order.dart';
 import '../../features/pfi/domain/entities/pfi.dart';
+import '../../features/security/presentation/pages/developer_options_blocked_page.dart';
 
-// TODO(assets): Temporarily disabled — uncomment when assets module is restored
 // import '../../features/assets/presentation/pages/assets_page.dart';
 // import '../../features/assets/presentation/pages/asset_detail_page.dart';
 
@@ -68,7 +66,9 @@ class AppRouter {
     '/documents': (_) => const DocumentPage(),
     '/notifications': (_) => const NotificationsPage(),
     '/hr': (_) => const HRPage(),
-    // TODO(assets): Temporarily disabled
+    '/security/developer_options_blocked': (_) =>
+        const DeveloperOptionsBlockedPage(),
+
     // '/assets': (_) => const AssetsPage(),
     // '/assets/detail': (_) => const AssetDetailPage(),
   };

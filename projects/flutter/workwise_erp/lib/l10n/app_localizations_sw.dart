@@ -304,6 +304,18 @@ class AppLocalizationsSw extends AppLocalizations {
       'Je, una uhakika unataka kutoka kwenye akaunti yako?';
 
   @override
+  String get termsOfService => 'Masharti ya Huduma';
+
+  @override
+  String get termsOfServiceSubtitle => 'Soma masharti na hali zetu';
+
+  @override
+  String get privacyPolicy => 'Sera ya Faragha';
+
+  @override
+  String get privacyPolicySubtitle => 'Jinsi tunavyolinda faragha yako';
+
+  @override
   String get shareApp => 'Shiriki Workwise';
 
   @override
@@ -422,4 +434,14 @@ class AppLocalizationsSw extends AppLocalizations {
   String timeDays(int count) {
     return 'siku $count';
   }
+
+  @override
+  String get developerOptionsBlockedTitle => 'Tahadhari ya Usalama';
+
+  @override
+  String get developerOptionsBlockedMessage =>
+      'Tumegundua kuwa Chaguo za Msanidi Programu zimewezeshwa kwenye kifaa chako. Tafadhali zizime ili kulinda data yako na kuendelea kutumia programu ya Workwise salama.';
+
+  @override
+  String get exitApp => 'Toka';
 }

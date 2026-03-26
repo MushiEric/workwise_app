@@ -213,8 +213,9 @@ class AuthRemoteDataSource {
         data = raw;
       } else if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException('Server returned HTML (check backend)');
+        }
         try {
           final decoded = json.decode(s);
           if (decoded is Map<String, dynamic>) data = decoded;
@@ -235,10 +236,12 @@ class AuthRemoteDataSource {
 
       if (data.containsKey('status')) {
         final st = data['status'];
-        if (st is bool && st == false)
+        if (st is bool && st == false) {
           throw ServerException(data['message']?.toString() ?? 'Login failed');
-        if (st is num && st == 0)
+        }
+        if (st is num && st == 0) {
           throw ServerException(data['message']?.toString() ?? 'Login failed');
+        }
       }
       if (data.containsKey('success') &&
           (data['success'] is bool) &&
@@ -375,12 +378,14 @@ class AuthRemoteDataSource {
           }
           if (respData is String) {
             final s = respData.trim();
-            if (s.startsWith('<'))
+            if (s.startsWith('<')) {
               throw ServerException('Server returned HTML (check backend)');
+            }
             try {
               final decoded = json.decode(s);
-              if (decoded is Map && decoded['message'] != null)
+              if (decoded is Map && decoded['message'] != null) {
                 throw ServerException(decoded['message'].toString());
+              }
             } catch (_) {}
           }
           throw ServerException(e.message ?? 'Server error');
@@ -627,8 +632,9 @@ class AuthRemoteDataSource {
         data = raw;
       } else if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException('Server returned HTML (check backend)');
+        }
         try {
           final decoded = json.decode(s);
           if (decoded is Map<String, dynamic>) data = decoded;
@@ -637,8 +643,9 @@ class AuthRemoteDataSource {
         }
       }
 
-      if (data == null)
+      if (data == null) {
         throw ServerException('Invalid server response when updating profile');
+      }
 
       Map<String, dynamic> userMap;
       if (data.containsKey('user') && data['user'] is Map) {
@@ -721,8 +728,9 @@ class AuthRemoteDataSource {
     } catch (e) {
       if (e is ServerException ||
           e is NetworkException ||
-          e is TimeoutException)
+          e is TimeoutException) {
         rethrow;
+      }
       throw ServerException('Unknown error');
     }
   }
@@ -756,10 +764,11 @@ class AuthRemoteDataSource {
       return items
           .map<String>((e) {
             if (e is String) return e.trim();
-            if (e is Map)
+            if (e is Map) {
               return ((e['name'] ?? e['permission'] ?? '') as Object)
                   .toString()
                   .trim();
+            }
             return '';
           })
           .where((n) => n.isNotEmpty)

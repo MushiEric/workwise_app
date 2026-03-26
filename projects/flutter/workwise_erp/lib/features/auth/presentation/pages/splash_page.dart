@@ -7,6 +7,7 @@ import '../../../../core/provider/token_provider.dart';
 import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../providers/auth_providers.dart';
+import '../../../security/presentation/providers/security_providers.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -58,12 +59,20 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 
   /// Determines the correct initial route:
+  ///  - Developer Options enabled → `/security/developer_options_blocked`
   ///  - No stored token → `/` (login)
   ///  - Token + API success → `/index` (home)
   ///  - Token + API failure → `/` (login; repository already cleared the
   ///                            stale token on any server-side error)
   Future<void> _resolveRoute() async {
     try {
+      // 0. Security gate: block if Android Developer Options is on.
+      final securityStatus = await ref.read(deviceSecurityProvider.future);
+      if (securityStatus.isDeveloperOptionsEnabled) {
+        _targetRoute = '/security/developer_options_blocked';
+        return;
+      }
+
       // 1. No stored token → go straight to login.
       final token = await ref.read(tokenLocalDataSourceProvider).readToken();
       if (token == null || token.isEmpty) {

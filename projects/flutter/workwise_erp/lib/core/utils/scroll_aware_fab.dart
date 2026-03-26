@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart'; // <-- add this
 
-/// A FloatingActionButton that reacts to scroll direction.
-///
-/// - Expands when scrolling up or when near top
-/// - Collapses when scrolling down
-/// - Uses hysteresis to avoid flicker
-/// - Safely handles controller changes
+
 class ScrollAwareFab extends StatefulWidget {
   final ScrollController controller;
   final VoidCallback? onPressed;

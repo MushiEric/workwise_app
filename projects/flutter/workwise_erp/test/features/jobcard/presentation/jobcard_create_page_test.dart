@@ -58,11 +58,11 @@ void main() {
 
     // verify dropdown styling propagation by inspecting Related To input decorator
     final decoratorFinder = find.byWidgetPredicate(
-      (w) => w is InputDecorator && w.decoration?.labelText == 'Related To',
+      (w) => w is InputDecorator && w.decoration.labelText == 'Related To',
     );
     expect(decoratorFinder, findsOneWidget);
     final decorator = tester.widget<InputDecorator>(decoratorFinder.first);
-    expect(decorator.decoration?.fillColor, isNotNull);
+    expect(decorator.decoration.fillColor, isNotNull);
 
     final subjectField = find.byWidgetPredicate(
       (w) => w is TextField && (w.decoration?.labelText ?? '') == 'Subject',

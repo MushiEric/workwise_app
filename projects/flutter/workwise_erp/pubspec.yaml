@@ -55,6 +55,7 @@ dependencies:
   google_maps_flutter: ^2.10.0
   google_nav_bar: ^5.0.7
   tutorial_coach_mark: ^1.0.1
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -125,16 +126,14 @@ flutter_launcher_icons:
     generate: false
 
 # ── Native splash screen ───────────────────────────────────────────────────────
+# No logo image — shows a plain background while the Flutter engine starts.
+# The real branded splash experience is handled by SplashPage (home.png).
 flutter_native_splash:
   color: "#FFFFFF"
-  image: assets/images/splash_logo.png
-  color_dark: "#0F172A"
-  image_dark: assets/images/splash_logo.png
+  color_dark: "#FFFFFF"
   android_12:
     icon_background_color: "#FFFFFF"
-    image:  assets/images/icon_launcher.png
-    icon_background_color_dark: "#0F172A"
-    image_dark: assets/images/icon_launcher.png
+    icon_background_color_dark: "#FFFFFF"
   android: true
   ios: true
   web: false

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,11 +11,43 @@ import '../../../../core/widgets/google_nav_bar.dart';
 import '../../domain/entities/sales_settings.dart';
 import '../providers/sales_providers.dart';
 
-class SalesSettingsPage extends ConsumerWidget {
+class SalesSettingsPage extends ConsumerStatefulWidget {
   const SalesSettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SalesSettingsPage> createState() => _SalesSettingsPageState();
+}
+
+class _SalesSettingsPageState extends ConsumerState<SalesSettingsPage> {
+  final _ipController = TextEditingController();
+  bool _manualOverride = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWeighbridgeSettings();
+  }
+
+  Future<void> _loadWeighbridgeSettings() async {
+    final service = ref.read(weightbridgeServiceProvider);
+    final ip = await service.getIp();
+    final manual = await service.getManualOverride();
+    if (mounted) {
+      setState(() {
+        _ipController.text = ip;
+        _manualOverride = manual;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final settingsAsync = ref.watch(salesSettingsProvider);
 
@@ -48,7 +81,7 @@ class SalesSettingsPage extends ConsumerWidget {
         ),
         body: settingsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => _buildError(context, isDark, ref, err.toString()),
+          error: (err, _) => _buildError(context, isDark, err.toString()),
           data: (s) => _buildSettings(isDark, s),
         ),
       ),
@@ -57,12 +90,7 @@ class SalesSettingsPage extends ConsumerWidget {
 
   // ── Error state ────────────────────────────────────────────────────────────
 
-  Widget _buildError(
-    BuildContext context,
-    bool isDark,
-    WidgetRef ref,
-    String msg,
-  ) {
+  Widget _buildError(BuildContext context, bool isDark, String msg) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -258,9 +286,147 @@ class SalesSettingsPage extends ConsumerWidget {
               _numberFormatRow(isDark, s.orderNumberFormat),
             ],
           ),
+          const SizedBox(height: 16),
+
+          // ── Weighbridge ──────────────────────────────────────────────────
+          _weighbridgeSection(isDark),
           const SizedBox(height: 80),
         ],
       ),
+    );
+  }
+
+  // ── Weighbridge section ────────────────────────────────────────────────────
+
+  Widget _weighbridgeSection(bool isDark) {
+    return _sectionCard(
+      isDark: isDark,
+      title: 'Weighbridge',
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Service IP Address',
+                style: AppTypography.textTheme.bodyMedium?.copyWith(
+                  color: isDark ? Colors.white70 : const Color(0xFF1A2634),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _ipController,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1A2634),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '192.168.1.100',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.grey.shade400,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.grey.shade300,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onPressed: () async {
+                      await ref
+                          .read(weightbridgeServiceProvider)
+                          .saveIp(_ipController.text.trim());
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            content: Text('Weighbridge IP saved'),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        _divider(isDark),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Allow Manual Check-in',
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? Colors.white70
+                            : const Color(0xFF1A2634),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'When on, weight can be typed manually instead of '
+                      'fetching from the weighbridge device.',
+                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _manualOverride,
+                activeColor: AppColors.primary,
+                onChanged: (v) async {
+                  setState(() => _manualOverride = v);
+                  await ref
+                      .read(weightbridgeServiceProvider)
+                      .saveManualOverride(v);
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -404,31 +570,17 @@ class _RadioChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final circleColor = selected
-        ? AppColors.primary
-        : (isDark ? Colors.white38 : Colors.grey.shade400);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: circleColor, width: selected ? 2 : 1.5),
-          ),
-          child: selected
-              ? Center(
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                )
-              : null,
+        Icon(
+          selected
+              ? CupertinoIcons.smallcircle_fill_circle
+              : CupertinoIcons.circle,
+          size: 20,
+          color: selected
+              ? AppColors.primary
+              : (isDark ? Colors.white38 : Colors.grey.shade400),
         ),
         const SizedBox(width: 5),
         Text(
@@ -461,30 +613,14 @@ class _RadioChipRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: selected
-                    ? AppColors.primary
-                    : (isDark ? Colors.white38 : Colors.grey.shade400),
-                width: 2,
-              ),
-            ),
-            child: selected
-                ? Center(
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  )
-                : null,
+          Icon(
+            selected
+                ? CupertinoIcons.smallcircle_fill_circle
+                : CupertinoIcons.circle,
+            size: 20,
+            color: selected
+                ? AppColors.primary
+                : (isDark ? Colors.white38 : Colors.grey.shade400),
           ),
           const SizedBox(width: 10),
           Text(

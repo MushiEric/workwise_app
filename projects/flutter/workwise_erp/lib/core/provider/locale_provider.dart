@@ -42,15 +42,15 @@ final appLocaleProvider = StateNotifierProvider<LocaleNotifier, String>(
   (ref) => LocaleNotifier(),
 );
 
-/// Helper to convert language code to a human friendly label.
+/// Helper to convert language code to its native name.
 String languageLabel(String? code) {
   switch (code) {
     case 'sw':
-      return 'Swahili';
+      return 'Kiswahili';
     case 'fr':
-      return 'French';
+      return 'Français';
     case 'hi':
-      return 'Hindi';
+      return 'हिन्दी';
     case 'en':
     default:
       return 'English';

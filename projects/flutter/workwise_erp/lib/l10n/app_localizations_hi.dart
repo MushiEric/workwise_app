@@ -305,6 +305,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'क्या आप वाकई अपने खाते से साइन आउट करना चाहते हैं?';
 
   @override
+  String get termsOfService => 'सेवा की शर्तें';
+
+  @override
+  String get termsOfServiceSubtitle => 'हमारी शर्तें और नियम पढ़ें';
+
+  @override
+  String get privacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get privacyPolicySubtitle => 'हम आपकी गोपनीयता कैसे सुरक्षित करते हैं';
+
+  @override
   String get shareApp => 'वर्कवाइज साझा करें';
 
   @override
@@ -423,4 +435,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String timeDays(int count) {
     return '${count}d';
   }
+
+  @override
+  String get developerOptionsBlockedTitle => 'सुरक्षा चेतावनी';
+
+  @override
+  String get developerOptionsBlockedMessage =>
+      'हमने पाया कि आपके डिवाइस पर डेवलपर विकल्प सक्षम हैं। कृपया अपने डेटा की सुरक्षा करने और Workwise ऐप का उपयोग सुरक्षित रूप से जारी रखने के लिए उन्हें बंद करें।';
+
+  @override
+  String get exitApp => 'बाहर निकलें';
 }

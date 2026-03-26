@@ -44,7 +44,7 @@ class EnvConfig {
   );
 
   static const String _prodSentryDsn =
-      'https://6f13134346dd0d35c1727ec20d725d8c@o4510437339299840.ingest.us.sentry.io/4510437340479488';
+      'https://0da0972120f1adca62d41100bc7d4f0d@o4511106371223552.ingest.de.sentry.io/4511106383282256';
   static const String _stagingSentryDsn = '';
 
   static String get sentryDsn {

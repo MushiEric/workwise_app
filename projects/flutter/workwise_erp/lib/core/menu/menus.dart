@@ -26,13 +26,13 @@ const List<MenuItemModel> appMenus = [
   //   requiredPermissions: ['show logistic dashboard'],
   // ),
 
-  // MenuItemModel(
-  //   id: 'project',
-  //   title: 'Project',
-  //   icon: Icons.work_outline,
-  //   route: '/projects',
-  //   requiredPermissions: ['show project dashboard'],
-  // ),
+  MenuItemModel(
+    id: 'project',
+    title: 'Project',
+    icon: Icons.work_outline,
+    route: '/projects',
+    requiredPermissions: ['show project dashboard'],
+  ),
 
   // MenuItemModel(
   //   id: 'documents',

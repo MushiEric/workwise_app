@@ -22,7 +22,7 @@ class SalesRemoteDataSource {
       final defaultData = <String, dynamic>{
         'draw': '1',
         'start': '0',
-        'length': '1000',
+        'length': '5000',
         'search[value]': '',
         'search[regex]': 'false',
         'start_date': '2000-01-01',
@@ -39,28 +39,29 @@ class SalesRemoteDataSource {
           ? Map<String, dynamic>.from(params)
           : Map<String, dynamic>.from(defaultData);
 
-      // Robust pagination parameters (mirroring Jobcard implementation for compatibility)
-      final lengthVal = queryParams['length'] ?? '1000';
-      final startVal = queryParams['start'] ?? '0';
+      queryParams.putIfAbsent('start', () => '0');
+      queryParams.putIfAbsent('length', () => '5000');
 
-      queryParams.putIfAbsent('length', () => lengthVal);
-      queryParams.putIfAbsent('limit', () => lengthVal);
-      queryParams.putIfAbsent('per_page', () => lengthVal);
-      queryParams.putIfAbsent('page_length', () => lengthVal);
-      queryParams.putIfAbsent('limit_page_length', () => lengthVal);
+      // Include status array if not already provided.
+      if (!queryParams.containsKey('status')) {
+        queryParams['status'] = defaultStatus;
+      }
 
-      queryParams.putIfAbsent('start', () => startVal);
-      queryParams.putIfAbsent('offset', () => startVal);
-      queryParams.putIfAbsent('limit_start', () => startVal);
-
-      // Handle search parameters
+      // Also send flat search keys alongside any nested search object so
+      // the server accepts either format.
       final searchObj = queryParams['search'];
       if (searchObj is Map) {
-        queryParams.putIfAbsent('search[value]', () => searchObj['value'] ?? '');
-        queryParams.putIfAbsent('search[regex]', () => searchObj['regex'] ?? 'false');
-      } else if (!queryParams.containsKey('search[value]')) {
-        queryParams['search[value]'] = '';
-        queryParams['search[regex]'] = 'false';
+        queryParams.putIfAbsent(
+          'search[value]',
+          () => searchObj['value'] ?? '',
+        );
+        queryParams.putIfAbsent(
+          'search[regex]',
+          () => searchObj['regex'] ?? 'false',
+        );
+      } else {
+        queryParams.putIfAbsent('search[value]', () => '');
+        queryParams.putIfAbsent('search[regex]', () => 'false');
       }
 
       final resp = await client.get(
@@ -104,10 +105,12 @@ class SalesRemoteDataSource {
     if (v is String) return v;
     if (v is num || v is bool) return v.toString();
     if (v is Map) {
-      if (v.containsKey('name') && v['name'] is String)
+      if (v.containsKey('name') && v['name'] is String) {
         return v['name'] as String;
-      if (v.containsKey('title') && v['title'] is String)
+      }
+      if (v.containsKey('title') && v['title'] is String) {
         return v['title'] as String;
+      }
     }
     return v.toString();
   }
@@ -162,11 +165,13 @@ class SalesRemoteDataSource {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
     }
     if (out.containsKey('id')) out['id'] = _asInt(out['id']);
-    if (out.containsKey('customer_id'))
+    if (out.containsKey('customer_id')) {
       out['customer_id'] = _asInt(out['customer_id']);
+    }
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
-    if (out.containsKey('payment_status'))
+    if (out.containsKey('payment_status')) {
       out['payment_status'] = _asInt(out['payment_status']);
+    }
 
     out['customer'] = _asMap(out['customer']);
     out['user'] = _asMap(out['user']);
@@ -346,48 +351,22 @@ class SalesRemoteDataSource {
         'materials',
         'products',
         'units',
-        'unit',
         'statuses',
         'settings',
         'contracts',
-        'contract',
         'requests',
-        'request',
         'quotations',
-        'quotation',
         'currencies',
-        'currency',
-        'currency_list',
-        'currency_data',
         'exchange_rates',
         'sale_order_requests',
         'rates',
+        'currency',
+        'contract',
+        'request',
         'form_numbers',
         'pfi',
         'order',
         'status',
-        'tickets',
-        'support_tickets',
-        'jobcards',
-        'warehouses',
-        'warehouse',
-        'users',
-        'user',
-        'taxes',
-        'tax',
-        'projects',
-        'project',
-        'trips',
-        'trip',
-        'payment_terms',
-        'payment_term',
-        'payment_methods',
-        'payment_method',
-        'vehicles',
-        'vehicle',
-        'package_types',
-        'package_type',
-        'measure_units',
       ];
 
       // 1. check direct keys
@@ -462,13 +441,7 @@ class SalesRemoteDataSource {
     try {
       final resp = await client.get(
         '/product/getItem',
-        queryParameters: {
-          if (creatorId != null) 'creatorId': creatorId,
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        },
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
       );
       final list = _extractList(resp.data);
       return list.map((m) => _normalizeProductJson(m)).toList();
@@ -484,13 +457,7 @@ class SalesRemoteDataSource {
     try {
       final resp = await client.get(
         '/product/getProductUnit',
-        queryParameters: {
-          if (creatorId != null) 'creatorId': creatorId,
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        },
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
       );
       return _extractList(resp.data)
           .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
@@ -505,12 +472,7 @@ class SalesRemoteDataSource {
   /// GET /vehicle/getVehicle
   Future<List<Map<String, dynamic>>> getVehicles() async {
     try {
-      final resp = await client.get('/vehicle/getVehicle', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/vehicle/getVehicle');
       return _extractList(resp.data);
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
@@ -521,12 +483,7 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getPackageTypes() async {
     try {
-      final resp = await client.get('/order/getPackageType', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/order/getPackageType');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -535,12 +492,7 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getWarehouses() async {
     try {
-      final resp = await client.get('/warehouse/getWarehouse', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/warehouse/getWarehouse');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -549,12 +501,7 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getQuotations() async {
     try {
-      final resp = await client.get('/sales/getSaleOrderPFI', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/sales/getSaleOrderPFI');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -563,12 +510,7 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getContracts() async {
     try {
-      final resp = await client.get('/contract/getSaleOrderContract', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/contract/getSaleOrderContract');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -577,12 +519,7 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getRequests() async {
     try {
-      final resp = await client.get('/sales/getSaleOrderRequest', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/sales/getSaleOrderRequest');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -591,264 +528,43 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getTaxes() async {
     try {
-      final resp = await client.get('/sales/getTaxes', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
-        'all': '1',
-      });
+      final resp = await client.get('/sales/getTaxes');
       return _extractList(resp.data);
     } catch (_) {
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> getProjects() async {
-    final paths = [
-      '/project/getProject',
-      '/projects/getProject',
-      '/get-projects',
-      '/sales/getProject',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getTrips() async {
-    final paths = [
-      '/trip/getTrip',
-      '/trips/getTrip',
-      '/logistic/getTrip',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentTerms() async {
-    final paths = [
-      '/payment/getPaymentTerm',
-      '/sales/getPaymentTerm',
-      '/order/getPaymentTerm',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentMethods() async {
-    final paths = [
-      '/payment/getPaymentMethod',
-      '/sales/getPaymentMethod',
-      '/order/getPaymentMethod',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p, queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'all': '1',
-        });
-        final list = _extractList(resp.data);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
   Future<List<Map<String, dynamic>>> getCurrencies() async {
-    final paths = [
-      '/order/getCurrency',
-      '/logistic/getCurrency',
-      '/sales/getCurrency',
-      '/api/getCurrency',
-      '/currency/getCurrency',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<double?> getExchangeRate(int currencyId) async {
-    final paths = [
-      '/logistic/getExchangeRate/$currencyId',
-      '/order/getExchangeRate/$currencyId',
-      '/sales/getExchangeRate/$currencyId',
-      '/api/getExchangeRate/$currencyId',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p);
-        final raw = resp.data;
-        if (raw is Map && raw.containsKey('rate')) {
-          return double.tryParse(raw['rate'].toString());
-        } else if (raw is num) {
-          return raw.toDouble();
-        } else if (raw is String) {
-          final decoded = json.decode(raw);
-          if (decoded is Map && decoded.containsKey('rate'))
-            return double.tryParse(decoded['rate'].toString());
-        }
-      } catch (_) {}
-    }
-    return null;
-  }
-
-  Future<List<Map<String, dynamic>>> getPriorities() async {
-    final paths = [
-      '/order/getPriority',
-      '/support/getSupportPriority',
-      '/order/getPriorities',
-      '/sales/getPriority'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getCargoUnits() async {
-    final paths = [
-      '/product/getProductUnit',
-      '/order/getMeasureUnits',
-      '/sales/getMeasureUnit',
-      '/logistic/getMeasureUnits'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentTypes() async {
-    final paths = [
-      '/order/getPackageType',
-      '/sales/getPaymentType',
-      '/api/payment/getPaymentType',
-      '/order/getPaymentType'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getDiscountTypes() async {
-    final paths = [
-      '/sales/getDiscountType',
-      '/order/getDiscountType',
-      '/proposal/getDiscountType',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async {
     try {
-      return await _getMetadata('/sales/getSubscriptionDuration');
+      final resp = await client.get('/logistic/getCurrency');
+      return _extractList(resp.data);
     } catch (_) {
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> getUsers() async {
-    final paths = [
-      '/user/getUsers',
-      '/users/getUsers',
-      '/auth/getUsers',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getSupportTickets() async {
-    return _getMetadata('/support/getSupportTicket');
-  }
-
-  Future<List<Map<String, dynamic>>> getJobCards() async {
-    final paths = [
-      '/jobcard/getJobCard',
-      '/job-card/getJobCard',
-      '/sales/getJobCard',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> _getMetadata(String path) async {
+  Future<double?> getExchangeRate(int currencyId) async {
     try {
-      final resp = await client.get(
-        path,
-        queryParameters: {
-          'length': '1000',
-          'limit': '1000',
-          'per_page': '1000',
-          'page_length': '1000',
-          'all': '1',
-          'draw': '1',
-          'start': '0',
-        },
-      );
+      final resp = await client.get('/logistic/getExchangeRate/$currencyId');
+      final raw = resp.data;
+      if (raw is Map && raw.containsKey('rate')) {
+        return double.tryParse(raw['rate'].toString());
+      } else if (raw is num) {
+        return raw.toDouble();
+      } else if (raw is String) {
+        final decoded = json.decode(raw);
+        if (decoded is Map && decoded.containsKey('rate')) {
+          return double.tryParse(decoded['rate'].toString());
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    try {
+      final resp = await client.get('/user/getUsers');
       return _extractList(resp.data);
     } catch (_) {
       return [];
@@ -856,24 +572,24 @@ class SalesRemoteDataSource {
   }
 
   /// POST /order/saveOrder
+  ///
+  /// [payload] can be either a plain `Map<String, dynamic>` (sent as JSON) or
+  /// a `FormData` instance (sent as multipart/form-data when file uploads are
+  /// included such as priority_document, lpo_document, or proof_of_payment).
   Future<Map<String, dynamic>> saveOrder(dynamic payload) async {
     try {
       final resp = await client.post('/order/saveOrder', data: payload);
       final raw = resp.data;
       if (raw is Map) return Map<String, dynamic>.from(raw);
-      return {'status': 200};
-    } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Network error');
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
-  }
-
-  Future<Map<String, dynamic>> savePfi(dynamic payload) async {
-    try {
-      final resp = await client.post('/proposal/saveSalesQuotation', data: payload);
-      final raw = resp.data;
-      if (raw is Map) return Map<String, dynamic>.from(raw);
+      if (raw is String) {
+        final s = raw.trim();
+        if (!s.startsWith('<')) {
+          try {
+            final decoded = json.decode(s);
+            if (decoded is Map) return Map<String, dynamic>.from(decoded);
+          } catch (_) {}
+        }
+      }
       return {'status': 200};
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
