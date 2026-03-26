@@ -268,6 +268,63 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
+  void _populateItemsFromMap(Map<String, dynamic> selectedMap) {
+    if (selectedMap.isEmpty) return;
+
+    final rawItems = selectedMap['items'] ?? selectedMap['materials'] ?? selectedMap['tasks'];
+    if (rawItems is List && rawItems.isNotEmpty) {
+      final newItems = rawItems.map((raw) {
+        final m = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+        String? extractedName;
+        if (m['product'] is Map) {
+          extractedName = m['product']['name']?.toString();
+        } else if (m['material'] is Map) {
+          extractedName = m['material']['name']?.toString();
+        } else if (m['service'] is Map) {
+          extractedName = m['service']['name']?.toString();
+        }
+        
+        final itemId = extractedName ?? (m['item_name'] ?? m['name'] ?? m['title'] ?? m['material_name'] ?? m['service_name'] ?? m['task_name'] ?? m['material'] ?? m['service'] ?? m['task'] ?? m['description'] ?? m['item_id'])?.toString();
+        final description = (m['description'] ?? m['details'])?.toString();
+        
+        final qty = double.tryParse((m['qty'] ?? m['quantity'])?.toString() ?? '1') ?? 1.0;
+        final rate = double.tryParse((m['rate'] ?? m['price'] ?? m['amount'] ?? m['sale_price'] ?? m['cost'])?.toString() ?? '0') ?? 0.0;
+        
+        final uomId = (m['uom'] ?? m['uom_id'] ?? m['unit'] ?? m['unit_id'] ?? m['measure_unit_id'])?.toString();
+        
+        final period = double.tryParse((m['period'])?.toString() ?? '1') ?? 1.0;
+        final periodUnit = m['period_unit']?.toString();
+        
+        final tax = (m['tax'] ?? m['tax_id'] ?? m['tax_name'])?.toString();
+        
+        final computedSubtotal = qty * rate * (_showPeriod ? period : 1.0);
+        final subtotal = double.tryParse(m['subtotal']?.toString() ?? '') ?? computedSubtotal;
+
+        return PfiItem(
+          itemId: itemId ?? 'Item',
+          isCustom: true,
+          description: description,
+          qty: qty,
+          uomId: uomId,
+          rate: rate,
+          tax: tax,
+          period: period,
+          periodUnit: periodUnit,
+          subtotal: subtotal,
+        );
+      }).toList();
+
+      if (newItems.isNotEmpty) {
+        setState(() {
+          for (var item in newItems) {
+             _items.add(item);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${newItems.length} items populated.'), backgroundColor: Colors.green));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -404,6 +461,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                     label: 'Job Card',
                     hintText: 'Select Jobcard',
                     onChanged: (v) => setState(() => _selectedJobcardId = v),
+                    onMapChanged: _populateItemsFromMap,
                     labelBuilder: (m) => '${m['jobcard_number'] ?? m['job_number'] ?? ''} - ${m['subject'] ?? m['service'] ?? m['name'] ?? ''}',
                     itemWidgetBuilder: (m) => RichText(
                       text: TextSpan(
@@ -424,6 +482,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                         label: 'Project',
                         hintText: 'Select Project',
                         onChanged: (v) => setState(() => _selectedProjectId = v),
+                        onMapChanged: _populateItemsFromMap,
                         labelBuilder: (m) {
                           return m['name']?.toString() ??
                               m['title']?.toString() ??
@@ -439,6 +498,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                         label: 'Trip',
                         hintText: 'Select Trip',
                         onChanged: (v) => setState(() => _selectedTripId = v),
+                        onMapChanged: _populateItemsFromMap,
                         labelBuilder: (m) {
                           final num = m['trip_number'] ?? m['trip_no'] ?? m['number'] ?? m['code'];
                           final dest = m['name'] ?? m['title'] ?? m['route'] ?? m['destination'] ?? m['desc'];
@@ -731,8 +791,10 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
           SizedBox(height: 12.h),
           Row(
             children: [
-              _buildItemTag(isDark, '${item.qty} ${item.uomId ?? ''}'),
-              if (item.period != null) Padding(padding: EdgeInsets.only(left: 8.w), child: _buildItemTag(isDark, '${item.period} ${item.periodUnit ?? ''}')),
+              _buildItemTag(isDark, '${item.qty} ${item.uomId ?? ''}'.trim()),
+              if (item.period != null) Padding(padding: EdgeInsets.only(left: 8.w), child: _buildItemTag(isDark, '${item.period} ${item.periodUnit ?? ''}'.trim())),
+              if (item.rate != null && item.rate! > 0)
+                Padding(padding: EdgeInsets.only(left: 8.w), child: _buildItemTag(isDark, '@ ${(item.rate ?? 0).toStringAsFixed(2)}')),
               const Spacer(),
               Text('${(item.subtotal ?? 0.0).toStringAsFixed(2)} TSh', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: AppColors.primary)),
             ],
@@ -756,6 +818,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     required String label,
     required String hintText,
     required void Function(T?) onChanged,
+    void Function(Map<String, dynamic>)? onMapChanged,
     String displayKey = 'name',
     Widget Function(Map<String, dynamic>)? itemWidgetBuilder,
     String Function(Map<String, dynamic>)? labelBuilder,
@@ -836,6 +899,10 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
           label: label, 
           hintText: hintText, 
           onChanged: (v) {
+            if (onMapChanged != null) {
+              final m = v != null ? list.firstWhere((e) => getId(e) == v, orElse: () => <String, dynamic>{}) : <String, dynamic>{};
+              onMapChanged(m);
+            }
             if (v == null) return onChanged(null);
             if (T == int) return onChanged(int.tryParse(v) as T);
             onChanged(v as T);
