@@ -46,14 +46,11 @@ class OrderTile extends StatelessWidget {
         ? NumberFormat.decimalPattern().format(order.amount)
         : '';
 
-    final statusName = order.statusRow?.name ?? order.paymentStatusRow?.name;
-    final statusColor = _colorFromHex(order.statusRow?.color ?? order.paymentStatusRow?.color) ?? primary;
+    final statusName = order.statusRow?.name;
+    final statusColor = _colorFromHex(order.statusRow?.color) ?? primary;
 
-    final allStatusNames = [
-      order.statusRow?.name ?? '',
-      order.paymentStatusRow?.name ?? '',
-    ];
-    final isInvoiced = allStatusNames.any((s) => s.toLowerCase().contains('invoice'));
+    final paymentStatusName = order.paymentStatusRow?.name;
+    final hasPaymentStatus = paymentStatusName != null && paymentStatusName.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -125,7 +122,7 @@ class OrderTile extends StatelessWidget {
                       ),
                     ),
 
-                    // Amount + status
+                    // Amount + order status + invoice/payment status
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -136,6 +133,7 @@ class OrderTile extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         const SizedBox(height: 6),
+                        // Order status chip
                         if (statusName != null)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -145,9 +143,32 @@ class OrderTile extends StatelessWidget {
                             ),
                             child: Text(
                               statusName,
-                              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12),
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
+                        // Invoice / payment status chip — always green
+                        if (hasPaymentStatus) ...[  
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              paymentStatusName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -180,23 +201,6 @@ class OrderTile extends StatelessWidget {
                       ),
 
                     const Spacer(),
-
-                    if (isInvoiced)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Invoiced',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade600,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ],

@@ -85,6 +85,24 @@ class PfiModel {
       return v.toString();
     }
 
+    String? parseHtml(dynamic v) {
+      final str = asString(v);
+      if (str == null) return null;
+      var s = str;
+      s = s.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+      s = s.replaceAll(RegExp(r'</(p|div)>', caseSensitive: false), '\n\n');
+      s = s.replaceAll(RegExp(r'</li>', caseSensitive: false), '\n');
+      s = s.replaceAll(RegExp(r'<li>', caseSensitive: false), '• ');
+      s = s.replaceAll(RegExp(r'&nbsp;', caseSensitive: false), ' ');
+      s = s.replaceAll(RegExp(r'&amp;', caseSensitive: false), '&');
+      s = s.replaceAll(RegExp(r'&lt;', caseSensitive: false), '<');
+      s = s.replaceAll(RegExp(r'&gt;', caseSensitive: false), '>');
+      s = s.replaceAll(RegExp(r'&quot;', caseSensitive: false), '"');
+      s = s.replaceAll(RegExp(r'<[^>]*>'), '');
+      s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+      return s.trim();
+    }
+
     return PfiModel(
       id: asInt(json['id']) ?? 0,
       proposalNumber: asString(json['proposal_number'] ?? json['form_number']),
@@ -114,8 +132,8 @@ class PfiModel {
       subscriptionEndDate: asString(json['subscription_end_date']),
       isRecurring: json['is_recurring'],
       items: (json['items'] as List?)?.map((i) => PfiItemModel.fromJson(i)).toList(),
-      notes: asString(json['notes']),
-      terms: asString(json['terms_and_conditions']),
+      notes: parseHtml(json['notes']),
+      terms: parseHtml(json['terms_and_conditions']),
     );
   }
 
@@ -188,11 +206,28 @@ class PfiItemModel {
       if (v is String) return double.tryParse(v.replaceAll(',', ''));
       return null;
     }
+    String? parseHtml(dynamic v) {
+      if (v == null) return null;
+      var s = v.toString();
+      s = s.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+      s = s.replaceAll(RegExp(r'</(p|div)>', caseSensitive: false), '\n\n');
+      s = s.replaceAll(RegExp(r'</li>', caseSensitive: false), '\n');
+      s = s.replaceAll(RegExp(r'<li>', caseSensitive: false), '• ');
+      s = s.replaceAll(RegExp(r'&nbsp;', caseSensitive: false), ' ');
+      s = s.replaceAll(RegExp(r'&amp;', caseSensitive: false), '&');
+      s = s.replaceAll(RegExp(r'&lt;', caseSensitive: false), '<');
+      s = s.replaceAll(RegExp(r'&gt;', caseSensitive: false), '>');
+      s = s.replaceAll(RegExp(r'&quot;', caseSensitive: false), '"');
+      s = s.replaceAll(RegExp(r'<[^>]*>'), '');
+      s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+      return s.trim();
+    }
+    
     return PfiItemModel(
       id: json['id'] as int?,
       itemId: json['item_id']?.toString(),
       isCustom: json['is_custom'],
-      description: json['description']?.toString(),
+      description: parseHtml(json['description']),
       qty: json['qty'],
       uomId: json['uom_id']?.toString(),
       period: json['period'],

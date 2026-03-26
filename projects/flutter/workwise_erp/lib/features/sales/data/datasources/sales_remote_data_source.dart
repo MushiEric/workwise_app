@@ -43,15 +43,16 @@ class SalesRemoteDataSource {
       final lengthVal = queryParams['length'] ?? '1000';
       final startVal = queryParams['start'] ?? '0';
 
-      queryParams.putIfAbsent('length', () => lengthVal);
-      queryParams.putIfAbsent('limit', () => lengthVal);
-      queryParams.putIfAbsent('per_page', () => lengthVal);
-      queryParams.putIfAbsent('page_length', () => lengthVal);
-      queryParams.putIfAbsent('limit_page_length', () => lengthVal);
+      queryParams['length'] = lengthVal;
+      queryParams['limit'] = lengthVal;
+      queryParams['per_page'] = lengthVal;
+      queryParams['page_length'] = lengthVal;
+      queryParams['limit_page_length'] = lengthVal;
+      queryParams['all'] = '1';
 
-      queryParams.putIfAbsent('start', () => startVal);
-      queryParams.putIfAbsent('offset', () => startVal);
-      queryParams.putIfAbsent('limit_start', () => startVal);
+      queryParams['start'] = startVal;
+      queryParams['offset'] = startVal;
+      queryParams['limit_start'] = startVal;
 
       // Handle search parameters
       final searchObj = queryParams['search'];
@@ -147,12 +148,27 @@ class SalesRemoteDataSource {
     return <Map<String, dynamic>>[];
   }
 
+  String _parseHtmlToReadable(String html) {
+    var s = html;
+    s = s.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+    s = s.replaceAll(RegExp(r'</(p|div)>', caseSensitive: false), '\n\n');
+    s = s.replaceAll(RegExp(r'</li>', caseSensitive: false), '\n');
+    s = s.replaceAll(RegExp(r'<li>', caseSensitive: false), '• ');
+    s = s.replaceAll(RegExp(r'&nbsp;', caseSensitive: false), ' ');
+    s = s.replaceAll(RegExp(r'&amp;', caseSensitive: false), '&');
+    s = s.replaceAll(RegExp(r'&lt;', caseSensitive: false), '<');
+    s = s.replaceAll(RegExp(r'&gt;', caseSensitive: false), '>');
+    s = s.replaceAll(RegExp(r'&quot;', caseSensitive: false), '"');
+    s = s.replaceAll(RegExp(r'<[^>]*>'), '');
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    return s.trim();
+  }
+
   Map<String, dynamic> _normalizeOrderJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
     final stringFields = [
       'order_number',
       'title',
-      'quotation',
       'start_date',
       'end_date',
       'created_at',
@@ -161,6 +177,19 @@ class SalesRemoteDataSource {
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
     }
+
+    // Strip HTML tags from order_number (API sometimes returns it wrapped in <a> tags)
+    if (out.containsKey('order_number') && out['order_number'] is String) {
+      out['order_number'] = (out['order_number'] as String)
+          .replaceAll(RegExp(r'<[^>]*>'), '')
+          .replaceAll(RegExp(r'&[^;]+;'), '')
+          .trim();
+    }
+
+    if (out.containsKey('quotation')) {
+      final qStr = _asString(out['quotation']);
+      if (qStr != null) out['quotation'] = _parseHtmlToReadable(qStr);
+    }
     if (out.containsKey('id')) out['id'] = _asInt(out['id']);
     if (out.containsKey('customer_id'))
       out['customer_id'] = _asInt(out['customer_id']);
@@ -168,21 +197,56 @@ class SalesRemoteDataSource {
     if (out.containsKey('payment_status'))
       out['payment_status'] = _asInt(out['payment_status']);
 
-    out['customer'] = _asMap(out['customer']);
-    out['user'] = _asMap(out['user']);
-    out['status_row'] = _asMap(out['status_row']);
-    out['payment_status_row'] = _asMap(out['payment_status_row']);
+    Map<String, dynamic>? fixId(Map<String, dynamic>? m) {
+      if (m == null) return null;
+      if (m.containsKey('id')) m['id'] = _asInt(m['id']);
+      if (m.containsKey('name')) {
+        final n = _asString(m['name']);
+        if (n != null) {
+          m['name'] = n.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+        }
+      }
+      return m;
+    }
+
+    // Safely extract status_row or fallback to 'status' string if it contains HTML
+    var sRow = _asMap(out['status_row']);
+    if (sRow == null && out.containsKey('status') && out['status'] is String) {
+      final statStr = out['status'] as String;
+      final stripped = statStr.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+      if (stripped.isNotEmpty) {
+        // optionally try to extract color if present
+        String? color;
+        final colorMatch = RegExp(r'color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
+        final bgMatch = RegExp(r'background-color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
+        if (bgMatch != null) color = bgMatch.group(1);
+        else if (colorMatch != null) color = colorMatch.group(1);
+        sRow = {'name': stripped, 'color': color};
+      }
+    }
+    out['status_row'] = fixId(sRow);
+    out['payment_status_row'] = fixId(_asMap(out['payment_status_row']));
 
     final rawItems = _asListOfMaps(out['items']);
     final normalizedItems = <Map<String, dynamic>>[];
     for (final it in rawItems) {
       final m = Map<String, dynamic>.from(it);
+      if (m.containsKey('id')) m['id'] = _asInt(m['id']);
       if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
       if (m.containsKey('item_id')) m['item_id'] = _asString(m['item_id']);
       if (m.containsKey('price')) m['price'] = _asString(m['price']);
       if (m.containsKey('quantity')) m['quantity'] = _asString(m['quantity']);
-      m['product'] = _asMap(m['product']);
-      m['package_unit'] = _asMap(m['package_unit']);
+      if (m.containsKey('loading_instruction')) {
+        final li = _asString(m['loading_instruction']);
+        if (li != null) m['loading_instruction'] = _parseHtmlToReadable(li);
+      }
+      
+      final pMap = _asMap(m['product']);
+      m['product'] = pMap != null ? _normalizeProductJson(pMap) : null;
+      
+      final puMap = _asMap(m['package_unit']);
+      m['package_unit'] = puMap != null ? _normalizePackageUnitJson(puMap) : null;
+      
       normalizedItems.add(m);
     }
     out['items'] = normalizedItems;
@@ -192,7 +256,7 @@ class SalesRemoteDataSource {
     for (final t in rawTrucks) {
       final m = Map<String, dynamic>.from(t);
       if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
-      m['id'] = _asInt(m['id']);
+      if (m.containsKey('id')) m['id'] = _asInt(m['id']);
       normalizedTrucks.add(m);
     }
     out['truck_list'] = normalizedTrucks;
