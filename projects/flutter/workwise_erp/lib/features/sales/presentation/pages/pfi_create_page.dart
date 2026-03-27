@@ -358,7 +358,14 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                   _buildField(AppSmartDropdown<int>(
                     value: _selectedCustomerId,
                     items: _customers.map((c) => c.id!).toList(),
-                    itemBuilder: (id) => _customers.firstWhere((c) => c.id == id).name ?? 'Unknown',
+                    itemBuilder: (id) {
+                      if (_customers.isEmpty) return 'Loading...';
+                      final customer = _customers.cast<Customer?>().firstWhere(
+                        (c) => c?.id == id,
+                        orElse: () => null,
+                      );
+                      return customer?.name ?? 'Unknown ($id)';
+                    },
                     label: 'Customer *',
                     hintText: 'Select Customer',
                     enabled: _customers.isNotEmpty,

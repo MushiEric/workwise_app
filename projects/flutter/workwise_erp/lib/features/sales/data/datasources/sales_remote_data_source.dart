@@ -166,30 +166,15 @@ class SalesRemoteDataSource {
 
   Map<String, dynamic> _normalizeOrderJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
+    
+    // 1. Broad set of fields that must be strings in OrderModel
     final stringFields = [
-      'order_number',
-      'invoice_number',
-      'title',
-      'start_date',
-      'end_date',
-      'created_at',
-      'updated_at',
-      'lpo_number',
-      'sender_name',
-      'sender_phone',
-      'receiver_name',
-      'receiver_phone',
-      'consignment_details',
-      'package_type',
-      'cargo_value',
-      'cargo_unit',
-      'priority',
-      'payment_type',
-      'exchange_rate',
-      'currency_id',
-      'contract_id',
-      'request_id',
-      'quotation_id',
+      'order_number', 'invoice_number', 'title', 'start_date', 'end_date',
+      'created_at', 'updated_at', 'lpo_number', 'sender_name', 'sender_phone',
+      'receiver_name', 'receiver_phone', 'consignment_details', 'package_type',
+      'cargo_value', 'cargo_unit', 'priority', 'payment_type', 
+      'currency_id', 'exchange_rate', 'contract_id', 'request_id', 'quotation_id',
+      'duration', 'duration_unit'
     ];
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
@@ -215,15 +200,21 @@ class SalesRemoteDataSource {
       final qStr = _asString(out['quotation']);
       if (qStr != null) out['quotation'] = _parseHtmlToReadable(qStr);
     }
-    if (out.containsKey('id')) out['id'] = _asInt(out['id']);
-    if (out.containsKey('customerId')) out['customer_id'] = _asInt(out['customer_id'] ?? out['customerId']);
-    if (out.containsKey('customer_id')) out['customer_id'] = _asInt(out['customer_id']);
-    if (out.containsKey('warehouse_id')) out['warehouse_id'] = _asInt(out['warehouse_id']);
-    if (out.containsKey('status_id')) out['status_id'] = _asInt(out['status_id']);
-    if (out.containsKey('assign_user_id')) out['assign_user_id'] = _asInt(out['assign_user_id']);
+    
+    // 2. Normalize common integer IDs
+    final intFields = [
+      'id', 'customer_id', 'customerId', 'warehouse_id', 'status_id', 
+      'assign_user_id', 'payment_status'
+    ];
+    for (final f in intFields) {
+      if (out.containsKey(f)) {
+        final val = _asInt(out[f]);
+        if (f == 'customerId') out['customer_id'] = val;
+        else out[f] = val;
+      }
+    }
+
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
-    if (out.containsKey('payment_status'))
-      out['payment_status'] = _asInt(out['payment_status']);
 
     Map<String, dynamic>? fixId(Map<String, dynamic>? m) {
       if (m == null) return null;
@@ -237,13 +228,12 @@ class SalesRemoteDataSource {
       return m;
     }
 
-    // Safely extract status_row or fallback to 'status' string if it contains HTML
+    // 3. Normalize nested objects
     var sRow = _asMap(out['status_row']);
     if (sRow == null && out.containsKey('status') && out['status'] is String) {
       final statStr = out['status'] as String;
       final stripped = statStr.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
       if (stripped.isNotEmpty) {
-        // optionally try to extract color if present
         String? color;
         final colorMatch = RegExp(r'color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
         final bgMatch = RegExp(r'background-color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
@@ -254,20 +244,40 @@ class SalesRemoteDataSource {
     }
     out['status_row'] = fixId(sRow);
     out['payment_status_row'] = fixId(_asMap(out['payment_status_row']));
+    
+    // Robustly normalize customer and user if present as maps
+    if (out['customer'] is Map) {
+      final c = Map<String, dynamic>.from(out['customer'] as Map);
+      if (c.containsKey('id')) c['id'] = _asInt(c['id']);
+      if (c.containsKey('name')) c['name'] = _asString(c['name']);
+      if (c.containsKey('email')) c['email'] = _asString(c['email']);
+      if (c.containsKey('contact')) c['contact'] = _asString(c['contact']);
+      out['customer'] = c;
+    }
+    
+    if (out['user'] is Map) {
+      final u = Map<String, dynamic>.from(out['user'] as Map);
+      if (u.containsKey('id')) u['id'] = _asInt(u['id']);
+      if (u.containsKey('name')) u['name'] = _asString(u['name']);
+      if (u.containsKey('email')) u['email'] = _asString(u['email']);
+      if (u.containsKey('phone')) u['phone'] = _asString(u['phone']);
+      out['user'] = u;
+    }
 
+    // 4. Normalize Order Items
     final rawItems = _asListOfMaps(out['items']);
     final normalizedItems = <Map<String, dynamic>>[];
     for (final it in rawItems) {
       final m = Map<String, dynamic>.from(it);
       if (m.containsKey('id')) m['id'] = _asInt(m['id']);
-      if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
-      if (m.containsKey('item_id')) m['item_id'] = _asString(m['item_id']);
-      if (m.containsKey('price')) m['price'] = _asString(m['price']);
-      if (m.containsKey('quantity')) m['quantity'] = _asString(m['quantity']);
-      if (m.containsKey('tax')) m['tax'] = _asString(m['tax']);
-      if (m.containsKey('discount')) m['discount'] = _asString(m['discount']);
-      if (m.containsKey('duration')) m['duration'] = _asString(m['duration']);
-      if (m.containsKey('duration_unit')) m['duration_unit'] = _asString(m['duration_unit']);
+      
+      final itemStringFields = [
+        'order_id', 'item_id', 'price', 'quantity', 'tax', 'discount', 
+        'duration', 'duration_unit'
+      ];
+      for (final f in itemStringFields) {
+        if (m.containsKey(f)) m[f] = _asString(m[f]);
+      }
       
       if (m.containsKey('loading_instruction')) {
         final li = _asString(m['loading_instruction']);
@@ -284,6 +294,7 @@ class SalesRemoteDataSource {
     }
     out['items'] = normalizedItems;
 
+    // 5. Normalize Truck List
     final rawTrucks = _asListOfMaps(out['truck_list']);
     final normalizedTrucks = <Map<String, dynamic>>[];
     for (final t in rawTrucks) {
@@ -334,7 +345,6 @@ class SalesRemoteDataSource {
     );
     out['category_id'] = _asInt(src['category_id']);
 
-    // Improved unit and tax normalization
     final rawUnit =
         src['unit'] ??
         src['uom'] ??

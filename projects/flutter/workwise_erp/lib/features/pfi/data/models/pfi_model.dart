@@ -37,6 +37,7 @@ class PfiModel {
 
   // Items & Footer
   final List<PfiItemModel>? items;
+  final List<PfiPaymentModel>? payments;
   final String? notes;
   final String? terms;
 
@@ -69,6 +70,7 @@ class PfiModel {
     this.subscriptionEndDate,
     this.isRecurring,
     this.items,
+    this.payments,
     this.notes,
     this.terms,
     this.customerName,
@@ -129,17 +131,61 @@ class PfiModel {
       warehouseId: asString(json['warehouse_id']),
       salesAgentId: asString(json['sales_agent_id']),
       attachmentPath: asString(json['attachment']),
-      paymentTermsId: asString(json['payment_terms_id']),
-      paymentMethodId: asString(json['payment_method_id']),
       subscriptionStartDate: asString(json['subscription_start_date']),
       subscriptionDuration: asString(json['subscription_duration']),
       subscriptionEndDate: asString(json['subscription_end_date']),
       isRecurring: json['is_recurring'],
       items: (json['items'] as List?)?.map((i) => PfiItemModel.fromJson(i)).toList(),
-      notes: parseHtml(json['notes']),
-      terms: parseHtml(json['terms_and_conditions']),
-      customerName: asString(json['company'] ?? json['customer_name'] ?? json['client_name']),
-      total: json['total'] ?? json['grand_total'],
+      payments: (json['payments'] as List?)?.map((p) => PfiPaymentModel.fromJson(p)).toList(),
+      notes: parseHtml(json['pfi_client_notes'] ?? json['notes']),
+      terms: parseHtml(json['pfi_terms_condition'] ?? json['terms_and_conditions']),
+      customerName: () {
+        // 1. Direct top-level string fields
+        String? name = asString(
+          json['company'] ??
+          json['customer_name'] ??
+          json['client_name'] ??
+          json['billing_name'] ??
+          json['display_name'] ??
+          json['contact_name'],
+        );
+        if (name != null && name.isNotEmpty) return name;
+
+        // 2. Nested map — try every common key the API might use
+        for (final key in ['customer', 'client', 'customer_row', 'customer_data', 'billing_info', 'contact']) {
+          final v = json[key];
+          if (v is Map) {
+            name = asString(
+              v['company'] ??
+              v['name'] ??
+              v['short_name'] ??
+              v['display_name'] ??
+              v['full_name'] ??
+              v['billing_name'] ??
+              v['contact_name'] ??
+              v['client_name'],
+            );
+            if (name != null && name.isNotEmpty) return name;
+          }
+        }
+
+        return null;
+      }(),
+      total: json['total'] ?? json['grand_total'] ?? json['amount'] ?? () {
+        final items = json['items'];
+        if (items is List) {
+          double sum = 0;
+          for (var it in items) {
+             final q = double.tryParse(it['quantity']?.toString() ?? '0') ?? 0;
+             final p = double.tryParse(it['price']?.toString() ?? '0') ?? 0;
+             sum += (q * p);
+          }
+          return sum > 0 ? sum : null;
+        }
+        return null;
+      }(),
+      paymentMethodId: json['payment_method'] is Map ? json['payment_method']['name']?.toString() : asString(json['payment_method_id'] ?? json['payment_method']),
+      paymentTermsId: json['payment_term'] is Map ? json['payment_term']['name']?.toString() : asString(json['payment_terms_id'] ?? json['payment_term']),
     );
   }
 
@@ -172,6 +218,7 @@ class PfiModel {
         subscriptionEndDate: DateTime.tryParse(subscriptionEndDate ?? ''),
         isRecurring: isRecurring == 1 || isRecurring == true,
         items: items?.map((i) => i.toDomain()).toList(),
+        payments: payments?.map((p) => p.toDomain()).toList(),
         notes: notes,
         terms: terms,
         customerName: customerName,
@@ -207,17 +254,6 @@ class PfiItemModel {
   });
 
   factory PfiItemModel.fromJson(Map<String, dynamic> json) {
-    int? asInt(dynamic v) {
-      if (v == null) return null;
-      if (v is int) return v;
-      if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v);
-      return null;
-    }
-    String? asString(dynamic v) {
-      if (v == null) return null;
-      return v.toString();
-    }
     double? asDouble(dynamic v) {
       if (v == null) return null;
       if (v is double) return v;
@@ -242,18 +278,33 @@ class PfiItemModel {
       return s.trim();
     }
     
+    // Helper: safely extract int from dynamic
+    int? asInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+
     return PfiItemModel(
+      // id may come as int or string
       id: asInt(json['id']),
-      itemId: asString(json['item_id']),
-      isCustom: json['is_custom'],
+      // item label is 'item_name' in the API
+      itemId: (json['item_name'] ?? json['item_id'] ?? json['product_id'])?.toString(),
+      isCustom: json['is_custom'] ?? json['is_custom_item'],
       description: parseHtml(json['description']),
-      qty: json['qty'],
-      uomId: asString(json['uom_id']),
-      period: json['period'],
-      periodUnit: asString(json['period_unit']),
-      rate: json['rate'],
-      tax: asString(json['tax']),
-      subtotal: json['subtotal'],
+      // quantity arrives as int from the API
+      qty: json['quantity'] ?? json['qty'],
+      uomId: (json['unit_id'] ?? json['uom_id'])?.toString(),
+      // period is usually empty string; period_qty holds the value
+      period: json['period_qty'] ?? json['period'],
+      periodUnit: json['period_unit']?.toString(),
+      // base_price is the reliable price field; fall back to price/rate
+      rate: json['price'] ?? json['base_price'] ?? json['rate'],
+      // tax_rate holds the percentage; tax may hold the display label
+      tax: (json['tax_rate'] ?? json['tax'])?.toString(),
+      subtotal: json['total'] ?? json['subtotal'],
     );
   }
 
@@ -279,4 +330,42 @@ class PfiItemModel {
       subtotal: asDouble(subtotal),
     );
   }
+}
+
+class PfiPaymentModel {
+  final int? id;
+  final String? paymentReceipt;
+  final String? date;
+  final num? amount;
+  final String? paymentType;
+  final String? reference;
+
+  PfiPaymentModel({
+    this.id,
+    this.paymentReceipt,
+    this.date,
+    this.amount,
+    this.paymentType,
+    this.reference,
+  });
+
+  factory PfiPaymentModel.fromJson(Map<String, dynamic> json) {
+    return PfiPaymentModel(
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
+      paymentReceipt: json['payment_receipt']?.toString() ?? json['receipt_no']?.toString(),
+      date: json['date']?.toString() ?? json['payment_date']?.toString(),
+      amount: json['amount'] is num ? json['amount'] : num.tryParse(json['amount']?.toString().replaceAll(',', '') ?? ''),
+      paymentType: json['payment_type']?.toString() ?? json['method']?.toString(),
+      reference: json['reference']?.toString() ?? json['ref']?.toString(),
+    );
+  }
+
+  domain.PfiPayment toDomain() => domain.PfiPayment(
+    id: id,
+    paymentReceipt: paymentReceipt,
+    date: DateTime.tryParse(date ?? ''),
+    amount: amount?.toDouble(),
+    paymentType: paymentType,
+    reference: reference,
+  );
 }

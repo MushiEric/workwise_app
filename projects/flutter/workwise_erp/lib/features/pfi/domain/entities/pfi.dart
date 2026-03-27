@@ -37,6 +37,7 @@ class Pfi extends Equatable {
 
   // Items & Footer
   final List<PfiItem>? items;
+  final List<PfiPayment>? payments;
   final String? notes;
   final String? terms;
 
@@ -69,6 +70,7 @@ class Pfi extends Equatable {
     this.subscriptionEndDate,
     this.isRecurring,
     this.items,
+    this.payments,
     this.notes,
     this.terms,
     this.customerName,
@@ -83,9 +85,30 @@ class Pfi extends Equatable {
     jobcardId, projectId, tripId, warehouseId, salesAgentId,
     attachmentPath, paymentTermsId, paymentMethodId,
     subscriptionStartDate, subscriptionDuration, subscriptionEndDate,
-    isRecurring, items, notes, terms,
+    isRecurring, items, payments, notes, terms,
     customerName, total,
   ];
+}
+
+class PfiPayment extends Equatable {
+  final int? id;
+  final String? paymentReceipt;
+  final DateTime? date;
+  final double? amount;
+  final String? paymentType;
+  final String? reference;
+
+  const PfiPayment({
+    this.id,
+    this.paymentReceipt,
+    this.date,
+    this.amount,
+    this.paymentType,
+    this.reference,
+  });
+
+  @override
+  List<Object?> get props => [id, paymentReceipt, date, amount, paymentType, reference];
 }
 
 class PfiItem extends Equatable {
