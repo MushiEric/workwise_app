@@ -10,6 +10,7 @@ _$TruckModelImpl _$$TruckModelImplFromJson(Map<String, dynamic> json) =>
     _$TruckModelImpl(
       id: (json['id'] as num?)?.toInt(),
       orderId: json['order_id'] as String?,
+      vehicleId: (json['vehicle_id'] as num?)?.toInt(),
       vehicleName: json['vehicle_name'] as String?,
       vehiclePlateNumber: json['vehicle_plate_number'] as String?,
       vehicleTrailerNumber: json['vehicle_trailer_number'] as String?,
@@ -32,6 +33,7 @@ Map<String, dynamic> _$$TruckModelImplToJson(_$TruckModelImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'order_id': instance.orderId,
+      'vehicle_id': instance.vehicleId,
       'vehicle_name': instance.vehicleName,
       'vehicle_plate_number': instance.vehiclePlateNumber,
       'vehicle_trailer_number': instance.vehicleTrailerNumber,

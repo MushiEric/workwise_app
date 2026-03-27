@@ -168,17 +168,33 @@ class SalesRemoteDataSource {
     final out = Map<String, dynamic>.from(src);
     final stringFields = [
       'order_number',
+      'invoice_number',
       'title',
       'start_date',
       'end_date',
       'created_at',
       'updated_at',
+      'lpo_number',
+      'sender_name',
+      'sender_phone',
+      'receiver_name',
+      'receiver_phone',
+      'consignment_details',
+      'package_type',
+      'cargo_value',
+      'cargo_unit',
+      'priority',
+      'payment_type',
+      'exchange_rate',
+      'currency_id',
+      'contract_id',
+      'request_id',
+      'quotation_id',
     ];
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
     }
 
-    // Strip HTML tags from order_number (API sometimes returns it wrapped in <a> tags)
     if (out.containsKey('order_number') && out['order_number'] is String) {
       out['order_number'] = (out['order_number'] as String)
           .replaceAll(RegExp(r'<[^>]*>'), '')
@@ -186,13 +202,25 @@ class SalesRemoteDataSource {
           .trim();
     }
 
+    // Attempt to extract invoice number from various possible keys if not explicit
+    out['invoice_number'] = _asString(
+      out['invoice_number'] ?? 
+      out['invoice_no'] ?? 
+      out['inv_no'] ?? 
+      out['ref_no'] ?? 
+      out['invoice']
+    );
+
     if (out.containsKey('quotation')) {
       final qStr = _asString(out['quotation']);
       if (qStr != null) out['quotation'] = _parseHtmlToReadable(qStr);
     }
     if (out.containsKey('id')) out['id'] = _asInt(out['id']);
-    if (out.containsKey('customer_id'))
-      out['customer_id'] = _asInt(out['customer_id']);
+    if (out.containsKey('customerId')) out['customer_id'] = _asInt(out['customer_id'] ?? out['customerId']);
+    if (out.containsKey('customer_id')) out['customer_id'] = _asInt(out['customer_id']);
+    if (out.containsKey('warehouse_id')) out['warehouse_id'] = _asInt(out['warehouse_id']);
+    if (out.containsKey('status_id')) out['status_id'] = _asInt(out['status_id']);
+    if (out.containsKey('assign_user_id')) out['assign_user_id'] = _asInt(out['assign_user_id']);
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
     if (out.containsKey('payment_status'))
       out['payment_status'] = _asInt(out['payment_status']);
@@ -236,6 +264,11 @@ class SalesRemoteDataSource {
       if (m.containsKey('item_id')) m['item_id'] = _asString(m['item_id']);
       if (m.containsKey('price')) m['price'] = _asString(m['price']);
       if (m.containsKey('quantity')) m['quantity'] = _asString(m['quantity']);
+      if (m.containsKey('tax')) m['tax'] = _asString(m['tax']);
+      if (m.containsKey('discount')) m['discount'] = _asString(m['discount']);
+      if (m.containsKey('duration')) m['duration'] = _asString(m['duration']);
+      if (m.containsKey('duration_unit')) m['duration_unit'] = _asString(m['duration_unit']);
+      
       if (m.containsKey('loading_instruction')) {
         final li = _asString(m['loading_instruction']);
         if (li != null) m['loading_instruction'] = _parseHtmlToReadable(li);
@@ -255,8 +288,21 @@ class SalesRemoteDataSource {
     final normalizedTrucks = <Map<String, dynamic>>[];
     for (final t in rawTrucks) {
       final m = Map<String, dynamic>.from(t);
-      if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
       if (m.containsKey('id')) m['id'] = _asInt(m['id']);
+      if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
+      if (m.containsKey('vehicle_id')) m['vehicle_id'] = _asInt(m['vehicle_id']);
+      
+      final truckStringFields = [
+        'vehicle_name', 'vehicle_plate_number', 'vehicle_trailer_number',
+        'driver_name', 'driver_phone', 'driver_license_number',
+        'checkin_status', 'checkout_status', 'checkin_datetime', 'checkout_datetime',
+        'checkin_weight', 'checkin_weight_unit', 'checkout_weight', 'checkout_weight_unit',
+        'net_weight', 'net_weight_unit'
+      ];
+      for (final f in truckStringFields) {
+        if (m.containsKey(f)) m[f] = _asString(m[f]);
+      }
+      
       normalizedTrucks.add(m);
     }
     out['truck_list'] = normalizedTrucks;

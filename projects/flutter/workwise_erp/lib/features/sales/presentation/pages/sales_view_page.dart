@@ -26,12 +26,15 @@ class SalesViewPage extends ConsumerWidget {
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Share order — not implemented'))),
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.grey.shade600),
+            icon: Icon(Icons.more_vert_rounded, color: isDark ? Colors.white70 : Colors.white),
             onSelected: (v) {
               // placeholder actions
               switch (v) {
                 case 'print':
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Print order — not implemented')));
+                  break;
+                case 'invoice':
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(behavior: SnackBarBehavior.floating, content: Text('Convert to invoice — not implemented')));
                   break;
                 case 'more':
                 default:
@@ -39,13 +42,14 @@ class SalesViewPage extends ConsumerWidget {
               }
             },
             itemBuilder: (ctx) => const [
+              PopupMenuItem(value: 'invoice', child: Text('Convert to Invoice')),
               PopupMenuItem(value: 'print', child: Text('Print')),
               PopupMenuItem(value: 'more', child: Text('More...')),
             ],
           ),
         ],
       ),
-      body: DefaultTabController(length: 6, child: OrderDetailContent(order: order)),
+      body: DefaultTabController(length: 4, child: OrderDetailContent(order: order)),
     );
   }
 }

@@ -33,6 +33,11 @@ mixin _$OrderItemModel {
   ProductModel? get product => throw _privateConstructorUsedError;
   @JsonKey(name: 'loading_instruction')
   String? get loadingInstruction => throw _privateConstructorUsedError;
+  String? get tax => throw _privateConstructorUsedError;
+  String? get discount => throw _privateConstructorUsedError;
+  String? get duration => throw _privateConstructorUsedError;
+  @JsonKey(name: 'duration_unit')
+  String? get durationUnit => throw _privateConstructorUsedError;
 
   /// Serializes this OrderItemModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -60,6 +65,10 @@ abstract class $OrderItemModelCopyWith<$Res> {
     @JsonKey(name: 'package_unit') PackageUnitModel? packageUnit,
     ProductModel? product,
     @JsonKey(name: 'loading_instruction') String? loadingInstruction,
+    String? tax,
+    String? discount,
+    String? duration,
+    @JsonKey(name: 'duration_unit') String? durationUnit,
   });
 
   $PackageUnitModelCopyWith<$Res>? get packageUnit;
@@ -89,6 +98,10 @@ class _$OrderItemModelCopyWithImpl<$Res, $Val extends OrderItemModel>
     Object? packageUnit = freezed,
     Object? product = freezed,
     Object? loadingInstruction = freezed,
+    Object? tax = freezed,
+    Object? discount = freezed,
+    Object? duration = freezed,
+    Object? durationUnit = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -123,6 +136,22 @@ class _$OrderItemModelCopyWithImpl<$Res, $Val extends OrderItemModel>
             loadingInstruction: freezed == loadingInstruction
                 ? _value.loadingInstruction
                 : loadingInstruction // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            tax: freezed == tax
+                ? _value.tax
+                : tax // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            discount: freezed == discount
+                ? _value.discount
+                : discount // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            duration: freezed == duration
+                ? _value.duration
+                : duration // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            durationUnit: freezed == durationUnit
+                ? _value.durationUnit
+                : durationUnit // ignore: cast_nullable_to_non_nullable
                       as String?,
           )
           as $Val,
@@ -176,6 +205,10 @@ abstract class _$$OrderItemModelImplCopyWith<$Res>
     @JsonKey(name: 'package_unit') PackageUnitModel? packageUnit,
     ProductModel? product,
     @JsonKey(name: 'loading_instruction') String? loadingInstruction,
+    String? tax,
+    String? discount,
+    String? duration,
+    @JsonKey(name: 'duration_unit') String? durationUnit,
   });
 
   @override
@@ -206,6 +239,10 @@ class __$$OrderItemModelImplCopyWithImpl<$Res>
     Object? packageUnit = freezed,
     Object? product = freezed,
     Object? loadingInstruction = freezed,
+    Object? tax = freezed,
+    Object? discount = freezed,
+    Object? duration = freezed,
+    Object? durationUnit = freezed,
   }) {
     return _then(
       _$OrderItemModelImpl(
@@ -241,6 +278,22 @@ class __$$OrderItemModelImplCopyWithImpl<$Res>
             ? _value.loadingInstruction
             : loadingInstruction // ignore: cast_nullable_to_non_nullable
                   as String?,
+        tax: freezed == tax
+            ? _value.tax
+            : tax // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        discount: freezed == discount
+            ? _value.discount
+            : discount // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        duration: freezed == duration
+            ? _value.duration
+            : duration // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        durationUnit: freezed == durationUnit
+            ? _value.durationUnit
+            : durationUnit // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -258,6 +311,10 @@ class _$OrderItemModelImpl implements _OrderItemModel {
     @JsonKey(name: 'package_unit') this.packageUnit,
     this.product,
     @JsonKey(name: 'loading_instruction') this.loadingInstruction,
+    this.tax,
+    this.discount,
+    this.duration,
+    @JsonKey(name: 'duration_unit') this.durationUnit,
   });
 
   factory _$OrderItemModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -283,10 +340,19 @@ class _$OrderItemModelImpl implements _OrderItemModel {
   @override
   @JsonKey(name: 'loading_instruction')
   final String? loadingInstruction;
+  @override
+  final String? tax;
+  @override
+  final String? discount;
+  @override
+  final String? duration;
+  @override
+  @JsonKey(name: 'duration_unit')
+  final String? durationUnit;
 
   @override
   String toString() {
-    return 'OrderItemModel(id: $id, orderId: $orderId, itemId: $itemId, price: $price, quantity: $quantity, packageUnit: $packageUnit, product: $product, loadingInstruction: $loadingInstruction)';
+    return 'OrderItemModel(id: $id, orderId: $orderId, itemId: $itemId, price: $price, quantity: $quantity, packageUnit: $packageUnit, product: $product, loadingInstruction: $loadingInstruction, tax: $tax, discount: $discount, duration: $duration, durationUnit: $durationUnit)';
   }
 
   @override
@@ -304,7 +370,14 @@ class _$OrderItemModelImpl implements _OrderItemModel {
                 other.packageUnit == packageUnit) &&
             (identical(other.product, product) || other.product == product) &&
             (identical(other.loadingInstruction, loadingInstruction) ||
-                other.loadingInstruction == loadingInstruction));
+                other.loadingInstruction == loadingInstruction) &&
+            (identical(other.tax, tax) || other.tax == tax) &&
+            (identical(other.discount, discount) ||
+                other.discount == discount) &&
+            (identical(other.duration, duration) ||
+                other.duration == duration) &&
+            (identical(other.durationUnit, durationUnit) ||
+                other.durationUnit == durationUnit));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -319,6 +392,10 @@ class _$OrderItemModelImpl implements _OrderItemModel {
     packageUnit,
     product,
     loadingInstruction,
+    tax,
+    discount,
+    duration,
+    durationUnit,
   );
 
   /// Create a copy of OrderItemModel
@@ -348,6 +425,10 @@ abstract class _OrderItemModel implements OrderItemModel {
     @JsonKey(name: 'package_unit') final PackageUnitModel? packageUnit,
     final ProductModel? product,
     @JsonKey(name: 'loading_instruction') final String? loadingInstruction,
+    final String? tax,
+    final String? discount,
+    final String? duration,
+    @JsonKey(name: 'duration_unit') final String? durationUnit,
   }) = _$OrderItemModelImpl;
 
   factory _OrderItemModel.fromJson(Map<String, dynamic> json) =
@@ -373,6 +454,15 @@ abstract class _OrderItemModel implements OrderItemModel {
   @override
   @JsonKey(name: 'loading_instruction')
   String? get loadingInstruction;
+  @override
+  String? get tax;
+  @override
+  String? get discount;
+  @override
+  String? get duration;
+  @override
+  @JsonKey(name: 'duration_unit')
+  String? get durationUnit;
 
   /// Create a copy of OrderItemModel
   /// with the given fields replaced by the non-null parameter values.

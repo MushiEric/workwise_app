@@ -713,8 +713,16 @@ class _SalesPageState extends ConsumerState<SalesPage>
     final base = isDark ? Colors.white12 : Colors.grey.shade200;
     return Card(
       margin: EdgeInsets.zero,
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.05),
       color: isDark ? const Color(0xFF151A2E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: EdgeInsets.all(14.r),
         child: Column(

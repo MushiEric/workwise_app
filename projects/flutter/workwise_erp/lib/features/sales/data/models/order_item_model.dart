@@ -17,6 +17,10 @@ class OrderItemModel with _$OrderItemModel {
     @JsonKey(name: 'package_unit') PackageUnitModel? packageUnit,
     ProductModel? product,
     @JsonKey(name: 'loading_instruction') String? loadingInstruction,
+    String? tax,
+    String? discount,
+    String? duration,
+    @JsonKey(name: 'duration_unit') String? durationUnit,
   }) = _OrderItemModel;
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) =>
@@ -33,5 +37,9 @@ extension OrderItemModelX on OrderItemModel {
     product: product?.toDomain(),
     packageUnit: packageUnit?.toDomain(),
     loadingInstruction: loadingInstruction,
+    tax: tax,
+    discount: discount,
+    duration: duration,
+    durationUnit: durationUnit,
   );
 }

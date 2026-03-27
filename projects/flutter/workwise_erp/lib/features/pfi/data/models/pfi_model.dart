@@ -10,6 +10,8 @@ class PfiModel {
   final String? currencyExchangeRate;
   final int? status;
   final String? createdAt;
+  final String? customerName;
+  final dynamic total;
   
   // New fields from Image
   final String? issueDate;
@@ -69,6 +71,8 @@ class PfiModel {
     this.items,
     this.notes,
     this.terms,
+    this.customerName,
+    this.total,
   });
 
   factory PfiModel.fromJson(Map<String, dynamic> json) {
@@ -134,6 +138,8 @@ class PfiModel {
       items: (json['items'] as List?)?.map((i) => PfiItemModel.fromJson(i)).toList(),
       notes: parseHtml(json['notes']),
       terms: parseHtml(json['terms_and_conditions']),
+      customerName: asString(json['company'] ?? json['customer_name'] ?? json['client_name']),
+      total: json['total'] ?? json['grand_total'],
     );
   }
 
@@ -168,6 +174,8 @@ class PfiModel {
         items: items?.map((i) => i.toDomain()).toList(),
         notes: notes,
         terms: terms,
+        customerName: customerName,
+        total: double.tryParse((total ?? '0').toString().replaceAll(',', '')),
       );
 }
 
@@ -199,6 +207,17 @@ class PfiItemModel {
   });
 
   factory PfiItemModel.fromJson(Map<String, dynamic> json) {
+    int? asInt(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+    String? asString(dynamic v) {
+      if (v == null) return null;
+      return v.toString();
+    }
     double? asDouble(dynamic v) {
       if (v == null) return null;
       if (v is double) return v;
@@ -224,16 +243,16 @@ class PfiItemModel {
     }
     
     return PfiItemModel(
-      id: json['id'] as int?,
-      itemId: json['item_id']?.toString(),
+      id: asInt(json['id']),
+      itemId: asString(json['item_id']),
       isCustom: json['is_custom'],
       description: parseHtml(json['description']),
       qty: json['qty'],
-      uomId: json['uom_id']?.toString(),
+      uomId: asString(json['uom_id']),
       period: json['period'],
-      periodUnit: json['period_unit']?.toString(),
+      periodUnit: asString(json['period_unit']),
       rate: json['rate'],
-      tax: json['tax']?.toString(),
+      tax: asString(json['tax']),
       subtotal: json['subtotal'],
     );
   }

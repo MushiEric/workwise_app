@@ -10,6 +10,8 @@ class Pfi extends Equatable {
   final String? currencyExchangeRate;
   final int? status;
   final DateTime? createdAt;
+  final String? customerName;
+  final double? total;
 
   // New fields from Image
   final DateTime? issueDate;
@@ -69,6 +71,8 @@ class Pfi extends Equatable {
     this.items,
     this.notes,
     this.terms,
+    this.customerName,
+    this.total,
   });
 
   @override
@@ -80,6 +84,7 @@ class Pfi extends Equatable {
     attachmentPath, paymentTermsId, paymentMethodId,
     subscriptionStartDate, subscriptionDuration, subscriptionEndDate,
     isRecurring, items, notes, terms,
+    customerName, total,
   ];
 }
 

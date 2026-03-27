@@ -24,6 +24,8 @@ mixin _$TruckModel {
   int? get id => throw _privateConstructorUsedError;
   @JsonKey(name: 'order_id')
   String? get orderId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'vehicle_id')
+  int? get vehicleId => throw _privateConstructorUsedError;
   @JsonKey(name: 'vehicle_name')
   String? get vehicleName => throw _privateConstructorUsedError;
   @JsonKey(name: 'vehicle_plate_number')
@@ -77,6 +79,7 @@ abstract class $TruckModelCopyWith<$Res> {
   $Res call({
     int? id,
     @JsonKey(name: 'order_id') String? orderId,
+    @JsonKey(name: 'vehicle_id') int? vehicleId,
     @JsonKey(name: 'vehicle_name') String? vehicleName,
     @JsonKey(name: 'vehicle_plate_number') String? vehiclePlateNumber,
     @JsonKey(name: 'vehicle_trailer_number') String? vehicleTrailerNumber,
@@ -113,6 +116,7 @@ class _$TruckModelCopyWithImpl<$Res, $Val extends TruckModel>
   $Res call({
     Object? id = freezed,
     Object? orderId = freezed,
+    Object? vehicleId = freezed,
     Object? vehicleName = freezed,
     Object? vehiclePlateNumber = freezed,
     Object? vehicleTrailerNumber = freezed,
@@ -140,6 +144,10 @@ class _$TruckModelCopyWithImpl<$Res, $Val extends TruckModel>
                 ? _value.orderId
                 : orderId // ignore: cast_nullable_to_non_nullable
                       as String?,
+            vehicleId: freezed == vehicleId
+                ? _value.vehicleId
+                : vehicleId // ignore: cast_nullable_to_non_nullable
+                      as int?,
             vehicleName: freezed == vehicleName
                 ? _value.vehicleName
                 : vehicleName // ignore: cast_nullable_to_non_nullable
@@ -222,6 +230,7 @@ abstract class _$$TruckModelImplCopyWith<$Res>
   $Res call({
     int? id,
     @JsonKey(name: 'order_id') String? orderId,
+    @JsonKey(name: 'vehicle_id') int? vehicleId,
     @JsonKey(name: 'vehicle_name') String? vehicleName,
     @JsonKey(name: 'vehicle_plate_number') String? vehiclePlateNumber,
     @JsonKey(name: 'vehicle_trailer_number') String? vehicleTrailerNumber,
@@ -257,6 +266,7 @@ class __$$TruckModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? orderId = freezed,
+    Object? vehicleId = freezed,
     Object? vehicleName = freezed,
     Object? vehiclePlateNumber = freezed,
     Object? vehicleTrailerNumber = freezed,
@@ -284,6 +294,10 @@ class __$$TruckModelImplCopyWithImpl<$Res>
             ? _value.orderId
             : orderId // ignore: cast_nullable_to_non_nullable
                   as String?,
+        vehicleId: freezed == vehicleId
+            ? _value.vehicleId
+            : vehicleId // ignore: cast_nullable_to_non_nullable
+                  as int?,
         vehicleName: freezed == vehicleName
             ? _value.vehicleName
             : vehicleName // ignore: cast_nullable_to_non_nullable
@@ -359,6 +373,7 @@ class _$TruckModelImpl implements _TruckModel {
   const _$TruckModelImpl({
     this.id,
     @JsonKey(name: 'order_id') this.orderId,
+    @JsonKey(name: 'vehicle_id') this.vehicleId,
     @JsonKey(name: 'vehicle_name') this.vehicleName,
     @JsonKey(name: 'vehicle_plate_number') this.vehiclePlateNumber,
     @JsonKey(name: 'vehicle_trailer_number') this.vehicleTrailerNumber,
@@ -385,6 +400,9 @@ class _$TruckModelImpl implements _TruckModel {
   @override
   @JsonKey(name: 'order_id')
   final String? orderId;
+  @override
+  @JsonKey(name: 'vehicle_id')
+  final int? vehicleId;
   @override
   @JsonKey(name: 'vehicle_name')
   final String? vehicleName;
@@ -436,7 +454,7 @@ class _$TruckModelImpl implements _TruckModel {
 
   @override
   String toString() {
-    return 'TruckModel(id: $id, orderId: $orderId, vehicleName: $vehicleName, vehiclePlateNumber: $vehiclePlateNumber, vehicleTrailerNumber: $vehicleTrailerNumber, driverName: $driverName, driverPhone: $driverPhone, driverLicenseNumber: $driverLicenseNumber, checkinStatus: $checkinStatus, checkoutStatus: $checkoutStatus, checkinDatetime: $checkinDatetime, checkoutDatetime: $checkoutDatetime, checkinWeight: $checkinWeight, checkinWeightUnit: $checkinWeightUnit, checkoutWeight: $checkoutWeight, checkoutWeightUnit: $checkoutWeightUnit, netWeight: $netWeight, netWeightUnit: $netWeightUnit)';
+    return 'TruckModel(id: $id, orderId: $orderId, vehicleId: $vehicleId, vehicleName: $vehicleName, vehiclePlateNumber: $vehiclePlateNumber, vehicleTrailerNumber: $vehicleTrailerNumber, driverName: $driverName, driverPhone: $driverPhone, driverLicenseNumber: $driverLicenseNumber, checkinStatus: $checkinStatus, checkoutStatus: $checkoutStatus, checkinDatetime: $checkinDatetime, checkoutDatetime: $checkoutDatetime, checkinWeight: $checkinWeight, checkinWeightUnit: $checkinWeightUnit, checkoutWeight: $checkoutWeight, checkoutWeightUnit: $checkoutWeightUnit, netWeight: $netWeight, netWeightUnit: $netWeightUnit)';
   }
 
   @override
@@ -446,6 +464,8 @@ class _$TruckModelImpl implements _TruckModel {
             other is _$TruckModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
+            (identical(other.vehicleId, vehicleId) ||
+                other.vehicleId == vehicleId) &&
             (identical(other.vehicleName, vehicleName) ||
                 other.vehicleName == vehicleName) &&
             (identical(other.vehiclePlateNumber, vehiclePlateNumber) ||
@@ -482,10 +502,11 @@ class _$TruckModelImpl implements _TruckModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     orderId,
+    vehicleId,
     vehicleName,
     vehiclePlateNumber,
     vehicleTrailerNumber,
@@ -502,7 +523,7 @@ class _$TruckModelImpl implements _TruckModel {
     checkoutWeightUnit,
     netWeight,
     netWeightUnit,
-  );
+  ]);
 
   /// Create a copy of TruckModel
   /// with the given fields replaced by the non-null parameter values.
@@ -522,6 +543,7 @@ abstract class _TruckModel implements TruckModel {
   const factory _TruckModel({
     final int? id,
     @JsonKey(name: 'order_id') final String? orderId,
+    @JsonKey(name: 'vehicle_id') final int? vehicleId,
     @JsonKey(name: 'vehicle_name') final String? vehicleName,
     @JsonKey(name: 'vehicle_plate_number') final String? vehiclePlateNumber,
     @JsonKey(name: 'vehicle_trailer_number') final String? vehicleTrailerNumber,
@@ -548,6 +570,9 @@ abstract class _TruckModel implements TruckModel {
   @override
   @JsonKey(name: 'order_id')
   String? get orderId;
+  @override
+  @JsonKey(name: 'vehicle_id')
+  int? get vehicleId;
   @override
   @JsonKey(name: 'vehicle_name')
   String? get vehicleName;
