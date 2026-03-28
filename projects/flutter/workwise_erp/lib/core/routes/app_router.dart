@@ -24,6 +24,7 @@ import '../../features/sales/presentation/pages/sales_view_page.dart';
 import '../../features/sales/presentation/pages/pfi_view_page.dart';
 import '../../features/sales/domain/entities/sales_order.dart';
 import '../../features/pfi/domain/entities/pfi.dart';
+import '../../features/pfi/presentation/pages/pfi_settings_page.dart';
 
 // TODO(assets): Temporarily disabled — uncomment when assets module is restored
 // import '../../features/assets/presentation/pages/assets_page.dart';
@@ -51,6 +52,7 @@ class AppRouter {
       final pfi = ModalRoute.of(ctx)!.settings.arguments as Pfi;
       return PfiCreatePage(pfi: pfi);
     },
+    '/sales/pfi/settings': (_) => const PfiSettingsPage(),
     '/sales/orders/view': (ctx) {
       final order = ModalRoute.of(ctx)!.settings.arguments as SalesOrder;
       return SalesViewPage(order: order);

@@ -80,11 +80,12 @@ class _PfiPageState extends ConsumerState<PfiPage> {
               final Pfi p = state.pfis[i];
               final pfiNumber = p.proposalNumber ?? ('#${p.id}');
               final subject = p.subject ?? '';
-              final customerName = p.customerName ?? 'No Customer';
+              final customerName = p.customerName ?? '-';
+              final status = p.status ?? '-'; 
               final date = p.createdAt != null ? DateFormat.yMMMd().format(p.createdAt!) : 'No Date';
               final totalAmount = p.total != null 
                   ? NumberFormat.currency(symbol: '').format(p.total) 
-                  : '0.00';
+                  : '-';
               
               final isDark = Theme.of(context).brightness == Brightness.dark;
 

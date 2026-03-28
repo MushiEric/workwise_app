@@ -310,24 +310,49 @@ class _SalesPageState extends ConsumerState<SalesPage>
             borderRadius: BorderRadius.circular(16.r),
           ),
         ),
-        bottomNavigationBar: AppGoogleNavBar(
-          selectedIndex: 0,
-          onTabChange: (idx) {
-            if (idx == 1) {
-              Navigator.pushReplacementNamed(context, '/sales/settings');
-            }
-          },
-          items: const [
-            AppGoogleNavBarItem(label: 'Sales', icon: AppIcons.shoppingCart),
-            AppGoogleNavBarItem(label: 'Settings', icon: AppIcons.settings),
-          ],
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          activeTabBackgroundColor: isDark
-              ? Colors.white12
-              : AppColors.primary.withOpacity(0.15),
-          activeColor: AppColors.primary,
-          color: isDark ? Colors.white60 : Colors.grey.shade600,
-        ),
+        bottomNavigationBar: _tabController.index == 0
+            ? AppGoogleNavBar(
+                selectedIndex: 0,
+                onTabChange: (idx) {
+                  if (idx == 1) {
+                    Navigator.pushReplacementNamed(context, '/sales/settings');
+                  }
+                },
+                items: const [
+                  AppGoogleNavBarItem(
+                      label: 'Orders', icon: AppIcons.shoppingCart),
+                  AppGoogleNavBarItem(
+                      label: 'Settings', icon: AppIcons.settings),
+                ],
+                backgroundColor:
+                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                activeTabBackgroundColor: isDark
+                    ? Colors.white12
+                    : AppColors.primary.withOpacity(0.15),
+                activeColor: AppColors.primary,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              )
+            : AppGoogleNavBar(
+                selectedIndex: 0,
+                onTabChange: (idx) {
+                  if (idx == 1) {
+                    Navigator.pushNamed(context, '/sales/pfi/settings');
+                  }
+                },
+                items: const [
+                  AppGoogleNavBarItem(
+                      label: 'PFI', icon: Icons.receipt_long_rounded),
+                  AppGoogleNavBarItem(
+                      label: 'PFI Settings', icon: AppIcons.settings),
+                ],
+                backgroundColor:
+                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                activeTabBackgroundColor: isDark
+                    ? Colors.white12
+                    : AppColors.primary.withOpacity(0.15),
+                activeColor: AppColors.primary,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              ),
       ),
     );
   }

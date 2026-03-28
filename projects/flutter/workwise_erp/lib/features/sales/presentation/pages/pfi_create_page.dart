@@ -19,6 +19,7 @@ import '../../../jobcard/presentation/providers/jobcard_providers.dart';
 import '../../../support/presentation/providers/support_providers.dart';
 import '../../../support/presentation/state/support_state.dart';
 import '../providers/sales_providers.dart';
+import '../../../pfi/presentation/providers/pfi_providers.dart';
 
 class PfiCreatePage extends ConsumerStatefulWidget {
   final Pfi? pfi;
@@ -170,12 +171,12 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     }
   }
 
-  void _addItem() async {
+  void _addItem(bool globallyShowPeriod) async {
      final result = await showModalBottomSheet<PfiItem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _AddItemDrawer(showPeriod: _showPeriod),
+      builder: (ctx) => _AddItemDrawer(showPeriod: globallyShowPeriod && _showPeriod),
     );
     if (result != null) {
        setState(() => _items.add(result));
@@ -330,6 +331,27 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
 
+    final settingsAsync = ref.watch(pfiSettingsProvider);
+    final cfg = settingsAsync.value ?? <String, dynamic>{};
+    bool show(String key) {
+      if (!cfg.containsKey(key)) return true;
+      return cfg[key] == true;
+    }
+
+    ref.listen<AsyncValue<Map<String, dynamic>>>(pfiSettingsProvider, (prev, next) {
+      if (widget.pfi == null && next.hasValue) {
+        final data = next.value!;
+        if (_notesCtl.text.isEmpty) {
+          final notesRaw = data['pfi_client_notes']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          _notesCtl.text = notesRaw.trim();
+        }
+        if (_termsCtl.text.isEmpty) {
+          final termsRaw = data['pfi_terms_condition']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          _termsCtl.text = termsRaw.trim();
+        }
+      }
+    });
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
       appBar: CustomAppBar(
@@ -483,22 +505,24 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
 
                   Row(
                     children: [
-                      Expanded(child: _buildAsyncMapDropdown<String>(
-                        asyncValue: ref.watch(salesProjectsProvider),
-                        value: _selectedProjectId,
-                        label: 'Project',
-                        hintText: 'Select Project',
-                        onChanged: (v) => setState(() => _selectedProjectId = v),
-                        onMapChanged: _populateItemsFromMap,
-                        labelBuilder: (m) {
-                          return m['name']?.toString() ??
-                              m['title']?.toString() ??
-                              m['project_name']?.toString() ??
-                              m['subject']?.toString() ??
-                              'Project ${m['id'] ?? ''}';
-                        },
-                      )),
-                      SizedBox(width: 12.w),
+                      if (show('pfi_show_project_agent')) ...[
+                        Expanded(child: _buildAsyncMapDropdown<String>(
+                          asyncValue: ref.watch(salesProjectsProvider),
+                          value: _selectedProjectId,
+                          label: 'Project',
+                          hintText: 'Select Project',
+                          onChanged: (v) => setState(() => _selectedProjectId = v),
+                          onMapChanged: _populateItemsFromMap,
+                          labelBuilder: (m) {
+                            return m['name']?.toString() ??
+                                m['title']?.toString() ??
+                                m['project_name']?.toString() ??
+                                m['subject']?.toString() ??
+                                'Project ${m['id'] ?? ''}';
+                          },
+                        )),
+                        SizedBox(width: 12.w),
+                      ],
                       Expanded(child: _buildAsyncMapDropdown<String>(
                         asyncValue: ref.watch(salesTripsProvider),
                         value: _selectedTripId,
@@ -528,105 +552,116 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                         hintText: 'Select',
                         onChanged: (v) => setState(() => _selectedWarehouseId = v),
                       )),
-                      SizedBox(width: 12.w),
-                      Expanded(child: _buildAsyncMapDropdown<String>(
-                        asyncValue: ref.watch(salesUsersProvider),
-                        value: _selectedSalesAgentId,
-                        label: 'Sales Agent',
-                        hintText: 'Select',
-                        onChanged: (v) => setState(() => _selectedSalesAgentId = v),
-                        labelBuilder: (m) {
-                          if (m['name'] != null) return m['name'].toString();
-                          final first = m['first_name']?.toString() ?? '';
-                          final last = m['last_name']?.toString() ?? '';
-                          final full = '$first $last'.trim();
-                          if (full.isNotEmpty) return full;
-                          return m['email']?.toString() ?? m['username']?.toString() ?? 'User ${m['id'] ?? ''}';
-                        },
-                      )),
+                      if (show('pfi_show_sale_agent')) ...[
+                        SizedBox(width: 12.w),
+                        Expanded(child: _buildAsyncMapDropdown<String>(
+                          asyncValue: ref.watch(salesUsersProvider),
+                          value: _selectedSalesAgentId,
+                          label: 'Sales Agent',
+                          hintText: 'Select',
+                          onChanged: (v) => setState(() => _selectedSalesAgentId = v),
+                          labelBuilder: (m) {
+                            if (m['name'] != null) return m['name'].toString();
+                            final first = m['first_name']?.toString() ?? '';
+                            final last = m['last_name']?.toString() ?? '';
+                            final full = '$first $last'.trim();
+                            if (full.isNotEmpty) return full;
+                            return m['email']?.toString() ?? m['username']?.toString() ?? 'User ${m['id'] ?? ''}';
+                          },
+                        )),
+                      ],
                     ],
                   ),
                   Row(
                     children: [
-                      Expanded(child: _buildField(AppTextField(
-                         label: 'Attachment',
-                         hintText: _attachmentName ?? 'No file chosen',
-                         readOnly: true,
-                         suffixIcon: Icon(Icons.attach_file_rounded, size: 18.r),
-                         onTap: () async {
-                           try {
-                             final result = await FilePicker.platform.pickFiles();
-                             if (result != null && result.files.single.path != null) {
-                               setState(() {
-                                 _attachmentPath = result.files.single.path;
-                                 _attachmentName = result.files.single.name;
-                               });
-                             }
-                           } catch (_) {}
-                         },
-                      ))),
-                      SizedBox(width: 12.w),
-                      Expanded(child: _buildAsyncMapDropdown<String>(
-                        asyncValue: ref.watch(salesPaymentTermsProvider), 
-                        value: _selectedPaymentTermsId,
-                        label: 'Payment Terms',
-                        hintText: 'Select Terms',
-                        onChanged: (v) => setState(() => _selectedPaymentTermsId = v),
-                      )),
+                      if (show('pfi_allow_attachment')) ...[
+                        Expanded(child: _buildField(AppTextField(
+                           label: 'Attachment',
+                           hintText: _attachmentName ?? 'No file chosen',
+                           readOnly: true,
+                           suffixIcon: Icon(Icons.attach_file_rounded, size: 18.r),
+                           onTap: () async {
+                             try {
+                               final result = await FilePicker.platform.pickFiles();
+                               if (result != null && result.files.single.path != null) {
+                                 setState(() {
+                                   _attachmentPath = result.files.single.path;
+                                   _attachmentName = result.files.single.name;
+                                 });
+                               }
+                             } catch (_) {}
+                           },
+                        ))),
+                        if (show('pfi_enable_payment')) SizedBox(width: 12.w),
+                      ],
+                      if (show('pfi_enable_payment'))
+                        Expanded(child: _buildAsyncMapDropdown<String>(
+                          asyncValue: ref.watch(salesPaymentTermsProvider), 
+                          value: _selectedPaymentTermsId,
+                          label: 'Payment Terms',
+                          hintText: 'Select Terms',
+                          onChanged: (v) => setState(() => _selectedPaymentTermsId = v),
+                        )),
                     ],
                   ),
-                  _buildAsyncMapDropdown<String>(
-                    asyncValue: ref.watch(salesPaymentMethodProvider),
-                    value: _selectedPaymentMethodId,
-                    label: 'Payment Method',
-                    hintText: 'Select Method',
-                    onChanged: (v) => setState(() => _selectedPaymentMethodId = v),
-                  ),
+                  if (show('pfi_enable_payment'))
+                    _buildAsyncMapDropdown<String>(
+                      asyncValue: ref.watch(salesPaymentMethodProvider),
+                      value: _selectedPaymentMethodId,
+                      label: 'Payment Method',
+                      hintText: 'Select Method',
+                      onChanged: (v) => setState(() => _selectedPaymentMethodId = v),
+                    ),
 
                   // ── Section: Subscription ───────────────────────
-                  _buildSectionHeader('Subscription'),
-                  Row(
-                    children: [
-                      Expanded(child: _buildField(AppTextField(
-                        controller: _subscriptionStartDateCtl,
-                        label: 'Start Date',
-                        readOnly: true,
-                        onTap: () => _selectDate(_subscriptionStartDateCtl),
-                        suffixIcon: Icon(AppIcons.calendar, size: 18.r),
-                      ))),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: _buildField(AppSmartDropdown<String>(
-                          value: _subscriptionDuration,
-                          items: const [
-                            'daily',
-                            'weekly',
-                            'monthly',
-                            'quater',
-                            'semi-annually',
-                            'Year',
-                          ],
-                          itemBuilder: (v) => v[0].toUpperCase() + v.substring(1),
-                          label: 'Duration',
-                          hintText: 'Select Duration',
-                          onChanged: (v) => setState(() => _subscriptionDuration = v),
-                        )),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(child: _buildField(AppTextField(
-                        controller: _subscriptionEndDateCtl,
-                        label: 'End Date',
-                        readOnly: true,
-                        onTap: () => _selectDate(_subscriptionEndDateCtl),
-                        suffixIcon: Icon(AppIcons.calendar, size: 18.r),
-                      ))),
-                      SizedBox(width: 12.w),
-                      Expanded(child: _buildRadioGroup('Recurring', ['Yes', 'No'], _isRecurring ? 'Yes' : 'No', (v) => setState(() => _isRecurring = v == 'Yes'))),
-                    ],
-                  ),
+                  if (show('pfi_subscription')) ...[
+                    _buildSectionHeader('Subscription'),
+                    Row(
+                      children: [
+                        Expanded(child: _buildField(AppTextField(
+                          controller: _subscriptionStartDateCtl,
+                          label: 'Start Date',
+                          readOnly: true,
+                          onTap: () => _selectDate(_subscriptionStartDateCtl),
+                          suffixIcon: Icon(AppIcons.calendar, size: 18.r),
+                        ))),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: _buildField(AppSmartDropdown<String>(
+                            value: _subscriptionDuration,
+                            items: const [
+                              'daily',
+                              'weekly',
+                              'monthly',
+                              'quater',
+                              'semi-annually',
+                              'Year',
+                            ],
+                            itemBuilder: (v) => v[0].toUpperCase() + v.substring(1),
+                            label: 'Duration',
+                            hintText: 'Select Duration',
+                            onChanged: (v) => setState(() => _subscriptionDuration = v),
+                          )),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(child: _buildField(AppTextField(
+                          controller: _subscriptionEndDateCtl,
+                          label: 'End Date',
+                          readOnly: true,
+                          onTap: () => _selectDate(_subscriptionEndDateCtl),
+                          suffixIcon: Icon(AppIcons.calendar, size: 18.r),
+                        ))),
+                        SizedBox(width: 12.w),
+                        if (show('pfi_subscription_recurring'))
+                          Expanded(child: _buildRadioGroup('Recurring', ['Yes', 'No'], _isRecurring ? 'Yes' : 'No', (v) => setState(() => _isRecurring = v == 'Yes')))
+                        else
+                          const Spacer(),
+                      ],
+                    ),
+                  ],
 
                   // ── Section: Items ──────────────────────────────
                   _buildSectionHeader('Items'),
@@ -645,8 +680,11 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                          Row(
                           children: [
                             Expanded(child: _buildField(AppTextField(controller: _defaultUnitLabelCtl, label: 'Default Unit Label'))),
-                            SizedBox(width: 12.w),
-                            Expanded(child: _buildRadioGroup('Show Period', ['Yes', 'No'], _showPeriod ? 'Yes' : 'No', (v) => setState(() => _showPeriod = v == 'Yes'))),
+                            if (show('pfi_show_period')) ...[
+                              SizedBox(width: 12.w),
+                              Expanded(child: _buildRadioGroup('Show Period', ['Yes', 'No'], _showPeriod ? 'Yes' : 'No', (v) => setState(() => _showPeriod = v == 'Yes'))),
+                            ] else
+                              const Spacer(),
                           ],
                         ),
                       ],
@@ -674,7 +712,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                     ),
 
                   InkWell(
-                    onTap: _addItem,
+                    onTap: () => _addItem(show('pfi_show_period')),
                     borderRadius: BorderRadius.circular(12.r),
                     child: Container(
                       width: double.infinity,
@@ -703,9 +741,11 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                   _buildSummaryRow('Total Amount', _subTotal, isBold: true),
 
                   // ── Section: Footer ─────────────────────────────
-                  _buildSectionHeader('Notes & Terms'),
-                  _buildField(AppTextField(controller: _notesCtl, label: 'Notes', maxLines: 3)),
-                  _buildField(AppTextField(controller: _termsCtl, label: 'Terms & Conditions', maxLines: 3)),
+                  if (show('pfi_allow_footer')) ...[
+                    _buildSectionHeader('Notes & Terms'),
+                    _buildField(AppTextField(controller: _notesCtl, label: 'Notes', maxLines: 3)),
+                    _buildField(AppTextField(controller: _termsCtl, label: 'Terms & Conditions', maxLines: 3)),
+                  ],
 
                   SizedBox(height: 32.h),
                   AppButton(
