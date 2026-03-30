@@ -20,6 +20,8 @@ import '../../data/models/product_model.dart';
 import '../../data/models/package_unit_model.dart';
 
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../jobcard/presentation/providers/jobcard_providers.dart';
+import '../../../jobcard/domain/entities/jobcard.dart';
 import '../notifier/sales_notifier.dart';
 import '../state/sales_state.dart';
 
@@ -182,7 +184,16 @@ final salesTaxesProvider = FutureProvider<List<Map<String, dynamic>>>((
 final salesCurrenciesProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,
 ) async {
-  return await ref.watch(salesRemoteDataSourceProvider).getCurrencies();
+  try {
+    final result = await ref.watch(salesRemoteDataSourceProvider).getCurrencies();
+    // ignore: avoid_print
+    print('[salesCurrenciesProvider] loaded ${result.length} currencies');
+    return result;
+  } catch (e) {
+    // ignore: avoid_print
+    print('[salesCurrenciesProvider] error: $e');
+    return [];
+  }
 });
 
 final salesUsersProvider = FutureProvider<List<Map<String, dynamic>>>((
@@ -191,10 +202,36 @@ final salesUsersProvider = FutureProvider<List<Map<String, dynamic>>>((
   return await ref.watch(salesRemoteDataSourceProvider).getUsers();
 });
 
-final salesJobcardsProvider = FutureProvider<List<Map<String, dynamic>>>((
-  ref,
-) async {
-  return await ref.watch(salesRemoteDataSourceProvider).getJobCards();
+final salesJobcardsProvider = Provider<AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  final state = ref.watch(jobcardNotifierProvider);
+  
+  // Transform entities to the Map structure the PFI/Order forms expect.
+  final List<Map<String, dynamic>> items = state.items.map((j) {
+    if (j is Jobcard) {
+      return {
+        'id': j.id,
+        'jobcard_number': j.jobcardNumber,
+        'subject': j.service,
+        'status': j.status,
+        'reported_date': j.reportedDate,
+        'technician_id': j.technicianId,
+        'location': j.location,
+      };
+    }
+    return j as Map<String, dynamic>;
+  }).toList();
+  
+  if (state.loading && state.items.isEmpty) {
+    return const AsyncValue.loading();
+  }
+  if (state.error != null && state.items.isEmpty) {
+    return AsyncValue.error(state.error!, StackTrace.current);
+  }
+  return AsyncValue.data(items);
+});
+
+final salesJobcardsLoadingMoreProvider = Provider<bool>((ref) {
+  return ref.watch(jobcardNotifierProvider).loadingMore;
 });
 
 final salesSupportTicketsProvider = FutureProvider<List<Map<String, dynamic>>>((

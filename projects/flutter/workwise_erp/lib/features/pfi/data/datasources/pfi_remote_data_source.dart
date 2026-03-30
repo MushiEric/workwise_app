@@ -43,12 +43,12 @@ class PfiRemoteDataSource {
       final list = _extractListFromRaw(resp.data);
 
       final models = <PfiModel>[];
+
       for (final raw in list) {
         try {
           final src = Map<String, dynamic>.from(raw);
           models.add(PfiModel.fromJson(src));
         } catch (err) {
-          // ignore malformed item
           // ignore: avoid_print
           print('warning: failed to parse pfi item: $err');
         }

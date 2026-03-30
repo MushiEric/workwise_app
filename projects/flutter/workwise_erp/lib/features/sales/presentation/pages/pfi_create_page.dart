@@ -34,6 +34,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   List<Customer> _customers = [];
   bool _isLoadingMetadata = false;
   bool _isSubmitting = false;
+  bool _generatingPfiNumber = false;
 
   @override
   void initState() {
@@ -51,12 +52,10 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   }
 
   Future<void> _loadMetadata() async {
-    setState(() => _isLoadingMetadata = true);
-    try {
-      final custRes = await ref.read(getCustomersUseCaseProvider).call();
-      custRes.fold((_) => null, (list) => _customers = list);
-    } catch (_) {}
-    if (mounted) setState(() => _isLoadingMetadata = false);
+    // customers are now handled by global customersNotifierProvider
+    Future.microtask(() {
+      ref.read(customersNotifierProvider.notifier).loadCustomers();
+    });
   }
 
   @override
@@ -112,6 +111,27 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final settingsAsync = ref.watch(pfiSettingsProvider);
+    final cfg = settingsAsync.value ?? <String, dynamic>{};
+    bool show(String key) {
+      if (!cfg.containsKey(key)) return true;
+      return cfg[key] == true;
+    }
+
+    ref.listen<AsyncValue<Map<String, dynamic>>>(pfiSettingsProvider, (prev, next) {
+      if (widget.pfi == null && next.hasValue) {
+        final data = next.value!;
+        if (_notesCtl.text.isEmpty) {
+          final notesRaw = data['pfi_client_notes']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          _notesCtl.text = notesRaw.trim();
+        }
+        if (_termsCtl.text.isEmpty) {
+          final termsRaw = data['pfi_terms_condition']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          _termsCtl.text = termsRaw.trim();
+        }
+      }
+    });
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,

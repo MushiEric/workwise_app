@@ -42,9 +42,10 @@ class CustomerRemoteDataSource {
   Future<List<CustomerModel>> getCustomers() async {
     try {
       final resp = await client.get('/customer/getCustomers', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
+        'length': '10000',
+        'limit': '10000',
+        'per_page': '10000',
+        'pageSize': 10000,
         'all': '1',
       });
       final list = _extractList(resp.data);
@@ -68,9 +69,10 @@ class CustomerRemoteDataSource {
   Future<List<CustomerContactModel>> getCustomerContacts(int customerId) async {
     try {
       final resp = await client.get('/customer/getCustomerContact/$customerId', queryParameters: {
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
+        'length': '10000',
+        'limit': '10000',
+        'per_page': '10000',
+        'pageSize': 10000,
         'all': '1',
       });
       final list = _extractList(resp.data);

@@ -97,24 +97,81 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   bool _notifyAll = false;
   String _afterSaveAction = 'Nothing';
 
-  List<Customer> _customers = [];
   bool _isSubmitting = false;
+  bool _generatingOrderNumber = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.order != null) {
-      _orderNumberCtl.text = widget.order!.orderNumber ?? '';
-      _selectedCustomerId = widget.order!.customerId;
+      final o = widget.order!;
+      _titleCtl.text = o.title ?? '';
+      _orderNumberCtl.text = o.orderNumber ?? '';
+      _exchangeRateCtl.text = o.exchangeRate ?? '';
+      _cargoValueCtl.text = o.cargoValue ?? '';
+      _amountCtl.text = o.amount?.toString() ?? '';
+      _senderNameCtl.text = o.senderName ?? '';
+      _senderPhoneCtl.text = o.senderPhone ?? '';
+      _receiverNameCtl.text = o.receiverName ?? '';
+      _receiverPhoneCtl.text = o.receiverPhone ?? '';
+      _consignmentDetailsCtl.text = o.consignmentDetails ?? '';
+      _lpoNumberCtl.text = o.lpoNumber ?? '';
 
-      if (widget.order!.startDate != null) {
-        final d = DateTime.tryParse(widget.order!.startDate!);
+      _selectedCustomerId = o.customerId;
+      _selectedCurrency = o.currencyId;
+      _selectedCargoUnit = o.cargoUnit;
+      _selectedPriority = o.priority;
+      _selectedWarehouseId = o.warehouseId;
+      _selectedStatusId = o.statusId;
+      _assignUserId = o.assignUserId;
+      _selectedPackageType = o.packageType;
+      _selectedContract = o.contractId;
+      _selectedRequest = o.requestId;
+      _selectedQuotation = o.quotationId;
+      _selectedPaymentType = o.paymentType;
+
+      if (o.startDate != null) {
+        final d = DateTime.tryParse(o.startDate!);
         if (d != null) {
           _startDateCtl.text = DateFormat('yyyy-MM-dd').format(d);
         }
       }
+
+      // Map items to _DraftItem
+      if (o.items != null) {
+        _items = o.items!.map((i) {
+          return _DraftItem(
+            itemId: i.itemId ?? 0,
+            name: i.product?.name ?? 'Item',
+            available: 0,
+            qty: double.tryParse(i.quantity ?? '0') ?? 0,
+            price: double.tryParse(i.price ?? '0') ?? 0,
+            discount: double.tryParse(i.discount ?? '0') ?? 0,
+            tax: i.tax,
+            packSize: i.packageUnit?.name,
+          );
+        }).toList();
+      }
+
+      // Truck details (assuming first one for now as per form structure)
+      if (o.truckList != null && o.truckList!.isNotEmpty) {
+        final t = o.truckList!.first;
+        _selectedMyVehicleId = t.vehicleId;
+        _transporterNameCtl.text = t.vehicleName ?? '';
+        _truckNumberCtl.text = t.vehiclePlateNumber ?? '';
+        _trailerNumberCtl.text = t.vehicleTrailerNumber ?? '';
+        _driverNameCtl.text = t.driverName ?? '';
+        _driverPhoneCtl.text = t.driverPhone ?? '';
+        _driverLicenseCtl.text = t.driverLicenseNumber ?? '';
+        _truckDetailsCtl.text = ''; // Add helper if needed
+        _checkinWeightCtl.text = t.checkinWeight?.toString() ?? '';
+      }
+
+      // Ensure totals are calculated after populating items
+      _updateTotals();
     } else {
       _startDateCtl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _generateOrderNumber());
     }
 
     _loadCustomers();
@@ -168,14 +225,21 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     }
   }
 
-  Future<void> _loadCustomers() async {
+  Future<void> _generateOrderNumber() async {
+    setState(() => _generatingOrderNumber = true);
     try {
-      final res = await ref.read(getCustomersUseCaseProvider).call();
-      res.fold((_) {}, (list) {
-        if (mounted) setState(() => _customers = list);
-      });
-    } catch (_) {}
+      final remote = ref.read(salesRemoteDataSourceProvider);
+      final num = await remote.generateUniqueNumber('logistic_order', 'order_number');
+      if (num != null && mounted) {
+        _orderNumberCtl.text = num;
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _generatingOrderNumber = false);
+    }
   }
+
+  // _loadCustomers is replaced by global customersNotifierProvider
 
   @override
   void dispose() {
@@ -846,17 +910,33 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                 ),
               if (_fieldEnabled(cfg, ['enable_customer_id', 'enable_customer']))
                 _buildField(
-                  AppSmartDropdown<int>(
-                    value: _selectedCustomerId,
-                    items: _customers.map((c) => c.id!).toList(),
-                    itemBuilder: (id) =>
-                        _customers.firstWhere((c) => c.id == id).name ??
-                        'Unknown',
-                    label: 'Customer *',
-                    hintText: 'Select Customer',
-                    enabled: _customers.isNotEmpty,
-                    onChanged: (id) => setState(() => _selectedCustomerId = id),
-                  ),
+                  Builder(builder: (context) {
+                    final customerState = ref.watch(customersNotifierProvider);
+                    final customers = customerState.maybeWhen(
+                      loaded: (list) => list,
+                      orElse: () => <Customer>[],
+                    );
+
+                    return AppSmartDropdown<int>(
+                      value: _selectedCustomerId,
+                      items: customers.map((c) => c.id!).toList(),
+                      itemBuilder: (id) =>
+                          customers
+                              .firstWhere(
+                                (c) => c.id == id,
+                                orElse:
+                                    () =>
+                                        Customer(id: id, name: 'Customer #$id'),
+                              )
+                              .name ??
+                          'Unknown',
+                      label: 'Customer *',
+                      hintText: customers.isEmpty ? 'Loading customers...' : 'Select Customer',
+                      enabled: customers.isNotEmpty,
+                      onChanged:
+                          (id) => setState(() => _selectedCustomerId = id),
+                    );
+                  }),
                 ),
               if (_fieldEnabled(cfg, ['enable_currency', 'show_currency']))
                 _buildAsyncMapDropdown<String>(
@@ -1234,7 +1314,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
               'enable_items_section',
               'enable_items',
             ])) ...[
-              _buildSectionHeader('Items'),
+              // _buildSectionHeader('Items'),
               _buildItems(isDark, cfg),
             ],
 
@@ -1476,17 +1556,17 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(
-              child: Text(
-                "No Item Added",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ),
-          )
-        else ...[
+        // if (_items.isEmpty)
+        //   const Padding(
+        //     padding: EdgeInsets.symmetric(vertical: 20),
+        //     child: Center(
+        //       child: Text(
+        //         "No Item Added",
+        //         style: TextStyle(color: Colors.grey, fontSize: 14),
+        //       ),
+        //     ),
+        //   )
+        // else ...[
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1587,6 +1667,32 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                       ),
                     ),
                     IconButton(
+                      onPressed: () async {
+                        final result = await showModalBottomSheet<_DraftItem>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => _AddItemDrawer(cfg: cfg, editItem: item),
+                        );
+                        if (result != null) {
+                          if (mounted) {
+                            setState(() => _items[i] = result);
+                            _updateTotals();
+                          }
+                        }
+                      },
+                      icon: Icon(
+                        Icons.edit_rounded,
+                        size: 20,
+                        color: primaryColor,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                    IconButton(
                       onPressed: () {
                         setState(() => _items.removeAt(i));
                         _updateTotals();
@@ -1609,38 +1715,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
           ),
 
           const SizedBox(height: 16),
-
-          // Totals Summary (Matching Jobcard feel but adjusted for Sales)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.04)
-                  : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.grey.shade200,
-              ),
-            ),
-            child: Column(
-              children: [
-                _buildSummaryRow('Sub Total', subTotal, isDark),
-                const SizedBox(height: 8),
-                _buildSummaryRow('VAT', totalVat, isDark),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
-                ),
-                _buildSummaryRow(
-                  'Grand Total',
-                  grandTotal,
-                  isDark,
-                  isTotal: true,
-                ),
-              ],
-            ),
-          ),
-        ],
+        // ],
 
         const SizedBox(height: 16),
 
@@ -1774,7 +1849,8 @@ class _DraftItem {
 
 class _AddItemDrawer extends ConsumerStatefulWidget {
   final Map<String, dynamic> cfg;
-  const _AddItemDrawer({required this.cfg});
+  final _DraftItem? editItem;
+  const _AddItemDrawer({required this.cfg, this.editItem});
 
   @override
   ConsumerState<_AddItemDrawer> createState() => _AddItemDrawerState();
@@ -1793,6 +1869,31 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
   double _availableStock = 0;
   String? _selectedTax;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.editItem != null) {
+      final item = widget.editItem!;
+      _itemNameCtl.text = item.name;
+      _qtyCtl.text = item.qty.toString();
+      _priceCtl.text = item.price.toString();
+      _discountCtl.text = item.discount.toString();
+      _selectedTax = item.tax;
+      _selectedPackSize = item.packSize;
+      _availableStock = item.available;
+      
+      // Attempt to restore selected product if ID is known
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && item.itemId > 0) {
+          final products = ref.read(salesProductsProvider).value ?? [];
+          final match = products.where((p) => p.id == item.itemId).toList();
+          if (match.isNotEmpty) {
+            setState(() => _selectedProduct = match.first);
+          }
+        }
+      });
+    }
+  }
   @override
   void dispose() {
     _itemNameCtl.dispose();
@@ -1938,9 +2039,9 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Add Material',
-                          style: TextStyle(
+                        Text(
+                          widget.editItem != null ? 'Edit Material' : 'Add Material',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),

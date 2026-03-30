@@ -12,6 +12,10 @@ class OrderItem extends Equatable {
   final ProductSummary? product;
   final PackageUnit? packageUnit;
   final String? loadingInstruction;
+  final String? tax;
+  final String? discount;
+  final String? duration;
+  final String? durationUnit;
 
   const OrderItem({
     this.id,
@@ -22,6 +26,10 @@ class OrderItem extends Equatable {
     this.product,
     this.packageUnit,
     this.loadingInstruction,
+    this.tax,
+    this.discount,
+    this.duration,
+    this.durationUnit,
   });
 
   @override
@@ -34,5 +42,9 @@ class OrderItem extends Equatable {
     product,
     packageUnit,
     loadingInstruction,
+    tax,
+    discount,
+    duration,
+    durationUnit,
   ];
 }

@@ -49,6 +49,7 @@ class AppRouter {
       final pfi = ModalRoute.of(ctx)!.settings.arguments as Pfi;
       return PfiCreatePage(pfi: pfi);
     },
+    '/sales/pfi/settings': (_) => const PfiSettingsPage(),
     '/sales/orders/view': (ctx) {
       final order = ModalRoute.of(ctx)!.settings.arguments as SalesOrder;
       return SalesViewPage(order: order);
