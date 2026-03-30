@@ -93,8 +93,8 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   bool _notifyAll = false;
   String _afterSaveAction = 'Nothing';
 
-  List<Customer> _customers = [];
   bool _isSubmitting = false;
+  bool _generatingOrderNumber = false;
 
   @override
   void initState() {
@@ -167,19 +167,31 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
       _updateTotals();
     } else {
       _startDateCtl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _generateOrderNumber());
     }
 
-    _loadCustomers();
+    // Trigger metadata/customer loads if not already there, 
+    // though SalesPage should have warmed them up.
+    Future.microtask(() {
+      ref.read(customersNotifierProvider.notifier).loadCustomers();
+    });
   }
 
-  Future<void> _loadCustomers() async {
+  Future<void> _generateOrderNumber() async {
+    setState(() => _generatingOrderNumber = true);
     try {
-      final res = await ref.read(getCustomersUseCaseProvider).call();
-      res.fold((_) {}, (list) {
-        if (mounted) setState(() => _customers = list);
-      });
-    } catch (_) {}
+      final remote = ref.read(salesRemoteDataSourceProvider);
+      final num = await remote.generateUniqueNumber('logistic_order', 'order_number');
+      if (num != null && mounted) {
+        _orderNumberCtl.text = num;
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _generatingOrderNumber = false);
+    }
   }
+
+  // _loadCustomers is replaced by global customersNotifierProvider
 
   @override
   void dispose() {
@@ -849,17 +861,33 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                 ),
               if (_fieldEnabled(cfg, ['enable_customer_id', 'enable_customer']))
                 _buildField(
-                  AppSmartDropdown<int>(
-                    value: _selectedCustomerId,
-                    items: _customers.map((c) => c.id!).toList(),
-                    itemBuilder: (id) =>
-                        _customers.firstWhere((c) => c.id == id, orElse: () => Customer(id: id, name: 'Customer #$id')).name ??
-                        'Unknown',
-                    label: 'Customer *',
-                    hintText: 'Select Customer',
-                    enabled: _customers.isNotEmpty,
-                    onChanged: (id) => setState(() => _selectedCustomerId = id),
-                  ),
+                  Builder(builder: (context) {
+                    final customerState = ref.watch(customersNotifierProvider);
+                    final customers = customerState.maybeWhen(
+                      loaded: (list) => list,
+                      orElse: () => <Customer>[],
+                    );
+
+                    return AppSmartDropdown<int>(
+                      value: _selectedCustomerId,
+                      items: customers.map((c) => c.id!).toList(),
+                      itemBuilder: (id) =>
+                          customers
+                              .firstWhere(
+                                (c) => c.id == id,
+                                orElse:
+                                    () =>
+                                        Customer(id: id, name: 'Customer #$id'),
+                              )
+                              .name ??
+                          'Unknown',
+                      label: 'Customer *',
+                      hintText: customers.isEmpty ? 'Loading customers...' : 'Select Customer',
+                      enabled: customers.isNotEmpty,
+                      onChanged:
+                          (id) => setState(() => _selectedCustomerId = id),
+                    );
+                  }),
                 ),
               if (_fieldEnabled(cfg, ['enable_currency', 'show_currency']))
                 _buildAsyncMapDropdown<String>(
@@ -1237,7 +1265,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
               'enable_items_section',
               'enable_items',
             ])) ...[
-              _buildSectionHeader('Items'),
+              // _buildSectionHeader('Items'),
               _buildItems(isDark, cfg),
             ],
 
@@ -1467,17 +1495,17 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(
-              child: Text(
-                "No Item Added",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-            ),
-          )
-        else ...[
+        // if (_items.isEmpty)
+        //   const Padding(
+        //     padding: EdgeInsets.symmetric(vertical: 20),
+        //     child: Center(
+        //       child: Text(
+        //         "No Item Added",
+        //         style: TextStyle(color: Colors.grey, fontSize: 14),
+        //       ),
+        //     ),
+        //   )
+        // else ...[
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1626,38 +1654,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
           ),
 
           const SizedBox(height: 16),
-
-          // Totals Summary (Matching Jobcard feel but adjusted for Sales)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.04)
-                  : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.grey.shade200,
-              ),
-            ),
-            child: Column(
-              children: [
-                _buildSummaryRow('Sub Total', subTotal, isDark),
-                const SizedBox(height: 8),
-                _buildSummaryRow('VAT', totalVat, isDark),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
-                ),
-                _buildSummaryRow(
-                  'Grand Total',
-                  grandTotal,
-                  isDark,
-                  isTotal: true,
-                ),
-              ],
-            ),
-          ),
-        ],
+        // ],
 
         const SizedBox(height: 16),
 

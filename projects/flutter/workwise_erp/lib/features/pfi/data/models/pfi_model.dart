@@ -1,4 +1,5 @@
 import '../../domain/entities/pfi.dart' as domain;
+import '../../../../features/customer/data/models/customer_model.dart';
 
 class PfiModel {
   final int id;
@@ -12,6 +13,12 @@ class PfiModel {
   final String? createdAt;
   final String? customerName;
   final dynamic total;
+  final CustomerModel? customer;
+  final String? currencySymbol;
+  final String? totalTax;
+  final String? totalDiscountType;
+  final String? showQuantityAs;
+  final dynamic pfiShowPeriod;
   
   // New fields from Image
   final String? issueDate;
@@ -75,6 +82,12 @@ class PfiModel {
     this.terms,
     this.customerName,
     this.total,
+    this.customer,
+    this.currencySymbol,
+    this.totalTax,
+    this.totalDiscountType,
+    this.showQuantityAs,
+    this.pfiShowPeriod,
   });
 
   factory PfiModel.fromJson(Map<String, dynamic> json) {
@@ -122,8 +135,13 @@ class PfiModel {
       issueDate: asString(json['issue_date']),
       dueDate: asString(json['due_date']),
       discountType: asString(json['discount_type']),
-      showDiscountPerItem: asString(json['show_discount_per_item']),
-      showTaxPerItem: asString(json['show_tax_per_item']),
+      showDiscountPerItem: asString(json['show_discount_per_item'] ?? json['discount_per_item']),
+      showTaxPerItem: asString(json['show_tax_per_item'] ?? json['tax_per_item']),
+      currencySymbol: asString(json['currency_symbol']),
+      totalTax: asString(json['totalTax'] ?? json['total_tax']),
+      totalDiscountType: asString(json['totalDiscountType'] ?? json['total_discount_type']),
+      showQuantityAs: asString(json['show_quantity_as']),
+      pfiShowPeriod: json['pfi_show_period'],
       supportTicketId: asString(json['support_ticket_id']),
       jobcardId: asString(json['jobcard_id']),
       projectId: asString(json['project_id']),
@@ -135,7 +153,13 @@ class PfiModel {
       subscriptionDuration: asString(json['subscription_duration']),
       subscriptionEndDate: asString(json['subscription_end_date']),
       isRecurring: json['is_recurring'],
-      items: (json['items'] as List?)?.map((i) => PfiItemModel.fromJson(i)).toList(),
+      items: () {
+        try {
+          return (json['items'] as List?)?.map((i) {
+            try { return PfiItemModel.fromJson(i); } catch (_) { return null; }
+          }).whereType<PfiItemModel>().toList();
+        } catch (_) { return null; }
+      }(),
       payments: (json['payments'] as List?)?.map((p) => PfiPaymentModel.fromJson(p)).toList(),
       notes: parseHtml(json['pfi_client_notes'] ?? json['notes']),
       terms: parseHtml(json['pfi_terms_condition'] ?? json['terms_and_conditions']),
@@ -186,6 +210,19 @@ class PfiModel {
       }(),
       paymentMethodId: json['payment_method'] is Map ? json['payment_method']['name']?.toString() : asString(json['payment_method_id'] ?? json['payment_method']),
       paymentTermsId: json['payment_term'] is Map ? json['payment_term']['name']?.toString() : asString(json['payment_terms_id'] ?? json['payment_term']),
+      customer: () {
+        try {
+          for (final key in ['customer', 'client', 'customer_row', 'customer_data', 'billing_info', 'contact']) {
+            final v = json[key];
+            if (v is Map) {
+              return CustomerModel.fromJson(Map<String, dynamic>.from(v));
+            }
+          }
+        } catch (e) {
+          // Fallback if parsing fails
+        }
+        return null;
+      }(),
     );
   }
 
@@ -199,8 +236,8 @@ class PfiModel {
         currencyExchangeRate: currencyExchangeRate,
         status: status,
         createdAt: DateTime.tryParse(createdAt ?? ''),
-        issueDate: DateTime.tryParse(issueDate ?? ''),
-        dueDate: DateTime.tryParse(dueDate ?? ''),
+        issue_date: DateTime.tryParse(issueDate ?? ''),
+        due_date: DateTime.tryParse(dueDate ?? ''),
         discountType: discountType,
         showDiscountPerItem: showDiscountPerItem,
         showTaxPerItem: showTaxPerItem,
@@ -223,6 +260,12 @@ class PfiModel {
         terms: terms,
         customerName: customerName,
         total: double.tryParse((total ?? '0').toString().replaceAll(',', '')),
+        customer: customer?.toDomain(),
+        currencySymbol: currencySymbol,
+        totalTax: double.tryParse((totalTax ?? '0').toString().replaceAll(',', '')),
+        totalDiscountType: totalDiscountType,
+        showQuantityAs: showQuantityAs,
+        pfiShowPeriod: pfiShowPeriod is int ? pfiShowPeriod : int.tryParse(pfiShowPeriod?.toString() ?? ''),
       );
 }
 
@@ -236,7 +279,10 @@ class PfiItemModel {
   final dynamic period;
   final String? periodUnit;
   final dynamic rate;
+  final dynamic basePrice;
   final String? tax;
+  final dynamic discount;
+  final String? discountType;
   final dynamic subtotal;
 
   PfiItemModel({
@@ -249,7 +295,10 @@ class PfiItemModel {
     this.period,
     this.periodUnit,
     this.rate,
+    this.basePrice,
     this.tax,
+    this.discount,
+    this.discountType,
     this.subtotal,
   });
 
@@ -290,20 +339,60 @@ class PfiItemModel {
     return PfiItemModel(
       // id may come as int or string
       id: asInt(json['id']),
-      // item label is 'item_name' in the API
-      itemId: (json['item_name'] ?? json['item_id'] ?? json['product_id'])?.toString(),
+      // item label is 'item_name' or 'name' in the API, or inside nested 'item' / 'product' object
+      itemId: (json['name'] ?? json['item_name'] ?? json['title'] ?? json['item_id'] ?? json['product_id'] ?? 
+               (() {
+                 for (final key in ['item', 'product', 'item_row']) {
+                   if (json[key] is Map) {
+                     return json[key]['name'] ?? json[key]['title'] ?? json[key]['item_name'];
+                   }
+                 }
+                 return null;
+               })())?.toString(),
       isCustom: json['is_custom'] ?? json['is_custom_item'],
-      description: parseHtml(json['description']),
+      description: parseHtml(json['description'] ?? 
+               (() {
+                 for (final key in ['item', 'product', 'item_row']) {
+                   if (json[key] is Map) {
+                     return json[key]['description'];
+                   }
+                 }
+                 return null;
+               })()),
       // quantity arrives as int from the API
       qty: json['quantity'] ?? json['qty'],
-      uomId: (json['unit_id'] ?? json['uom_id'])?.toString(),
+      uomId: (json['unit_id'] ?? json['uom_id'] ?? 
+               (() {
+                 if (json['unit'] is Map) return json['unit']['name'] ?? json['unit']['title'];
+                 if (json['uom'] is Map) return json['uom']['name'] ?? json['uom']['title'];
+                 return null;
+               })())?.toString(),
       // period is usually empty string; period_qty holds the value
       period: json['period_qty'] ?? json['period'],
       periodUnit: json['period_unit']?.toString(),
-      // base_price is the reliable price field; fall back to price/rate
-      rate: json['price'] ?? json['base_price'] ?? json['rate'],
+      // base_price is the reliable price field; fall back to price/rate or nested items
+      rate: json['price'] ?? json['rate'] ?? 
+               (() {
+                 for (final key in ['item', 'product', 'item_row']) {
+                   if (json[key] is Map) {
+                     return json[key]['price'] ?? json[key]['rate'];
+                   }
+                 }
+                 return null;
+               })(),
+      basePrice: json['base_price'] ?? 
+               (() {
+                 for (final key in ['item', 'product', 'item_row']) {
+                   if (json[key] is Map) {
+                     return json[key]['base_price'];
+                   }
+                 }
+                 return null;
+               })(),
       // tax_rate holds the percentage; tax may hold the display label
       tax: (json['tax_rate'] ?? json['tax'])?.toString(),
+      discount: json['discount'],
+      discountType: json['discount_type']?.toString(),
       subtotal: json['total'] ?? json['subtotal'],
     );
   }
@@ -326,7 +415,10 @@ class PfiItemModel {
       period: asDouble(period),
       periodUnit: periodUnit,
       rate: asDouble(rate),
+      basePrice: asDouble(basePrice),
       tax: tax,
+      discount: asDouble(discount),
+      discountType: discountType,
       subtotal: asDouble(subtotal),
     );
   }

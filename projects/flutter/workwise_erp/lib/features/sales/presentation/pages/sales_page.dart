@@ -24,6 +24,8 @@ import '../../../../core/themes/app_icons.dart';
 import '../../../../core/widgets/drawer_filter.dart';
 import '../../../../core/widgets/google_nav_bar.dart';
 import '../../../jobcard/presentation/providers/jobcard_providers.dart';
+import '../../../customer/presentation/providers/customer_providers.dart';
+import '../../../support/presentation/providers/support_providers.dart';
 
 import '../../../pfi/presentation/providers/pfi_providers.dart';
 import '../../../pfi/presentation/state/pfi_state.dart';
@@ -61,7 +63,54 @@ class _SalesPageState extends ConsumerState<SalesPage>
           .read(salesNotifierProvider.notifier)
           .loadOrders(_mapFilterToParams(_activeFilter));
       ref.read(pfiNotifierProvider.notifier).loadPfis();
+      _warmupMetadata();
     });
+  }
+
+  void _warmupMetadata() {
+    // Warm up common metadata providers for create forms to avoid loading states later
+    final providers = [
+      salesUsersProvider,
+      salesOrderStatusesProvider,
+      salesProductsProvider,
+      salesPackageUnitsProvider,
+      salesVehiclesProvider,
+      salesPackageTypesProvider,
+      salesWarehousesProvider,
+      salesQuotationsProvider,
+      salesContractsProvider,
+      salesRequestsProvider,
+      salesTaxesProvider,
+      salesCurrenciesProvider,
+      salesJobcardsProvider,
+      salesSupportTicketsProvider,
+      salesProjectsProvider,
+      salesTripsProvider,
+      salesPaymentTermsProvider,
+      salesPaymentMethodProvider,
+      salesPrioritiesProvider,
+      salesCargoUnitsProvider,
+      salesPaymentTypesProvider,
+      salesDiscountTypesProvider,
+      salesSubscriptionDurationsProvider,
+      salesSettingsProvider,
+      salesSettingsConfigProvider,
+      pfiSettingsProvider,
+    ];
+
+    for (final p in providers) {
+      try {
+        ref.read(p);
+      } catch (_) {}
+    }
+
+    // Trigger stateful metadata loads if not already loaded
+    try {
+      ref.read(customersNotifierProvider.notifier).loadCustomers();
+    } catch (_) {}
+    try {
+      ref.read(supportNotifierProvider.notifier).loadTickets(limit: 1000);
+    } catch (_) {}
   }
 
   void _onScroll() {

@@ -73,9 +73,9 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   final _termsCtl = TextEditingController();
 
   int? _selectedCustomerId;
-  List<Customer> _customers = [];
   bool _isLoadingMetadata = false;
   bool _isSubmitting = false;
+  bool _generatingPfiNumber = false;
 
   @override
   void initState() {
@@ -87,6 +87,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
       final now = DateTime.now();
       _issueDateCtl.text = DateFormat('yyyy-MM-dd').format(now);
       _dueDateCtl.text = DateFormat('yyyy-MM-dd').format(now);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _generatePfiNumber());
     }
     _loadMetadata();
     // Pre-fetch support tickets using the existing module notifier
@@ -95,13 +96,27 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     });
   }
 
+  Future<void> _generatePfiNumber() async {
+    setState(() => _generatingPfiNumber = true);
+    try {
+      final remote = ref.read(salesRemoteDataSourceProvider);
+      final num = await remote.generateUniqueNumber('proposals', 'proposal_number');
+      if (num != null && mounted) {
+        _proposalNumberCtl.text = num;
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _generatingPfiNumber = false);
+    }
+  }
+
   void _loadPfiData() {
     final p = widget.pfi!;
     _proposalNumberCtl.text = p.proposalNumber ?? '';
     _subjectCtl.text = p.subject ?? '';
     _selectedCustomerId = p.customerId;
-    if (p.issueDate != null) _issueDateCtl.text = DateFormat('yyyy-MM-dd').format(p.issueDate!);
-    if (p.dueDate != null) _dueDateCtl.text = DateFormat('yyyy-MM-dd').format(p.dueDate!);
+    if (p.issue_date != null) _issueDateCtl.text = DateFormat('yyyy-MM-dd').format(p.issue_date!);
+    if (p.due_date != null) _dueDateCtl.text = DateFormat('yyyy-MM-dd').format(p.due_date!);
     _exchangeRateCtl.text = p.currencyExchangeRate ?? '1.00';
     _selectedCurrencyId = p.currency?.toString();
     _selectedDiscountType = p.discountType;
@@ -126,12 +141,10 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   }
 
   Future<void> _loadMetadata() async {
-    setState(() => _isLoadingMetadata = true);
-    try {
-      final custRes = await ref.read(getCustomersUseCaseProvider).call();
-      custRes.fold((_) => null, (list) => _customers = list);
-    } catch (_) {}
-    if (mounted) setState(() => _isLoadingMetadata = false);
+    // customers are now handled by global customersNotifierProvider
+    Future.microtask(() {
+      ref.read(customersNotifierProvider.notifier).loadCustomers();
+    });
   }
 
   @override
@@ -365,7 +378,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                    // ── Section: General Details ─────────────────────
-                  _buildSectionHeader('General Details'),
+                  // _buildSectionHeader('General Details'),
                   _buildField(AppTextField(
                     controller: _proposalNumberCtl,
                     label: 'Proposal Number',
@@ -377,22 +390,31 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                     hintText: 'e.g. Pro Forma for Spares',
                     validator: (v) => v?.isEmpty == true ? 'Required' : null,
                   )),
-                  _buildField(AppSmartDropdown<int>(
-                    value: _selectedCustomerId,
-                    items: _customers.map((c) => c.id!).toList(),
-                    itemBuilder: (id) {
-                      if (_customers.isEmpty) return 'Loading...';
-                      final customer = _customers.cast<Customer?>().firstWhere(
-                        (c) => c?.id == id,
-                        orElse: () => null,
-                      );
-                      return customer?.name ?? 'Unknown ($id)';
-                    },
-                    label: 'Customer *',
-                    hintText: 'Select Customer',
-                    enabled: _customers.isNotEmpty,
-                    onChanged: (id) => setState(() => _selectedCustomerId = id),
-                  )),
+                  _buildField(Builder(builder: (context) {
+                    final customerState = ref.watch(customersNotifierProvider);
+                    final customers = customerState.maybeWhen(
+                      loaded: (list) => list,
+                      orElse: () => <Customer>[],
+                    );
+
+                    return AppSmartDropdown<int>(
+                      value: _selectedCustomerId,
+                      items: customers.map((c) => c.id!).toList(),
+                      itemBuilder: (id) {
+                        if (customers.isEmpty) return 'Loading...';
+                        final customer = customers.cast<Customer?>().firstWhere(
+                              (c) => c?.id == id,
+                              orElse: () => null,
+                            );
+                        return customer?.name ?? 'Unknown ($id)';
+                      },
+                      label: 'Customer *',
+                      hintText: customers.isEmpty ? 'Loading customers...' : 'Select Customer',
+                      enabled: customers.isNotEmpty,
+                      onChanged:
+                          (id) => setState(() => _selectedCustomerId = id),
+                    );
+                  })),
                   Row(
                     children: [
                       Expanded(child: _buildField(AppTextField(
@@ -414,7 +436,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                   ),
 
                   // ── Section: Pricing & Linking ──────────────────
-                  _buildSectionHeader('Pricing & Linking'),
+                  // _buildSectionHeader('Pricing & Linking'),
                   Row(
                     children: [
                       Expanded(child: _buildAsyncMapDropdown<String>(
@@ -542,7 +564,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                   ),
 
                   // ── Section: Logistics & Assignment ──────────────
-                  _buildSectionHeader('Logistics & Assignment'),
+                  // _buildSectionHeader('Logistics & Assignment'),
                   Row(
                     children: [
                       Expanded(child: _buildAsyncMapDropdown<String>(
@@ -615,7 +637,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
 
                   // ── Section: Subscription ───────────────────────
                   if (show('pfi_subscription')) ...[
-                    _buildSectionHeader('Subscription'),
+                    // _buildSectionHeader('Subscription'),
                     Row(
                       children: [
                         Expanded(child: _buildField(AppTextField(
@@ -664,45 +686,36 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                   ],
 
                   // ── Section: Items ──────────────────────────────
-                  _buildSectionHeader('Items'),
+                  // _buildSectionHeader('Items'),
                   
                   // Setup UI (matching Reference 2)
-                  Container(
-                    padding: EdgeInsets.all(16.r),
-                    margin: EdgeInsets.only(bottom: 16.h),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                         Row(
-                          children: [
-                            Expanded(child: _buildField(AppTextField(controller: _defaultUnitLabelCtl, label: 'Default Unit Label'))),
-                            if (show('pfi_show_period')) ...[
-                              SizedBox(width: 12.w),
-                              Expanded(child: _buildRadioGroup('Show Period', ['Yes', 'No'], _showPeriod ? 'Yes' : 'No', (v) => setState(() => _showPeriod = v == 'Yes'))),
-                            ] else
-                              const Spacer(),
-                          ],
-                        ),
-                      ],
-                    ),
+                  Column(
+                    children: [
+                       Row(
+                        children: [
+                          Expanded(child: _buildField(AppTextField(controller: _defaultUnitLabelCtl, label: 'Default Unit Label'))),
+                          if (show('pfi_show_period')) ...[
+                            SizedBox(width: 12.w),
+                            Expanded(child: _buildRadioGroup('Show Period', ['Yes', 'No'], _showPeriod ? 'Yes' : 'No', (v) => setState(() => _showPeriod = v == 'Yes'))),
+                          ] else
+                            const Spacer(),
+                        ],
+                      ),
+                    ],
                   ),
 
-                  if (_items.isEmpty)
-                    Container(
-                      padding: EdgeInsets.all(24.r),
-                      margin: EdgeInsets.only(bottom: 16.h),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(16.r),
-                        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-                      ),
-                      child: Center(child: Text('No items added yet', style: TextStyle(color: Colors.grey, fontSize: 13.sp))),
-                    )
-                  else
+                  // if (_items.isEmpty)
+                  //   Container(
+                  //     padding: EdgeInsets.all(24.r),
+                  //     margin: EdgeInsets.only(bottom: 16.h),
+                  //     decoration: BoxDecoration(
+                  //       color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+                  //       borderRadius: BorderRadius.circular(16.r),
+                  //       border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                  //     ),
+                  //     child: Center(child: Text('No items added yet', style: TextStyle(color: Colors.grey, fontSize: 13.sp))),
+                  //   )
+                  // else
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -736,13 +749,13 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                     ),
                   ),
 
-                  SizedBox(height: 24.h),
-                  _buildSummaryRow('Sub Total', _subTotal),
-                  _buildSummaryRow('Total Amount', _subTotal, isBold: true),
+                  SizedBox(height: 2.h),
+                  // _buildSummaryRow('Sub Total', _subTotal),
+                  // _buildSummaryRow('Total Amount', _subTotal, isBold: true),
 
                   // ── Section: Footer ─────────────────────────────
                   if (show('pfi_allow_footer')) ...[
-                    _buildSectionHeader('Notes & Terms'),
+                    // _buildSectionHeader('Notes & Terms'),
                     _buildField(AppTextField(controller: _notesCtl, label: 'Notes', maxLines: 3)),
                     _buildField(AppTextField(controller: _termsCtl, label: 'Terms & Conditions', maxLines: 3)),
                   ],

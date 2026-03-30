@@ -51,9 +51,8 @@ const List<MenuItemModel> appMenus = [
 
   // MenuItemModel(
   //   id: 'hr',
-  //   title: 'HR',
+  //   title: 'Human Resource',
   //   icon: Icons.people_outline,
-  //   iconSize: 56,
   //   route: '/hr',
   //   requiredPermissions: ['show hrm dashboard'],
   // ),

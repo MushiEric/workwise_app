@@ -130,6 +130,12 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var effectiveTextColor = textColor;
+    // Default to white text if the background is our primary blue (or similar)
+    if (backgroundColor == AppColors.primary && effectiveTextColor == null) {
+      effectiveTextColor = AppColors.white;
+    }
+    
     final bool isDisabled = !enabled || isLoading || onPressed == null;
 
     // If sticky, wrap with sticky container
@@ -150,7 +156,7 @@ class AppButton extends StatelessWidget {
         child: SizedBox(
           width: width ?? double.infinity,
           height: height,
-          child: _buildButton(isDisabled),
+          child: _buildButton(isDisabled, effectiveTextColor),
         ),
       );
     }
@@ -159,22 +165,22 @@ class AppButton extends StatelessWidget {
     return SizedBox(
       width: width ?? double.infinity,
       height: height,
-      child: _buildButton(isDisabled),
+      child: _buildButton(isDisabled, effectiveTextColor),
     );
   }
 
-  Widget _buildButton(bool isDisabled) {
+  Widget _buildButton(bool isDisabled, Color? effectiveTextColor) {
     if (isTextButton) {
       return TextButton(
         onPressed: isDisabled ? null : onPressed,
         style: TextButton.styleFrom(
-          foregroundColor: textColor,
-          disabledForegroundColor: textColor?.withOpacity(0.5),
+          foregroundColor: effectiveTextColor,
+          disabledForegroundColor: effectiveTextColor?.withOpacity(0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTypography.buttonBorderRadius),
           ),
         ),
-        child: _buildButtonContent(),
+        child: _buildButtonContent(effectiveTextColor),
       );
     }
 
@@ -182,17 +188,17 @@ class AppButton extends StatelessWidget {
       return OutlinedButton(
         onPressed: isDisabled ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: textColor,
+          foregroundColor: effectiveTextColor,
           side: BorderSide(
             color: borderColor?.withOpacity(isDisabled ? 0.5 : 1.0) ?? AppColors.primary,
             width: 1.5,
           ),
-          disabledForegroundColor: textColor?.withOpacity(0.5),
+          disabledForegroundColor: effectiveTextColor?.withOpacity(0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTypography.buttonBorderRadius),
           ),
         ),
-        child: _buildButtonContent(),
+        child: _buildButtonContent(effectiveTextColor),
       );
     }
 
@@ -200,19 +206,19 @@ class AppButton extends StatelessWidget {
       onPressed: isDisabled ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
-        foregroundColor: textColor,
+        foregroundColor: effectiveTextColor,
         disabledBackgroundColor: backgroundColor?.withOpacity(0.5),
-        disabledForegroundColor: textColor?.withOpacity(0.5),
+        disabledForegroundColor: effectiveTextColor?.withOpacity(0.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTypography.buttonBorderRadius),
         ),
         elevation: 0,
       ),
-      child: _buildButtonContent(),
+      child: _buildButtonContent(effectiveTextColor),
     );
   }
 
-  Widget _buildButtonContent() {
+  Widget _buildButtonContent(Color? effectiveTextColor) {
     if (isLoading) {
       return SizedBox(
         height: 20,
@@ -220,7 +226,7 @@ class AppButton extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation<Color>(
-            textColor ?? AppColors.white,
+            effectiveTextColor ?? AppColors.white,
           ),
         ),
       );
@@ -234,9 +240,10 @@ class AppButton extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
+              color: effectiveTextColor,
             ),
           ),
         ],
@@ -245,9 +252,10 @@ class AppButton extends StatelessWidget {
 
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
+        color: effectiveTextColor,
       ),
     );
   }

@@ -465,6 +465,15 @@ class SalesRemoteDataSource {
         'records',
         'materials',
         'products',
+        'products_data',
+        'items_data',
+        'product_list',
+        'material_list',
+        'item_list',
+        'services',
+        'service',
+        'inventory',
+        'inventory_items',
         'units',
         'unit',
         'statuses',
@@ -587,20 +596,77 @@ class SalesRemoteDataSource {
   /// Internal helper to get raw product maps
   Future<List<Map<String, dynamic>>> getRawProducts({int? creatorId}) async {
     try {
-      final list = await _getMetadata('/product/getItem');
-      return list.map((m) => _normalizeProductJson(m)).toList();
+      final params = creatorId != null ? {'creatorId': creatorId} : null;
+      final paths = [
+        '/product/getItem',
+        '/product/getMaterial',
+        '/product/getProducts',
+        '/material/getMaterial',
+        '/logistic/getMaterial',
+        '/inventory/getItem',
+        '/sales/getMaterial',
+        '/sales/getItem',
+        '/api/product/getItem',
+        '/api/sales/getMaterial',
+      ];
+      
+      for (final p in paths) {
+        // Try simple fetch first (high limit, no complex pagination keys)
+        var list = await _getMetadataSimple(p, params: params);
+        if (list.isNotEmpty) return list.map((m) => _normalizeProductJson(m)).toList();
+        
+        // Fallback to complex paginated fetch
+        list = await _getMetadata(p, params: params);
+        if (list.isNotEmpty) return list.map((m) => _normalizeProductJson(m)).toList();
+      }
+      return [];
     } catch (e) {
       throw ServerException(e.toString());
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getMetadataSimple(String path, {Map<String, dynamic>? params}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'length': '1000',
+        'limit': '1000',
+        'per_page': '1000',
+        'all': '1',
+      };
+      if (params != null) queryParams.addAll(params);
+      
+      final resp = await client.get(path, queryParameters: queryParams);
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
     }
   }
 
   /// GET /product/getProductUnit
   Future<List<PackageUnitModel>> getPackageUnits({int? creatorId}) async {
     try {
-      final list = await _getMetadata('/product/getProductUnit');
-      return list
-          .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
-          .toList();
+      final params = creatorId != null ? {'creatorId': creatorId} : null;
+      final paths = [
+        '/product/getProductUnit',
+        '/sales/getMeasureUnit',
+        '/order/getMeasureUnits',
+        '/logistic/getMeasureUnits',
+        '/api/product/getProductUnit',
+        '/api/sales/getMeasureUnit',
+      ];
+      
+      for (final p in paths) {
+        var list = await _getMetadataSimple(p, params: params);
+        if (list.isEmpty) {
+          list = await _getMetadata(p, params: params);
+        }
+        if (list.isNotEmpty) {
+          return list
+              .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
+              .toList();
+        }
+      }
+      return [];
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -637,9 +703,9 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getProjects() async {
     final paths = [
-      '/project/getProject',
-      '/projects/getProject',
       '/get-projects',
+      '/proposal/getProject',
+      '/project/getProject',
       '/sales/getProject',
     ];
     for (final p in paths) {
@@ -698,11 +764,11 @@ class SalesRemoteDataSource {
 
   Future<List<Map<String, dynamic>>> getCurrencies() async {
     final paths = [
-      '/order/getCurrency',
-      '/logistic/getCurrency',
-      '/sales/getCurrency',
-      '/api/getCurrency',
+      '/proposal/getCurrency',
       '/currency/getCurrency',
+      '/api/getCurrency',
+      '/order/getCurrency',
+      '/sales/getCurrency',
     ];
     for (final p in paths) {
       try {
@@ -812,8 +878,10 @@ class SalesRemoteDataSource {
   Future<List<Map<String, dynamic>>> getUsers() async {
     final paths = [
       '/user/getUsers',
-      '/users/getUsers',
+      '/sales/getSalesAgent',
+      '/sales/getSalesAgents',
       '/auth/getUsers',
+      '/users/getUsers',
     ];
     for (final p in paths) {
       try {
@@ -843,30 +911,39 @@ class SalesRemoteDataSource {
     return [];
   }
 
-  Future<List<Map<String, dynamic>>> _getMetadata(String path) async {
+  Future<List<Map<String, dynamic>>> _getMetadata(String path, {Map<String, dynamic>? params}) async {
     try {
       final List<Map<String, dynamic>> allItems = [];
       int currentPage = 1;
       int lastPage = 1;
-      const int pageSize = 50; 
+      const int pageSize = 1000; 
 
       do {
+        final queryParams = <String, dynamic>{
+          'page': currentPage,
+          'length': pageSize.toString(),
+          'limit': pageSize.toString(),
+          'per_page': pageSize.toString(),
+          'page_length': pageSize.toString(),
+          'limit_page_length': pageSize.toString(),
+          'all': '1',
+          'draw': '1',
+          'start': (currentPage - 1) * pageSize,
+          'offset': (currentPage - 1) * pageSize,
+        };
+        if (params != null) {
+          queryParams.addAll(params);
+        }
+
         final resp = await client.get(
           path,
-          queryParameters: {
-            'page': currentPage,
-            'length': pageSize.toString(),
-            'limit': pageSize.toString(),
-            'per_page': pageSize.toString(),
-            'page_length': pageSize.toString(),
-            'limit_page_length': pageSize.toString(),
-            'all': '1',
-            'draw': '1',
-            'start': (currentPage - 1) * pageSize,
-            'offset': (currentPage - 1) * pageSize,
-          },
-          options: Options(validateStatus: (s) => s != null && s < 500),
-        );
+          queryParameters: queryParams,
+          options: Options(
+            validateStatus: (s) => s != null && s < 500,
+            sendTimeout: const Duration(seconds: 4),
+            receiveTimeout: const Duration(seconds: 8),
+          ),
+        ).timeout(const Duration(seconds: 10));
 
         if (resp.statusCode != 200) break;
 
@@ -968,5 +1045,52 @@ class SalesRemoteDataSource {
     } catch (e) {
       throw ServerException(e.toString());
     }
+  }
+
+  /// GET /generateUniqueNumber?table={table}&column={column}
+  /// Returns a generated number as a string when available.
+  Future<String?> generateUniqueNumber(String table, String column) async {
+    try {
+      final resp = await client.get(
+        '/generateUniqueNumber',
+        queryParameters: {
+          'table': table,
+          'column': column,
+        },
+        options: Options(extra: {'noAuth': true}),
+      );
+      return _tryParseNextNumber(resp.data);
+    } catch (e) {
+      // ignore: avoid_print
+      print('[SalesRemoteDataSource] generateUniqueNumber error for $table: $e');
+      return null;
+    }
+  }
+
+  String? _tryParseNextNumber(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is String) {
+      final s = raw.trim();
+      if (s.isEmpty || s.startsWith('<')) return null;
+      try {
+        final decoded = json.decode(s);
+        return _tryParseNextNumber(decoded);
+      } catch (_) {
+        return s;
+      }
+    }
+    if (raw is Map) {
+      if (raw['data'] is String) return raw['data'] as String;
+      if (raw['data'] is Map && raw['data']['number'] != null)
+        return raw['data']['number'].toString();
+      if (raw['number'] != null) return raw['number'].toString();
+      if (raw['order_number'] != null) return raw['order_number'].toString();
+      if (raw['proposal_number'] != null) return raw['proposal_number'].toString();
+      for (final v in raw.values) {
+        if (v is String && v.isNotEmpty) return v;
+      }
+    }
+    if (raw is num) return raw.toString();
+    return null;
   }
 }
