@@ -20,6 +20,8 @@ import 'package:workwise_erp/core/widgets/app_circle_avatar.dart';
 import 'package:intl/intl.dart';
 import 'package:workwise_erp/core/provider/locale_provider.dart';
 import 'package:workwise_erp/core/provider/theme_provider.dart';
+import 'package:workwise_erp/core/provider/tenant_provider.dart';
+import 'package:workwise_erp/core/provider/token_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1015,7 +1017,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 Consumer(
                   builder: (context, ref, _) {
                     final themeMode = ref.watch(themeModeProvider);
-                    final isDarkMode = themeMode == ThemeMode.dark;
+                    final isDarkMode = themeMode == ThemeMode.dark
+                        ? true
+                        : themeMode == ThemeMode.light
+                        ? false
+                        : Theme.of(context).brightness == Brightness.dark;
                     return _buildMenuTile(
                       icon: AppIcons.moon,
                       label: context.l10n.darkMode,
@@ -1061,15 +1067,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     activeColor: AppColors.primary,
                   ),
                 ),
-                // _buildMenuTile(
-                //   icon: AppIcons.server,
-                //   label: context.l10n.switchWorkspace,
-                //   subtitle: context.l10n.changeWorkspaceSubtitle,
-                //   onTap: () {
-                //     Navigator.pop(context);
-                //     _showSwitchWorkspaceConfirmation();
-                //   },
-                // ),
+                _buildMenuTile(
+                  icon: AppIcons.server,
+                  label: context.l10n.switchWorkspace,
+                  subtitle: context.l10n.changeWorkspaceSubtitle,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showSwitchWorkspaceConfirmation();
+                  },
+                ),
                 _buildMenuTile(
                   icon: Icons.description_outlined,
                   label: context.l10n.termsOfService,
@@ -1216,6 +1222,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         },
       ),
     );
+  }
+
+  Future<void> _showSwitchWorkspaceConfirmation() async {
+    final shouldSwitch = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(context.l10n.switchWorkspace),
+          content: Text(context.l10n.switchWorkspaceMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(context.l10n.switchWorkspace),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldSwitch != true) return;
+
+    await ref.read(tokenLocalDataSourceProvider).deleteToken();
+    await ref.read(tenantLocalDataSourceProvider).clearTenant();
+    ref.read(tenantProvider.notifier).state = null;
+
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/workspace', (route) => false);
   }
 
   Widget _buildMenuTile({

@@ -57,7 +57,7 @@ workflows:
         submit_to_app_store: false  # set to true when ready for full release
       email:
         recipients:
-          - your.email@example.com  # ← replace with your email
+          - ericprosper5@gmail.com  # ← replace with your email
         notify:
           success: true
           failure: true
@@ -65,15 +65,15 @@ scripts:
   - name: Verify current dir
     script: pwd && ls -la
 
-  - name: Install pods
-    script: |
-      cd projects/flutter/workwise_erp/ios
-      pod install --repo-update
-
   - name: Flutter pub get
     script: |
       cd projects/flutter/workwise_erp
       flutter pub get
+
+  - name: Install pods
+    script: |
+      cd projects/flutter/workwise_erp/ios
+      pod install --repo-update
 
   - name: Build IPA
     script: |

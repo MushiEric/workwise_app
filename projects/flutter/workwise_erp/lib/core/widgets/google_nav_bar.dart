@@ -50,42 +50,42 @@ class AppGoogleNavBar extends StatelessWidget {
 
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      color: backgroundColor ?? defaultBg,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: GNav(
-        gap: 8,
-        padding:
-            tabPadding ??
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        activeColor: activeColor ?? theme.colorScheme.primary,
-        color: color ?? theme.colorScheme.onSurface.withOpacity(0.8),
-        tabBackgroundColor:
-            activeTabBackgroundColor ??
-            theme.colorScheme.primary.withOpacity(0.12),
-        tabMargin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        selectedIndex: selectedIndex,
-        onTabChange: (index) => onTabChange(index),
-        tabs: items
-            .map(
-              (item) => GButton(
-                icon: item.icon,
-                iconSize: item.iconSize,
-                iconColor: item.iconColor,
-                iconActiveColor: item.activeIconColor,
-                text: item.label,
-                textStyle:
-                    item.textStyle ??
-                    theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
-                leading: item.leading,
-              ),
-            )
-            .toList(),
+    return SafeArea(
+      top: false,
+      child: Container(
+        color: backgroundColor ?? defaultBg,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: GNav(
+          gap: 8,
+          padding: tabPadding ??
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          activeColor: activeColor ?? theme.colorScheme.primary,
+          color: color ?? theme.colorScheme.onSurface.withOpacity(0.8),
+          tabBackgroundColor: activeTabBackgroundColor ??
+              theme.colorScheme.primary.withOpacity(0.12),
+          tabMargin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          selectedIndex: selectedIndex,
+          onTabChange: (index) => onTabChange(index),
+          tabs: items
+              .map(
+                (item) => GButton(
+                  icon: item.icon,
+                  iconSize: item.iconSize,
+                  iconColor: item.iconColor,
+                  iconActiveColor: item.activeIconColor,
+                  text: item.label,
+                  textStyle: item.textStyle ??
+                      theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                  leading: item.leading,
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
