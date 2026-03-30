@@ -93,58 +93,56 @@ class AppDrawer extends ConsumerWidget {
             headerEmail: headerEmail,
             headerAvatar: headerAvatar,
           ),
-            Expanded(
-              child: Container(
-                // Keep the drawer content background consistent with light/dark mode.
-                color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildDivider(isDark),
-                    _buildMenuHeader(isDark, context),
-                    const SizedBox(height: 12),
-                    // Menu items with animations
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: appMenus.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 2),
-                        itemBuilder: (context, index) {
-                          final m = appMenus[index];
-                          final checker = ref.watch(permissionCheckerProvider);
+          Expanded(
+            child: Container(
+              // Keep the drawer content background consistent with light/dark mode.
+              color: isDark ? const Color(0xFF0A0E21) : Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  _buildDivider(isDark),
+                  _buildMenuHeader(isDark, context),
+                  const SizedBox(height: 12),
+                  // Menu items with animations
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: appMenus.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 2),
+                      itemBuilder: (context, index) {
+                        final m = appMenus[index];
+                        final checker = ref.watch(permissionCheckerProvider);
 
-                          if (m.requiredPermissions != null &&
-                              m.requiredPermissions!.isNotEmpty &&
-                              !checker.hasAnyPermission(
-                                m.requiredPermissions!,
-                              )) {
-                            return const SizedBox.shrink();
-                          }
+                        if (m.requiredPermissions != null &&
+                            m.requiredPermissions!.isNotEmpty &&
+                            !checker.hasAnyPermission(m.requiredPermissions!)) {
+                          return const SizedBox.shrink();
+                        }
 
-                          return _buildAnimatedMenuItem(
-                            context: context,
-                            isDark: isDark,
-                            icon: _getLucideIconForMenu(m.id),
-                            title: m.title,
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(context, m.route);
-                            },
-                          );
-                        },
-                      ),
+                        return _buildAnimatedMenuItem(
+                          context: context,
+                          isDark: isDark,
+                          icon: _getLucideIconForMenu(m.id),
+                          title: m.title,
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, m.route);
+                          },
+                        );
+                      },
                     ),
-                    // Bottom Section (includes bottom safe-area padding so white fills to edge)
-                    _buildBottomSection(context, ref, isDark),
-                    SizedBox(height: MediaQuery.of(context).padding.bottom),
-                  ],
-                ),
+                  ),
+                  // Bottom Section (includes bottom safe-area padding so white fills to edge)
+                  _buildBottomSection(context, ref, isDark),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -757,8 +755,8 @@ class AppDrawer extends ConsumerWidget {
         '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
 
     final shareText = isMobile
-        ? '$appName — $baseDescription$mobileExtras\n\nLearn more: ${AppConstant.website}'
-        : '$appName — $baseDescription\n\nLearn more: ${AppConstant.website}';
+        ? '$appName — $baseDescription$mobileExtras\n\nDownload now: https://play.google.com/store/apps/details?id=com.getcoregroup.workwise'
+        : '$appName — $baseDescription\n\nDownload now: https://play.google.com/store/apps/details?id=com.getcoregroup.workwise';
 
     final subject = 'Try $appName — team productivity & operations';
 

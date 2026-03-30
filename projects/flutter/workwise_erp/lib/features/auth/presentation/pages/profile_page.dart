@@ -254,6 +254,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     // Always keep the last known good user so the UI never collapses to
     // defaults while the notifier is in loading state.
+    // If the authenticated user identity changed (different user logged in),
+    // reset stale cached state so we never display the previous user's data.
+    if (user != null && _cachedUser != null && _cachedUser!.id != user.id) {
+      _cachedUser = null;
+      _lastPopulatedUser = null;
+    }
     if (user != null) _cachedUser = user;
 
     // Prefer the fresh API data (currentUserProvider) for display; fall back to

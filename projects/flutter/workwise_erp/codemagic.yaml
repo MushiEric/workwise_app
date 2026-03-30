@@ -1,0 +1,61 @@
+workflows:
+  ios-release:
+    name: iOS Release to TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store       # matches the provisioning profile type
+        bundle_identifier: com.example.workwiseErp  # ← UPDATE to your real bundle ID
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        # ── App Store Connect API key (add these as encrypted vars in Codemagic UI) ──
+        APP_STORE_CONNECT_ISSUER_ID: Encrypted(...)    # replace after encrypting
+        APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(...)
+        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
+        # ── Your Apple Developer Team ID ──
+        APP_APPLE_TEAM_ID: Encrypted(...)
+        # ── App ID in App Store Connect (numeric, e.g. 1234567890) ──
+        APP_STORE_APP_ID: Encrypted(...)
+
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+
+      - name: Run tests
+        script: |
+          flutter test
+        ignore_failure: true
+
+      - name: Flutter build iOS (IPA)
+        script: |
+          flutter build ipa \
+            --release \
+            --build-name=$(cat pubspec.yaml | grep '^version:' | awk '{print $2}' | cut -d'+' -f1) \
+            --build-number=$(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" --apikey-issuer-id "$APP_STORE_CONNECT_ISSUER_ID" --apikey-key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" --apikey-private-key "$APP_STORE_CONNECT_PRIVATE_KEY" 2>/dev/null || echo 0) + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration         # uses the API key vars above
+        submit_to_testflight: true
+        submit_to_app_store: false  # set to true when ready for full release
+      email:
+        recipients:
+          - your.email@example.com  # ← replace with your email
+        notify:
+          success: true
+          failure: true

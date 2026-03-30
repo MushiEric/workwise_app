@@ -571,6 +571,30 @@ class SalesRemoteDataSource {
     }
   }
 
+  /// Fallback stubs for methods referenced by sales providers but not yet tracked
+  /// in this datasource. These may be updated to real endpoints as needed.
+  Future<List<Map<String, dynamic>>> getJobCards() async => [];
+
+  Future<List<Map<String, dynamic>>> getSupportTickets() async => [];
+
+  Future<List<Map<String, dynamic>>> getProjects() async => [];
+
+  Future<List<Map<String, dynamic>>> getTrips() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentTerms() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentMethods() async => [];
+
+  Future<List<Map<String, dynamic>>> getPriorities() async => [];
+
+  Future<List<Map<String, dynamic>>> getCargoUnits() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentTypes() async => [];
+
+  Future<List<Map<String, dynamic>>> getDiscountTypes() async => [];
+
+  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async => [];
+
   /// POST /order/saveOrder
   ///
   /// [payload] can be either a plain `Map<String, dynamic>` (sent as JSON) or

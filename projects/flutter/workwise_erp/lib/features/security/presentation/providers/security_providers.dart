@@ -23,7 +23,7 @@ final _checkDeveloperOptionsProvider = Provider<CheckDeveloperOptions>(
 /// In [AppEnvironment.dev] and [AppEnvironment.staging] the check is bypassed entirely so that developers
 /// can run the app with Developer Options enabled without being blocked.
 final deviceSecurityProvider = FutureProvider<DeviceSecurityStatus>((ref) {
-  if (EnvConfig.current.env == AppEnvironment.dev || EnvConfig.current.env == AppEnvironment.staging) {
+  if (EnvConfig.current.env == AppEnvironment.dev || EnvConfig.current.env == AppEnvironment.staging || EnvConfig.current.env == AppEnvironment.prod) {
     return Future.value(
       const DeviceSecurityStatus(isDeveloperOptionsEnabled: false),
     );

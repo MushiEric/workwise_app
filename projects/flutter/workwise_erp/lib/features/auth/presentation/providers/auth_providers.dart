@@ -103,6 +103,10 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
   Future<void> clearCachedUser() async {
     try {
       await userStorage.deleteUser();
+      // Invalidate the currentUserProvider so it re-fetches fresh data for
+      // the next user that logs in, instead of serving the previous user's
+      // cached profile.
+      ref.invalidate(currentUserProvider);
     } catch (_) {}
   }
 

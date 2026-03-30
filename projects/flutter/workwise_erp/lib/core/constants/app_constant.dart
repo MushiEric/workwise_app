@@ -2,7 +2,7 @@ class AppConstant {
   AppConstant._();
 
   static const String appName = 'Workwise';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.6.0';
   static const String author = 'Getcore';
   static const String company = 'Getcore';
   static const String website = 'https://getcore.workwise.africa';
