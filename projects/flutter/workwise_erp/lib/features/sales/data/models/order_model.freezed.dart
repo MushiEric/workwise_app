@@ -26,6 +26,45 @@ mixin _$OrderModel {
   String? get quotation => throw _privateConstructorUsedError;
   @JsonKey(name: 'order_number')
   String? get orderNumber => throw _privateConstructorUsedError;
+  @JsonKey(name: 'invoice_number')
+  String? get invoiceNumber => throw _privateConstructorUsedError;
+  @JsonKey(name: 'lpo_number')
+  String? get lpoNumber => throw _privateConstructorUsedError;
+  @JsonKey(name: 'currency_id')
+  String? get currencyId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'exchange_rate')
+  String? get exchangeRate => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cargo_value')
+  String? get cargoValue => throw _privateConstructorUsedError;
+  @JsonKey(name: 'cargo_unit')
+  String? get cargoUnit => throw _privateConstructorUsedError;
+  String? get priority => throw _privateConstructorUsedError;
+  @JsonKey(name: 'warehouse_id')
+  int? get warehouseId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'status_id')
+  int? get statusId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'assign_user_id')
+  int? get assignUserId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'package_type')
+  String? get packageType => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sender_name')
+  String? get senderName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sender_phone')
+  String? get senderPhone => throw _privateConstructorUsedError;
+  @JsonKey(name: 'receiver_name')
+  String? get receiverName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'receiver_phone')
+  String? get receiverPhone => throw _privateConstructorUsedError;
+  @JsonKey(name: 'consignment_details')
+  String? get consignmentDetails => throw _privateConstructorUsedError;
+  @JsonKey(name: 'contract_id')
+  String? get contractId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'request_id')
+  String? get requestId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'quotation_id')
+  String? get quotationId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'payment_type')
+  String? get paymentType => throw _privateConstructorUsedError;
   @JsonKey(name: 'customer_id')
   int? get customerId => throw _privateConstructorUsedError;
   @JsonKey(name: 'start_date')
@@ -69,6 +108,26 @@ abstract class $OrderModelCopyWith<$Res> {
     String? title,
     String? quotation,
     @JsonKey(name: 'order_number') String? orderNumber,
+    @JsonKey(name: 'invoice_number') String? invoiceNumber,
+    @JsonKey(name: 'lpo_number') String? lpoNumber,
+    @JsonKey(name: 'currency_id') String? currencyId,
+    @JsonKey(name: 'exchange_rate') String? exchangeRate,
+    @JsonKey(name: 'cargo_value') String? cargoValue,
+    @JsonKey(name: 'cargo_unit') String? cargoUnit,
+    String? priority,
+    @JsonKey(name: 'warehouse_id') int? warehouseId,
+    @JsonKey(name: 'status_id') int? statusId,
+    @JsonKey(name: 'assign_user_id') int? assignUserId,
+    @JsonKey(name: 'package_type') String? packageType,
+    @JsonKey(name: 'sender_name') String? senderName,
+    @JsonKey(name: 'sender_phone') String? senderPhone,
+    @JsonKey(name: 'receiver_name') String? receiverName,
+    @JsonKey(name: 'receiver_phone') String? receiverPhone,
+    @JsonKey(name: 'consignment_details') String? consignmentDetails,
+    @JsonKey(name: 'contract_id') String? contractId,
+    @JsonKey(name: 'request_id') String? requestId,
+    @JsonKey(name: 'quotation_id') String? quotationId,
+    @JsonKey(name: 'payment_type') String? paymentType,
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'start_date') String? startDate,
     @JsonKey(name: 'created_at') String? createdAt,
@@ -108,6 +167,26 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
     Object? title = freezed,
     Object? quotation = freezed,
     Object? orderNumber = freezed,
+    Object? invoiceNumber = freezed,
+    Object? lpoNumber = freezed,
+    Object? currencyId = freezed,
+    Object? exchangeRate = freezed,
+    Object? cargoValue = freezed,
+    Object? cargoUnit = freezed,
+    Object? priority = freezed,
+    Object? warehouseId = freezed,
+    Object? statusId = freezed,
+    Object? assignUserId = freezed,
+    Object? packageType = freezed,
+    Object? senderName = freezed,
+    Object? senderPhone = freezed,
+    Object? receiverName = freezed,
+    Object? receiverPhone = freezed,
+    Object? consignmentDetails = freezed,
+    Object? contractId = freezed,
+    Object? requestId = freezed,
+    Object? quotationId = freezed,
+    Object? paymentType = freezed,
     Object? customerId = freezed,
     Object? startDate = freezed,
     Object? createdAt = freezed,
@@ -138,6 +217,86 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
             orderNumber: freezed == orderNumber
                 ? _value.orderNumber
                 : orderNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            invoiceNumber: freezed == invoiceNumber
+                ? _value.invoiceNumber
+                : invoiceNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            lpoNumber: freezed == lpoNumber
+                ? _value.lpoNumber
+                : lpoNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            currencyId: freezed == currencyId
+                ? _value.currencyId
+                : currencyId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            exchangeRate: freezed == exchangeRate
+                ? _value.exchangeRate
+                : exchangeRate // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            cargoValue: freezed == cargoValue
+                ? _value.cargoValue
+                : cargoValue // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            cargoUnit: freezed == cargoUnit
+                ? _value.cargoUnit
+                : cargoUnit // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            priority: freezed == priority
+                ? _value.priority
+                : priority // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            warehouseId: freezed == warehouseId
+                ? _value.warehouseId
+                : warehouseId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            statusId: freezed == statusId
+                ? _value.statusId
+                : statusId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            assignUserId: freezed == assignUserId
+                ? _value.assignUserId
+                : assignUserId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            packageType: freezed == packageType
+                ? _value.packageType
+                : packageType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            senderName: freezed == senderName
+                ? _value.senderName
+                : senderName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            senderPhone: freezed == senderPhone
+                ? _value.senderPhone
+                : senderPhone // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            receiverName: freezed == receiverName
+                ? _value.receiverName
+                : receiverName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            receiverPhone: freezed == receiverPhone
+                ? _value.receiverPhone
+                : receiverPhone // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            consignmentDetails: freezed == consignmentDetails
+                ? _value.consignmentDetails
+                : consignmentDetails // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            contractId: freezed == contractId
+                ? _value.contractId
+                : contractId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            requestId: freezed == requestId
+                ? _value.requestId
+                : requestId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            quotationId: freezed == quotationId
+                ? _value.quotationId
+                : quotationId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            paymentType: freezed == paymentType
+                ? _value.paymentType
+                : paymentType // ignore: cast_nullable_to_non_nullable
                       as String?,
             customerId: freezed == customerId
                 ? _value.customerId
@@ -263,6 +422,26 @@ abstract class _$$OrderModelImplCopyWith<$Res>
     String? title,
     String? quotation,
     @JsonKey(name: 'order_number') String? orderNumber,
+    @JsonKey(name: 'invoice_number') String? invoiceNumber,
+    @JsonKey(name: 'lpo_number') String? lpoNumber,
+    @JsonKey(name: 'currency_id') String? currencyId,
+    @JsonKey(name: 'exchange_rate') String? exchangeRate,
+    @JsonKey(name: 'cargo_value') String? cargoValue,
+    @JsonKey(name: 'cargo_unit') String? cargoUnit,
+    String? priority,
+    @JsonKey(name: 'warehouse_id') int? warehouseId,
+    @JsonKey(name: 'status_id') int? statusId,
+    @JsonKey(name: 'assign_user_id') int? assignUserId,
+    @JsonKey(name: 'package_type') String? packageType,
+    @JsonKey(name: 'sender_name') String? senderName,
+    @JsonKey(name: 'sender_phone') String? senderPhone,
+    @JsonKey(name: 'receiver_name') String? receiverName,
+    @JsonKey(name: 'receiver_phone') String? receiverPhone,
+    @JsonKey(name: 'consignment_details') String? consignmentDetails,
+    @JsonKey(name: 'contract_id') String? contractId,
+    @JsonKey(name: 'request_id') String? requestId,
+    @JsonKey(name: 'quotation_id') String? quotationId,
+    @JsonKey(name: 'payment_type') String? paymentType,
     @JsonKey(name: 'customer_id') int? customerId,
     @JsonKey(name: 'start_date') String? startDate,
     @JsonKey(name: 'created_at') String? createdAt,
@@ -305,6 +484,26 @@ class __$$OrderModelImplCopyWithImpl<$Res>
     Object? title = freezed,
     Object? quotation = freezed,
     Object? orderNumber = freezed,
+    Object? invoiceNumber = freezed,
+    Object? lpoNumber = freezed,
+    Object? currencyId = freezed,
+    Object? exchangeRate = freezed,
+    Object? cargoValue = freezed,
+    Object? cargoUnit = freezed,
+    Object? priority = freezed,
+    Object? warehouseId = freezed,
+    Object? statusId = freezed,
+    Object? assignUserId = freezed,
+    Object? packageType = freezed,
+    Object? senderName = freezed,
+    Object? senderPhone = freezed,
+    Object? receiverName = freezed,
+    Object? receiverPhone = freezed,
+    Object? consignmentDetails = freezed,
+    Object? contractId = freezed,
+    Object? requestId = freezed,
+    Object? quotationId = freezed,
+    Object? paymentType = freezed,
     Object? customerId = freezed,
     Object? startDate = freezed,
     Object? createdAt = freezed,
@@ -335,6 +534,86 @@ class __$$OrderModelImplCopyWithImpl<$Res>
         orderNumber: freezed == orderNumber
             ? _value.orderNumber
             : orderNumber // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        invoiceNumber: freezed == invoiceNumber
+            ? _value.invoiceNumber
+            : invoiceNumber // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        lpoNumber: freezed == lpoNumber
+            ? _value.lpoNumber
+            : lpoNumber // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        currencyId: freezed == currencyId
+            ? _value.currencyId
+            : currencyId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        exchangeRate: freezed == exchangeRate
+            ? _value.exchangeRate
+            : exchangeRate // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        cargoValue: freezed == cargoValue
+            ? _value.cargoValue
+            : cargoValue // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        cargoUnit: freezed == cargoUnit
+            ? _value.cargoUnit
+            : cargoUnit // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        priority: freezed == priority
+            ? _value.priority
+            : priority // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        warehouseId: freezed == warehouseId
+            ? _value.warehouseId
+            : warehouseId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        statusId: freezed == statusId
+            ? _value.statusId
+            : statusId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        assignUserId: freezed == assignUserId
+            ? _value.assignUserId
+            : assignUserId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        packageType: freezed == packageType
+            ? _value.packageType
+            : packageType // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        senderName: freezed == senderName
+            ? _value.senderName
+            : senderName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        senderPhone: freezed == senderPhone
+            ? _value.senderPhone
+            : senderPhone // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        receiverName: freezed == receiverName
+            ? _value.receiverName
+            : receiverName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        receiverPhone: freezed == receiverPhone
+            ? _value.receiverPhone
+            : receiverPhone // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        consignmentDetails: freezed == consignmentDetails
+            ? _value.consignmentDetails
+            : consignmentDetails // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        contractId: freezed == contractId
+            ? _value.contractId
+            : contractId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        requestId: freezed == requestId
+            ? _value.requestId
+            : requestId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        quotationId: freezed == quotationId
+            ? _value.quotationId
+            : quotationId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        paymentType: freezed == paymentType
+            ? _value.paymentType
+            : paymentType // ignore: cast_nullable_to_non_nullable
                   as String?,
         customerId: freezed == customerId
             ? _value.customerId
@@ -397,6 +676,26 @@ class _$OrderModelImpl implements _OrderModel {
     this.title,
     this.quotation,
     @JsonKey(name: 'order_number') this.orderNumber,
+    @JsonKey(name: 'invoice_number') this.invoiceNumber,
+    @JsonKey(name: 'lpo_number') this.lpoNumber,
+    @JsonKey(name: 'currency_id') this.currencyId,
+    @JsonKey(name: 'exchange_rate') this.exchangeRate,
+    @JsonKey(name: 'cargo_value') this.cargoValue,
+    @JsonKey(name: 'cargo_unit') this.cargoUnit,
+    this.priority,
+    @JsonKey(name: 'warehouse_id') this.warehouseId,
+    @JsonKey(name: 'status_id') this.statusId,
+    @JsonKey(name: 'assign_user_id') this.assignUserId,
+    @JsonKey(name: 'package_type') this.packageType,
+    @JsonKey(name: 'sender_name') this.senderName,
+    @JsonKey(name: 'sender_phone') this.senderPhone,
+    @JsonKey(name: 'receiver_name') this.receiverName,
+    @JsonKey(name: 'receiver_phone') this.receiverPhone,
+    @JsonKey(name: 'consignment_details') this.consignmentDetails,
+    @JsonKey(name: 'contract_id') this.contractId,
+    @JsonKey(name: 'request_id') this.requestId,
+    @JsonKey(name: 'quotation_id') this.quotationId,
+    @JsonKey(name: 'payment_type') this.paymentType,
     @JsonKey(name: 'customer_id') this.customerId,
     @JsonKey(name: 'start_date') this.startDate,
     @JsonKey(name: 'created_at') this.createdAt,
@@ -424,6 +723,65 @@ class _$OrderModelImpl implements _OrderModel {
   @override
   @JsonKey(name: 'order_number')
   final String? orderNumber;
+  @override
+  @JsonKey(name: 'invoice_number')
+  final String? invoiceNumber;
+  @override
+  @JsonKey(name: 'lpo_number')
+  final String? lpoNumber;
+  @override
+  @JsonKey(name: 'currency_id')
+  final String? currencyId;
+  @override
+  @JsonKey(name: 'exchange_rate')
+  final String? exchangeRate;
+  @override
+  @JsonKey(name: 'cargo_value')
+  final String? cargoValue;
+  @override
+  @JsonKey(name: 'cargo_unit')
+  final String? cargoUnit;
+  @override
+  final String? priority;
+  @override
+  @JsonKey(name: 'warehouse_id')
+  final int? warehouseId;
+  @override
+  @JsonKey(name: 'status_id')
+  final int? statusId;
+  @override
+  @JsonKey(name: 'assign_user_id')
+  final int? assignUserId;
+  @override
+  @JsonKey(name: 'package_type')
+  final String? packageType;
+  @override
+  @JsonKey(name: 'sender_name')
+  final String? senderName;
+  @override
+  @JsonKey(name: 'sender_phone')
+  final String? senderPhone;
+  @override
+  @JsonKey(name: 'receiver_name')
+  final String? receiverName;
+  @override
+  @JsonKey(name: 'receiver_phone')
+  final String? receiverPhone;
+  @override
+  @JsonKey(name: 'consignment_details')
+  final String? consignmentDetails;
+  @override
+  @JsonKey(name: 'contract_id')
+  final String? contractId;
+  @override
+  @JsonKey(name: 'request_id')
+  final String? requestId;
+  @override
+  @JsonKey(name: 'quotation_id')
+  final String? quotationId;
+  @override
+  @JsonKey(name: 'payment_type')
+  final String? paymentType;
   @override
   @JsonKey(name: 'customer_id')
   final int? customerId;
@@ -474,7 +832,7 @@ class _$OrderModelImpl implements _OrderModel {
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, title: $title, quotation: $quotation, orderNumber: $orderNumber, customerId: $customerId, startDate: $startDate, createdAt: $createdAt, updatedAt: $updatedAt, amount: $amount, paymentStatus: $paymentStatus, customer: $customer, user: $user, statusRow: $statusRow, paymentStatusRow: $paymentStatusRow, items: $items, truckList: $truckList)';
+    return 'OrderModel(id: $id, title: $title, quotation: $quotation, orderNumber: $orderNumber, invoiceNumber: $invoiceNumber, lpoNumber: $lpoNumber, currencyId: $currencyId, exchangeRate: $exchangeRate, cargoValue: $cargoValue, cargoUnit: $cargoUnit, priority: $priority, warehouseId: $warehouseId, statusId: $statusId, assignUserId: $assignUserId, packageType: $packageType, senderName: $senderName, senderPhone: $senderPhone, receiverName: $receiverName, receiverPhone: $receiverPhone, consignmentDetails: $consignmentDetails, contractId: $contractId, requestId: $requestId, quotationId: $quotationId, paymentType: $paymentType, customerId: $customerId, startDate: $startDate, createdAt: $createdAt, updatedAt: $updatedAt, amount: $amount, paymentStatus: $paymentStatus, customer: $customer, user: $user, statusRow: $statusRow, paymentStatusRow: $paymentStatusRow, items: $items, truckList: $truckList)';
   }
 
   @override
@@ -488,6 +846,46 @@ class _$OrderModelImpl implements _OrderModel {
                 other.quotation == quotation) &&
             (identical(other.orderNumber, orderNumber) ||
                 other.orderNumber == orderNumber) &&
+            (identical(other.invoiceNumber, invoiceNumber) ||
+                other.invoiceNumber == invoiceNumber) &&
+            (identical(other.lpoNumber, lpoNumber) ||
+                other.lpoNumber == lpoNumber) &&
+            (identical(other.currencyId, currencyId) ||
+                other.currencyId == currencyId) &&
+            (identical(other.exchangeRate, exchangeRate) ||
+                other.exchangeRate == exchangeRate) &&
+            (identical(other.cargoValue, cargoValue) ||
+                other.cargoValue == cargoValue) &&
+            (identical(other.cargoUnit, cargoUnit) ||
+                other.cargoUnit == cargoUnit) &&
+            (identical(other.priority, priority) ||
+                other.priority == priority) &&
+            (identical(other.warehouseId, warehouseId) ||
+                other.warehouseId == warehouseId) &&
+            (identical(other.statusId, statusId) ||
+                other.statusId == statusId) &&
+            (identical(other.assignUserId, assignUserId) ||
+                other.assignUserId == assignUserId) &&
+            (identical(other.packageType, packageType) ||
+                other.packageType == packageType) &&
+            (identical(other.senderName, senderName) ||
+                other.senderName == senderName) &&
+            (identical(other.senderPhone, senderPhone) ||
+                other.senderPhone == senderPhone) &&
+            (identical(other.receiverName, receiverName) ||
+                other.receiverName == receiverName) &&
+            (identical(other.receiverPhone, receiverPhone) ||
+                other.receiverPhone == receiverPhone) &&
+            (identical(other.consignmentDetails, consignmentDetails) ||
+                other.consignmentDetails == consignmentDetails) &&
+            (identical(other.contractId, contractId) ||
+                other.contractId == contractId) &&
+            (identical(other.requestId, requestId) ||
+                other.requestId == requestId) &&
+            (identical(other.quotationId, quotationId) ||
+                other.quotationId == quotationId) &&
+            (identical(other.paymentType, paymentType) ||
+                other.paymentType == paymentType) &&
             (identical(other.customerId, customerId) ||
                 other.customerId == customerId) &&
             (identical(other.startDate, startDate) ||
@@ -515,12 +913,32 @@ class _$OrderModelImpl implements _OrderModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     title,
     quotation,
     orderNumber,
+    invoiceNumber,
+    lpoNumber,
+    currencyId,
+    exchangeRate,
+    cargoValue,
+    cargoUnit,
+    priority,
+    warehouseId,
+    statusId,
+    assignUserId,
+    packageType,
+    senderName,
+    senderPhone,
+    receiverName,
+    receiverPhone,
+    consignmentDetails,
+    contractId,
+    requestId,
+    quotationId,
+    paymentType,
     customerId,
     startDate,
     createdAt,
@@ -533,7 +951,7 @@ class _$OrderModelImpl implements _OrderModel {
     paymentStatusRow,
     const DeepCollectionEquality().hash(_items),
     const DeepCollectionEquality().hash(_truckList),
-  );
+  ]);
 
   /// Create a copy of OrderModel
   /// with the given fields replaced by the non-null parameter values.
@@ -555,6 +973,26 @@ abstract class _OrderModel implements OrderModel {
     final String? title,
     final String? quotation,
     @JsonKey(name: 'order_number') final String? orderNumber,
+    @JsonKey(name: 'invoice_number') final String? invoiceNumber,
+    @JsonKey(name: 'lpo_number') final String? lpoNumber,
+    @JsonKey(name: 'currency_id') final String? currencyId,
+    @JsonKey(name: 'exchange_rate') final String? exchangeRate,
+    @JsonKey(name: 'cargo_value') final String? cargoValue,
+    @JsonKey(name: 'cargo_unit') final String? cargoUnit,
+    final String? priority,
+    @JsonKey(name: 'warehouse_id') final int? warehouseId,
+    @JsonKey(name: 'status_id') final int? statusId,
+    @JsonKey(name: 'assign_user_id') final int? assignUserId,
+    @JsonKey(name: 'package_type') final String? packageType,
+    @JsonKey(name: 'sender_name') final String? senderName,
+    @JsonKey(name: 'sender_phone') final String? senderPhone,
+    @JsonKey(name: 'receiver_name') final String? receiverName,
+    @JsonKey(name: 'receiver_phone') final String? receiverPhone,
+    @JsonKey(name: 'consignment_details') final String? consignmentDetails,
+    @JsonKey(name: 'contract_id') final String? contractId,
+    @JsonKey(name: 'request_id') final String? requestId,
+    @JsonKey(name: 'quotation_id') final String? quotationId,
+    @JsonKey(name: 'payment_type') final String? paymentType,
     @JsonKey(name: 'customer_id') final int? customerId,
     @JsonKey(name: 'start_date') final String? startDate,
     @JsonKey(name: 'created_at') final String? createdAt,
@@ -582,6 +1020,65 @@ abstract class _OrderModel implements OrderModel {
   @override
   @JsonKey(name: 'order_number')
   String? get orderNumber;
+  @override
+  @JsonKey(name: 'invoice_number')
+  String? get invoiceNumber;
+  @override
+  @JsonKey(name: 'lpo_number')
+  String? get lpoNumber;
+  @override
+  @JsonKey(name: 'currency_id')
+  String? get currencyId;
+  @override
+  @JsonKey(name: 'exchange_rate')
+  String? get exchangeRate;
+  @override
+  @JsonKey(name: 'cargo_value')
+  String? get cargoValue;
+  @override
+  @JsonKey(name: 'cargo_unit')
+  String? get cargoUnit;
+  @override
+  String? get priority;
+  @override
+  @JsonKey(name: 'warehouse_id')
+  int? get warehouseId;
+  @override
+  @JsonKey(name: 'status_id')
+  int? get statusId;
+  @override
+  @JsonKey(name: 'assign_user_id')
+  int? get assignUserId;
+  @override
+  @JsonKey(name: 'package_type')
+  String? get packageType;
+  @override
+  @JsonKey(name: 'sender_name')
+  String? get senderName;
+  @override
+  @JsonKey(name: 'sender_phone')
+  String? get senderPhone;
+  @override
+  @JsonKey(name: 'receiver_name')
+  String? get receiverName;
+  @override
+  @JsonKey(name: 'receiver_phone')
+  String? get receiverPhone;
+  @override
+  @JsonKey(name: 'consignment_details')
+  String? get consignmentDetails;
+  @override
+  @JsonKey(name: 'contract_id')
+  String? get contractId;
+  @override
+  @JsonKey(name: 'request_id')
+  String? get requestId;
+  @override
+  @JsonKey(name: 'quotation_id')
+  String? get quotationId;
+  @override
+  @JsonKey(name: 'payment_type')
+  String? get paymentType;
   @override
   @JsonKey(name: 'customer_id')
   int? get customerId;

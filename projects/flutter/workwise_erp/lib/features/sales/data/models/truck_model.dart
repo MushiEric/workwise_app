@@ -9,6 +9,7 @@ class TruckModel with _$TruckModel {
   const factory TruckModel({
     int? id,
     @JsonKey(name: 'order_id') String? orderId,
+    @JsonKey(name: 'vehicle_id') int? vehicleId,
     @JsonKey(name: 'vehicle_name') String? vehicleName,
     @JsonKey(name: 'vehicle_plate_number') String? vehiclePlateNumber,
     @JsonKey(name: 'vehicle_trailer_number') String? vehicleTrailerNumber,
@@ -35,6 +36,7 @@ extension TruckModelX on TruckModel {
   Truck toDomain() => Truck(
     id: id,
     orderId: int.tryParse(orderId ?? ''),
+    vehicleId: vehicleId,
     vehicleName: vehicleName,
     vehiclePlateNumber: vehiclePlateNumber,
     vehicleTrailerNumber: vehicleTrailerNumber,

@@ -22,6 +22,10 @@ _$OrderItemModelImpl _$$OrderItemModelImplFromJson(Map<String, dynamic> json) =>
           ? null
           : ProductModel.fromJson(json['product'] as Map<String, dynamic>),
       loadingInstruction: json['loading_instruction'] as String?,
+      tax: json['tax'] as String?,
+      discount: json['discount'] as String?,
+      duration: json['duration'] as String?,
+      durationUnit: json['duration_unit'] as String?,
     );
 
 Map<String, dynamic> _$$OrderItemModelImplToJson(
@@ -35,4 +39,8 @@ Map<String, dynamic> _$$OrderItemModelImplToJson(
   'package_unit': instance.packageUnit,
   'product': instance.product,
   'loading_instruction': instance.loadingInstruction,
+  'tax': instance.tax,
+  'discount': instance.discount,
+  'duration': instance.duration,
+  'duration_unit': instance.durationUnit,
 };

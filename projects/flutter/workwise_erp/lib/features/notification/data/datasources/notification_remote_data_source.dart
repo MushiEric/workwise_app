@@ -46,6 +46,12 @@ class NotificationRemoteDataSource {
       for (final raw in list) {
         try {
           final src = Map<String, dynamic>.from(raw);
+          if (src.containsKey('message') && src['message'] is String) {
+            String msg = src['message'] as String;
+            msg = msg.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+            msg = msg.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+            src['message'] = msg;
+          }
           models.add(NotificationModel.fromJson(src));
         } catch (err) {
           // skip malformed items but continue

@@ -597,9 +597,9 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
                 ),
                 if (hasDriver) _linkedRow(
                   isDark: isDark,
-                  leading: _initialsAvatar(a.linkedDriver!.name, isDark),
+                  leading: _initialsAvatar(a.linkedDriver!.name ?? '?', isDark),
                   label: 'Driver',
-                  title: a.linkedDriver!.name,
+                  title: a.linkedDriver!.name ?? 'Unknown',
                   subtitle: a.linkedDriver!.phone,
                   isOnline: a.linkedDriver!.isOnDuty,
                   bottomBorder: hasTrailer,
@@ -617,7 +617,7 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
                         color: AppColors.primary, size: 22),
                   ),
                   label: 'Trailer',
-                  title: a.linkedTrailer!.registrationNumber,
+                  title: a.linkedTrailer!.registrationNumber ?? 'N/A',
                   subtitle: a.linkedTrailer!.name,
                   isOnline: null,
                   bottomBorder: false,
@@ -752,7 +752,11 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
     if (trip.statusColor != null) {
       try {
         final hex = trip.statusColor!.replaceAll('#', '');
-        statusColor = Color(int.parse('FF$hex', radix: 16));
+        if (hex.length == 6) {
+          statusColor = Color(int.parse('FF$hex', radix: 16));
+        } else if (hex.length == 8) {
+          statusColor = Color(int.parse(hex, radix: 16));
+        }
       } catch (_) {}
     }
 
@@ -775,7 +779,7 @@ class _AssetDetailPageState extends ConsumerState<AssetDetailPage> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              trip.tripNumber,
+              trip.tripNumber ?? '-',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

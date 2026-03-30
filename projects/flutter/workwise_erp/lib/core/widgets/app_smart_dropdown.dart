@@ -35,7 +35,12 @@ class AppSmartDropdown<T> extends StatefulWidget {
     this.backgroundColor,
     this.borderRadius = 12,
     this.borderColor,
+    this.onLoadMore,
+    this.isLoadingMore = false,
   });
+
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
 
   @override
   State<AppSmartDropdown<T>> createState() => _AppSmartDropdownState<T>();
@@ -54,6 +59,8 @@ class _AppSmartDropdownState<T> extends State<AppSmartDropdown<T>> {
         itemWidgetBuilder: widget.itemWidgetBuilder,
         label: widget.label,
         selectedValue: widget.value,
+        onLoadMore: widget.onLoadMore,
+        isLoadingMore: widget.isLoadingMore,
       ),
     );
     if (result != null) widget.onChanged(result);
@@ -193,7 +200,12 @@ class _SelectionBottomSheet<T> extends StatefulWidget {
     this.itemWidgetBuilder,
     required this.label,
     this.selectedValue,
+    this.onLoadMore,
+    this.isLoadingMore = false,
   });
+
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
 
   @override
   State<_SelectionBottomSheet<T>> createState() =>
@@ -317,40 +329,59 @@ class _SelectionBottomSheetState<T> extends State<_SelectionBottomSheet<T>> {
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      controller: scrollCtl,
-                      itemCount: _filtered.length,
-                      itemBuilder: (_, i) {
-                        final item = _filtered[i];
-                        final label = widget.itemBuilder(item);
-                        final isSelected = item == widget.selectedValue;
-                        return ListTile(
-                          title: widget.itemWidgetBuilder != null
-                              ? widget.itemWidgetBuilder!(item)
-                              : Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : (isDark
-                                              ? Colors.white70
-                                              : Colors.grey.shade800),
-                                  ),
-                                ),
-                          trailing: isSelected
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  color: AppColors.primary,
-                                  size: 18,
-                                )
-                              : null,
-                          onTap: () => Navigator.of(ctx).pop(item),
-                        );
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        if (widget.onLoadMore != null &&
+                            !widget.isLoadingMore &&
+                            scrollInfo.metrics.pixels >=
+                                scrollInfo.metrics.maxScrollExtent - 200) {
+                          widget.onLoadMore!();
+                        }
+                        return false;
                       },
+                      child: ListView.builder(
+                        controller: scrollCtl,
+                        itemCount: _filtered.length + (widget.isLoadingMore ? 1 : 0),
+                        itemBuilder: (_, i) {
+                          if (i >= _filtered.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            );
+                          }
+                          final item = _filtered[i];
+                          final label = widget.itemBuilder(item);
+                          final isSelected = item == widget.selectedValue;
+                          return ListTile(
+                            title: widget.itemWidgetBuilder != null
+                                ? widget.itemWidgetBuilder!(item)
+                                : Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : (isDark
+                                                ? Colors.white70
+                                                : Colors.grey.shade800),
+                                    ),
+                                  ),
+                            trailing: isSelected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    color: AppColors.primary,
+                                    size: 18,
+                                  )
+                                : null,
+                            onTap: () => Navigator.of(ctx).pop(item),
+                          );
+                        },
+                      ),
                     ),
             ),
           ],

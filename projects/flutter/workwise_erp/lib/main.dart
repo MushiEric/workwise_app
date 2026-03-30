@@ -122,7 +122,10 @@ class Workwise extends ConsumerWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
           appBarTheme: AppBarTheme(backgroundColor: AppColors.primary),
           elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
           ),
           scaffoldBackgroundColor: AppColors.greyFill,
           // Centralized typography (Inter default, Figtree for titles/numbers)
@@ -146,7 +149,10 @@ class Workwise extends ConsumerWidget {
             systemOverlayStyle: SystemUiOverlayStyle.light,
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
           ),
           textTheme: AppTypography.textTheme.apply(
             bodyColor: Colors.white,

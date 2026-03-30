@@ -24,6 +24,8 @@ import '../../../../core/themes/app_icons.dart';
 import '../../../../core/widgets/drawer_filter.dart';
 import '../../../../core/widgets/google_nav_bar.dart';
 import '../../../jobcard/presentation/providers/jobcard_providers.dart';
+import '../../../customer/presentation/providers/customer_providers.dart';
+import '../../../support/presentation/providers/support_providers.dart';
 
 import '../../../pfi/presentation/providers/pfi_providers.dart';
 import '../../../pfi/presentation/state/pfi_state.dart';
@@ -61,7 +63,56 @@ class _SalesPageState extends ConsumerState<SalesPage>
           .read(salesNotifierProvider.notifier)
           .loadOrders(_mapFilterToParams(_activeFilter));
       ref.read(pfiNotifierProvider.notifier).loadPfis();
+      _warmupMetadata();
     });
+  }
+
+  void _warmupMetadata() {
+    // Warm up common metadata providers for create forms to avoid loading states later
+    final providers = [
+      salesUsersProvider,
+      salesOrderStatusesProvider,
+      salesProductsProvider,
+      salesPackageUnitsProvider,
+      salesVehiclesProvider,
+      salesPackageTypesProvider,
+      salesWarehousesProvider,
+      salesQuotationsProvider,
+      salesContractsProvider,
+      salesRequestsProvider,
+      salesTaxesProvider,
+      salesCurrenciesProvider,
+      salesJobcardsProvider,
+      salesSupportTicketsProvider,
+      salesProjectsProvider,
+      salesTripsProvider,
+      salesPaymentTermsProvider,
+      salesPaymentMethodProvider,
+      salesPrioritiesProvider,
+      salesCargoUnitsProvider,
+      salesPaymentTypesProvider,
+      salesDiscountTypesProvider,
+      salesSubscriptionDurationsProvider,
+      salesSettingsProvider,
+      salesSettingsConfigProvider,
+      pfiSettingsProvider,
+    ];
+
+    for (final p in providers) {
+      try {
+        if (p is ProviderListenable) {
+           ref.read(p);
+        }
+      } catch (_) {}
+    }
+
+    // Trigger stateful metadata loads if not already loaded
+    try {
+      ref.read(customersNotifierProvider.notifier).loadCustomers();
+    } catch (_) {}
+    try {
+      ref.read(supportNotifierProvider.notifier).loadTickets(limit: 1000);
+    } catch (_) {}
   }
 
   void _onScroll() {
@@ -310,24 +361,49 @@ class _SalesPageState extends ConsumerState<SalesPage>
             borderRadius: BorderRadius.circular(16.r),
           ),
         ),
-        bottomNavigationBar: AppGoogleNavBar(
-          selectedIndex: 0,
-          onTabChange: (idx) {
-            if (idx == 1) {
-              Navigator.pushReplacementNamed(context, '/sales/settings');
-            }
-          },
-          items: const [
-            AppGoogleNavBarItem(label: 'Sales', icon: AppIcons.shoppingCart),
-            AppGoogleNavBarItem(label: 'Settings', icon: AppIcons.settings),
-          ],
-          backgroundColor: isDark ? const Color(0xFF151A2E) : Colors.white,
-          activeTabBackgroundColor: isDark
-              ? Colors.white12
-              : AppColors.primary.withOpacity(0.15),
-          activeColor: AppColors.primary,
-          color: isDark ? Colors.white60 : Colors.grey.shade600,
-        ),
+        bottomNavigationBar: _tabController.index == 0
+            ? AppGoogleNavBar(
+                selectedIndex: 0,
+                onTabChange: (idx) {
+                  if (idx == 1) {
+                    Navigator.pushReplacementNamed(context, '/sales/settings');
+                  }
+                },
+                items: const [
+                  AppGoogleNavBarItem(
+                      label: 'Orders', icon: AppIcons.shoppingCart),
+                  AppGoogleNavBarItem(
+                      label: 'Settings', icon: AppIcons.settings),
+                ],
+                backgroundColor:
+                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                activeTabBackgroundColor: isDark
+                    ? Colors.white12
+                    : AppColors.primary.withOpacity(0.15),
+                activeColor: AppColors.primary,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              )
+            : AppGoogleNavBar(
+                selectedIndex: 0,
+                onTabChange: (idx) {
+                  if (idx == 1) {
+                    Navigator.pushNamed(context, '/sales/pfi/settings');
+                  }
+                },
+                items: const [
+                  AppGoogleNavBarItem(
+                      label: 'PFI', icon: Icons.receipt_long_rounded),
+                  AppGoogleNavBarItem(
+                      label: 'PFI Settings', icon: AppIcons.settings),
+                ],
+                backgroundColor:
+                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                activeTabBackgroundColor: isDark
+                    ? Colors.white12
+                    : AppColors.primary.withOpacity(0.15),
+                activeColor: AppColors.primary,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              ),
       ),
     );
   }
@@ -722,8 +798,16 @@ class _SalesPageState extends ConsumerState<SalesPage>
     final base = isDark ? Colors.white12 : Colors.grey.shade200;
     return Card(
       margin: EdgeInsets.zero,
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.05),
       color: isDark ? const Color(0xFF151A2E) : Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: isDark ? Colors.white10 : Colors.grey.shade100,
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: EdgeInsets.all(14.r),
         child: Column(
