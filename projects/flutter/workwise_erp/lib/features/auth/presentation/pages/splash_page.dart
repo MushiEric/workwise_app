@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/provider/token_provider.dart';
+import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../providers/auth_providers.dart';
@@ -73,7 +74,16 @@ class _SplashPageState extends ConsumerState<SplashPage>
         return;
       }
 
-      // 1. No stored token → go straight to login.
+      // 1. No stored workspace -> ask the user to enter one.
+      final tenantBaseUrl = await ref
+          .read(tenantLocalDataSourceProvider)
+          .readTenant();
+      if (tenantBaseUrl == null || tenantBaseUrl.isEmpty) {
+        _targetRoute = '/workspace';
+        return;
+      }
+
+      // 2. No stored token -> go straight to login.
       final token = await ref.read(tokenLocalDataSourceProvider).readToken();
       if (token == null || token.isEmpty) {
         _targetRoute = '/';
