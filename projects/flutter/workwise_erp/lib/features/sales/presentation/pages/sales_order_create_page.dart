@@ -71,7 +71,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   String? _selectedPaymentType;
 
   // Items
-  List<_DraftItem> _items = [];
+  final List<_DraftItem> _items = [];
 
   // Truck Details
   int? _selectedMyVehicleId;
@@ -83,6 +83,10 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   final _driverLicenseCtl = TextEditingController();
   final _truckDetailsCtl = TextEditingController();
   final _checkinWeightCtl = TextEditingController();
+
+  // Weighbridge state
+  bool _isFetchingWeight = false;
+  bool _weighbridgeManual = false;
 
   // Location
   final _locationCtl = TextEditingController();
@@ -170,11 +174,55 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _generateOrderNumber());
     }
 
-    // Trigger metadata/customer loads if not already there, 
-    // though SalesPage should have warmed them up.
-    Future.microtask(() {
-      ref.read(customersNotifierProvider.notifier).loadCustomers();
-    });
+    _loadCustomers();
+    _loadWeighbridgeManual();
+  }
+
+  Future<void> _loadWeighbridgeManual() async {
+    final manual = await ref
+        .read(weightbridgeServiceProvider)
+        .getManualOverride();
+    if (mounted) setState(() => _weighbridgeManual = manual);
+  }
+
+  Future<void> _fetchFromWeighbridge() async {
+    final service = ref.read(weightbridgeServiceProvider);
+    final ip = await service.getIp();
+
+    if (ip.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            'Weighbridge IP not configured. Set it in Sales Settings.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isFetchingWeight = true);
+    try {
+      final result = await service.fetchWeight();
+      if (!mounted) return;
+      setState(() {
+        _checkinWeightCtl.text = '${result.weight}';
+        _isFetchingWeight = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isFetchingWeight = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          content: Text(
+            'Weight fetching failed. Enable manual check-in in settings.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _generateOrderNumber() async {
@@ -524,8 +572,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     if (s.orderShowUserAssignment && _assignUserId != null) {
       f('assign_user_id', _assignUserId);
     }
-    if (_orderNumberCtl.text.isNotEmpty)
+    if (_orderNumberCtl.text.isNotEmpty) {
       f('order_number', _orderNumberCtl.text);
+    }
     if (s.orderShowAmount && _amountCtl.text.isNotEmpty) {
       f('amount', _amountCtl.text);
     }
@@ -1369,10 +1418,22 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                   AppTextField(
                     controller: _checkinWeightCtl,
                     label: 'Check-in Weight',
-                    suffixIcon: TextButton(
-                      onPressed: () {},
-                      child: const Text('Fetch from Weighbridge'),
-                    ),
+                    readOnly: !_weighbridgeManual,
+                    suffixIcon: _isFetchingWeight
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : TextButton(
+                            onPressed: _weighbridgeManual
+                                ? null
+                                : _fetchFromWeighbridge,
+                            child: const Text('Fetch from Weighbridge'),
+                          ),
                   ),
                 ),
             ],

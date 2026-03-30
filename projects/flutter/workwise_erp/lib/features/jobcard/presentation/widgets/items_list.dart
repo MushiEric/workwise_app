@@ -214,11 +214,12 @@ class _ItemsListState extends State<ItemsList> {
                                                               'Material')
                                                           .toString(),
                                                   onSelected: (item) {
-                                                    if (item != null)
+                                                    if (item != null) {
                                                       setInner(
                                                         () =>
                                                             selectProduct(item),
                                                       );
+                                                    }
                                                   },
                                                 ),
                                           );
@@ -353,8 +354,9 @@ class _ItemsListState extends State<ItemsList> {
                                                     ?.toString() ??
                                                 '';
                                             if (key.isEmpty ||
-                                                seen.contains(key))
+                                                seen.contains(key)) {
                                               continue;
+                                            }
                                             seen.add(key);
                                             dedup.add(m);
                                           }
@@ -372,11 +374,12 @@ class _ItemsListState extends State<ItemsList> {
                                                               'Service')
                                                           .toString(),
                                                   onSelected: (item) {
-                                                    if (item != null)
+                                                    if (item != null) {
                                                       setInner(
                                                         () =>
                                                             selectService(item),
                                                       );
+                                                    }
                                                   },
                                                 ),
                                           );

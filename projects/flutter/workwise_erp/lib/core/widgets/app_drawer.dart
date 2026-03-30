@@ -79,71 +79,69 @@ class AppDrawer extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(right: Radius.circular(32)),
       ),
-      // Make the drawer background match the header so the top safe area is not white.
-      backgroundColor: headerColor,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildAnimatedHeader(
-              context: context,
-              isDark: isDark,
-              headerColor: headerColor,
-              headerName: headerName,
-              headerEmail: headerEmail,
-              headerAvatar: headerAvatar,
-            ),
-            Expanded(
-              child: Container(
-                // Keep the drawer content background consistent with light/dark mode.
-                color: isDark ? const Color(0xFF0A0E21) : Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildDivider(isDark),
-                    _buildMenuHeader(isDark, context),
-                    const SizedBox(height: 12),
-                    // Menu items with animations
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: appMenus.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 2),
-                        itemBuilder: (context, index) {
-                          final m = appMenus[index];
-                          final checker = ref.watch(permissionCheckerProvider);
+      // Body is white so the bottom navigation bar area never shows primary colour.
+      // The header extends into the top status-bar area via explicit padding below.
+      backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildAnimatedHeader(
+            context: context,
+            isDark: isDark,
+            headerColor: headerColor,
+            headerName: headerName,
+            headerEmail: headerEmail,
+            headerAvatar: headerAvatar,
+          ),
+          Expanded(
+            child: Container(
+              // Keep the drawer content background consistent with light/dark mode.
+              color: isDark ? const Color(0xFF0A0E21) : Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 16),
+                  _buildDivider(isDark),
+                  _buildMenuHeader(isDark, context),
+                  const SizedBox(height: 12),
+                  // Menu items with animations
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: appMenus.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 2),
+                      itemBuilder: (context, index) {
+                        final m = appMenus[index];
+                        final checker = ref.watch(permissionCheckerProvider);
 
-                          if (m.requiredPermissions != null &&
-                              m.requiredPermissions!.isNotEmpty &&
-                              !checker.hasAnyPermission(
-                                m.requiredPermissions!,
-                              )) {
-                            return const SizedBox.shrink();
-                          }
+                        if (m.requiredPermissions != null &&
+                            m.requiredPermissions!.isNotEmpty &&
+                            !checker.hasAnyPermission(m.requiredPermissions!)) {
+                          return const SizedBox.shrink();
+                        }
 
-                          return _buildAnimatedMenuItem(
-                            context: context,
-                            isDark: isDark,
-                            icon: _getLucideIconForMenu(m.id),
-                            title: m.title,
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(context, m.route);
-                            },
-                          );
-                        },
-                      ),
+                        return _buildAnimatedMenuItem(
+                          context: context,
+                          isDark: isDark,
+                          icon: _getLucideIconForMenu(m.id),
+                          title: m.title,
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, m.route);
+                          },
+                        );
+                      },
                     ),
-                    // Bottom Section
-                    _buildBottomSection(context, ref, isDark),
-                  ],
-                ),
+                  ),
+                  // Bottom Section (includes bottom safe-area padding so white fills to edge)
+                  _buildBottomSection(context, ref, isDark),
+                  SizedBox(height: MediaQuery.of(context).padding.bottom),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -156,14 +154,14 @@ class AppDrawer extends ConsumerWidget {
     required String headerEmail,
     String? headerAvatar,
   }) {
-    String _initials(String name) {
+    String initials0(String name) {
       final parts = name.trim().split(RegExp(r"\s+"));
       if (parts.isEmpty) return 'U';
       if (parts.length == 1) return parts.first[0].toUpperCase();
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
 
-    final initials = _initials(headerName);
+    final initials = initials0(headerName);
 
     final imageProvider = headerAvatar != null
         ? imageProviderFromUrl(headerAvatar)
@@ -177,7 +175,13 @@ class AppDrawer extends ConsumerWidget {
           Navigator.pushNamed(context, '/profile');
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          // Top padding absorbs status-bar height so header colour fills to screen edge.
+          padding: EdgeInsets.fromLTRB(
+            20,
+            22 + MediaQuery.of(context).padding.top,
+            20,
+            22,
+          ),
           decoration: BoxDecoration(
             color: headerColor,
             borderRadius: const BorderRadius.only(
@@ -751,8 +755,8 @@ class AppDrawer extends ConsumerWidget {
         '\n\nMobile highlights: offline sync, push notifications, quick task assignment, built-in timesheets.';
 
     final shareText = isMobile
-        ? '$appName — $baseDescription$mobileExtras\n\nLearn more: ${AppConstant.website}'
-        : '$appName — $baseDescription\n\nLearn more: ${AppConstant.website}';
+        ? '$appName — $baseDescription$mobileExtras\n\nDownload now: https://play.google.com/store/apps/details?id=com.getcoregroup.workwise'
+        : '$appName — $baseDescription\n\nDownload now: https://play.google.com/store/apps/details?id=com.getcoregroup.workwise';
 
     final subject = 'Try $appName — team productivity & operations';
 

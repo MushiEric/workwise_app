@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -604,32 +605,17 @@ class _RadioChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Plain radio style matching web — just a circle indicator + label, no container border
-    final circleColor = selected
-        ? AppColors.primary
-        : (isDark ? Colors.white38 : Colors.grey.shade400);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: circleColor, width: selected ? 2 : 1.5),
-          ),
-          child: selected
-              ? Center(
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                )
-              : null,
+        Icon(
+          selected
+              ? CupertinoIcons.smallcircle_fill_circle
+              : CupertinoIcons.circle,
+          size: 20,
+          color: selected
+              ? selectedColor
+              : (isDark ? Colors.white38 : Colors.grey.shade400),
         ),
         const SizedBox(width: 5),
         Text(

@@ -660,6 +660,30 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to sign out of your account?'**
   String get signOutMessage;
 
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @termsOfServiceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View our terms and conditions'**
+  String get termsOfServiceSubtitle;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How we protect your privacy'**
+  String get privacyPolicySubtitle;
+
   /// No description provided for @shareApp.
   ///
   /// In en, this message translates to:
@@ -869,6 +893,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}d'**
   String timeDays(int count);
+
+  /// No description provided for @developerOptionsBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security Alert'**
+  String get developerOptionsBlockedTitle;
+
+  /// No description provided for @developerOptionsBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We detected that Developer Options is enabled on your device. Please turn it off to protect your data and continue using the Workwise app safely.'**
+  String get developerOptionsBlockedMessage;
+
+  /// No description provided for @exitApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exitApp;
 }
 
 class _AppLocalizationsDelegate

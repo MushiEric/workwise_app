@@ -9,7 +9,6 @@ import '../../../../core/widgets/app_bar.dart';
 import 'package:workwise_erp/core/utils/image_utils.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../providers/assets_providers.dart';
-import '../../domain/entities/asset.dart' as domain;
 import '../../domain/entities/asset_links.dart' as domain;
 
 class AssetDetailPage extends ConsumerStatefulWidget {

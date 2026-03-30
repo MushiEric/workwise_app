@@ -527,12 +527,13 @@ class _SalesPageState extends ConsumerState<SalesPage>
                     (o.customer?.name?.toLowerCase().contains(q) ?? false);
               }).toList();
 
-        if (filtered.isEmpty)
+        if (filtered.isEmpty) {
           return _buildEmptyState(
             isDark,
             _searchController.text.isNotEmpty ||
                 (_activeFilter != null && !_activeFilter!.isEmpty),
           );
+        }
 
         // Apply Drawer Filter to Orders
         var finalFiltered = filtered;
@@ -555,20 +556,23 @@ class _SalesPageState extends ConsumerState<SalesPage>
               final dt = DateTime.tryParse(dateStr.replaceAll(' ', 'T'));
               if (dt == null) return false;
               if (_activeFilter!.dateFrom != null &&
-                  dt.isBefore(_activeFilter!.dateFrom!))
+                  dt.isBefore(_activeFilter!.dateFrom!)) {
                 return false;
+              }
               if (_activeFilter!.dateTo != null &&
                   dt.isAfter(
                     _activeFilter!.dateTo!.add(const Duration(days: 1)),
-                  ))
+                  )) {
                 return false;
+              }
             }
             // Customer filter
             if (_activeFilter!.customer != null &&
                 _activeFilter!.customer!.isNotEmpty) {
               final name = o.customer?.name?.toLowerCase() ?? '';
-              if (!name.contains(_activeFilter!.customer!.toLowerCase()))
+              if (!name.contains(_activeFilter!.customer!.toLowerCase())) {
                 return false;
+              }
             }
             // Vehicle filter
             if (_activeFilter!.vehicle != null &&
@@ -576,8 +580,9 @@ class _SalesPageState extends ConsumerState<SalesPage>
               // Assuming order might have vehicle info, checking if available
               final vName =
                   o.truckList?.firstOrNull?.vehicleName?.toLowerCase() ?? '';
-              if (!vName.contains(_activeFilter!.vehicle!.toLowerCase()))
+              if (!vName.contains(_activeFilter!.vehicle!.toLowerCase())) {
                 return false;
+              }
             }
             return true;
           }).toList();
@@ -631,12 +636,13 @@ class _SalesPageState extends ConsumerState<SalesPage>
         itemBuilder: (_, __) => _buildPfiSkeleton(isDark),
       );
     }
-    if (state.error != null && state.pfis.isEmpty)
+    if (state.error != null && state.pfis.isEmpty) {
       return _buildError(
         state.error!,
         isDark,
         () => ref.read(pfiNotifierProvider.notifier).loadPfis(),
       );
+    }
 
     final filtered = _searchController.text.isEmpty
         ? state.pfis
@@ -646,12 +652,13 @@ class _SalesPageState extends ConsumerState<SalesPage>
                 (p.subject?.toLowerCase().contains(q) ?? false);
           }).toList();
 
-    if (filtered.isEmpty)
+    if (filtered.isEmpty) {
       return _buildEmptyState(
         isDark,
         _searchController.text.isNotEmpty ||
             (_activeFilter != null && !_activeFilter!.isEmpty),
       );
+    }
 
     // Apply Drawer Filter to PFIs
     var finalFiltered = filtered;
@@ -673,11 +680,13 @@ class _SalesPageState extends ConsumerState<SalesPage>
           final dt = p.createdAt;
           if (dt == null) return false;
           if (_activeFilter!.dateFrom != null &&
-              dt.isBefore(_activeFilter!.dateFrom!))
+              dt.isBefore(_activeFilter!.dateFrom!)) {
             return false;
+          }
           if (_activeFilter!.dateTo != null &&
-              dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1))))
+              dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1)))) {
             return false;
+          }
         }
         return true;
       }).toList();

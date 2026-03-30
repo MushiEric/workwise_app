@@ -734,8 +734,7 @@ class _ModuleTile extends StatefulWidget {
   final dynamic menu;
   final int index;
 
-  const _ModuleTile({Key? key, required this.menu, required this.index})
-    : super(key: key);
+  const _ModuleTile({super.key, required this.menu, required this.index});
 
   @override
   State<_ModuleTile> createState() => _ModuleTileState();

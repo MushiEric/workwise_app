@@ -22,7 +22,7 @@ class SalesRemoteDataSource {
       final defaultData = <String, dynamic>{
         'draw': '1',
         'start': '0',
-        'length': '1000',
+        'length': '5000',
         'search[value]': '',
         'search[regex]': 'false',
         'start_date': '2000-01-01',
@@ -39,29 +39,29 @@ class SalesRemoteDataSource {
           ? Map<String, dynamic>.from(params)
           : Map<String, dynamic>.from(defaultData);
 
-      // Robust pagination parameters (mirroring Jobcard implementation for compatibility)
-      final lengthVal = queryParams['length'] ?? '1000';
-      final startVal = queryParams['start'] ?? '0';
+      queryParams.putIfAbsent('start', () => '0');
+      queryParams.putIfAbsent('length', () => '5000');
 
-      queryParams['length'] = lengthVal;
-      queryParams['limit'] = lengthVal;
-      queryParams['per_page'] = lengthVal;
-      queryParams['page_length'] = lengthVal;
-      queryParams['limit_page_length'] = lengthVal;
-      queryParams['all'] = '1';
+      // Include status array if not already provided.
+      if (!queryParams.containsKey('status')) {
+        queryParams['status'] = defaultStatus;
+      }
 
-      queryParams['start'] = startVal;
-      queryParams['offset'] = startVal;
-      queryParams['limit_start'] = startVal;
-
-      // Handle search parameters
+      // Also send flat search keys alongside any nested search object so
+      // the server accepts either format.
       final searchObj = queryParams['search'];
       if (searchObj is Map) {
-        queryParams.putIfAbsent('search[value]', () => searchObj['value'] ?? '');
-        queryParams.putIfAbsent('search[regex]', () => searchObj['regex'] ?? 'false');
-      } else if (!queryParams.containsKey('search[value]')) {
-        queryParams['search[value]'] = '';
-        queryParams['search[regex]'] = 'false';
+        queryParams.putIfAbsent(
+          'search[value]',
+          () => searchObj['value'] ?? '',
+        );
+        queryParams.putIfAbsent(
+          'search[regex]',
+          () => searchObj['regex'] ?? 'false',
+        );
+      } else {
+        queryParams.putIfAbsent('search[value]', () => '');
+        queryParams.putIfAbsent('search[regex]', () => 'false');
       }
 
       final resp = await client.get(
@@ -105,10 +105,12 @@ class SalesRemoteDataSource {
     if (v is String) return v;
     if (v is num || v is bool) return v.toString();
     if (v is Map) {
-      if (v.containsKey('name') && v['name'] is String)
+      if (v.containsKey('name') && v['name'] is String) {
         return v['name'] as String;
-      if (v.containsKey('title') && v['title'] is String)
+      }
+      if (v.containsKey('title') && v['title'] is String) {
         return v['title'] as String;
+      }
     }
     return v.toString();
   }
@@ -179,42 +181,14 @@ class SalesRemoteDataSource {
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
     }
-
-    if (out.containsKey('order_number') && out['order_number'] is String) {
-      out['order_number'] = (out['order_number'] as String)
-          .replaceAll(RegExp(r'<[^>]*>'), '')
-          .replaceAll(RegExp(r'&[^;]+;'), '')
-          .trim();
+    if (out.containsKey('id')) out['id'] = _asInt(out['id']);
+    if (out.containsKey('customer_id')) {
+      out['customer_id'] = _asInt(out['customer_id']);
     }
-
-    // Attempt to extract invoice number from various possible keys if not explicit
-    out['invoice_number'] = _asString(
-      out['invoice_number'] ?? 
-      out['invoice_no'] ?? 
-      out['inv_no'] ?? 
-      out['ref_no'] ?? 
-      out['invoice']
-    );
-
-    if (out.containsKey('quotation')) {
-      final qStr = _asString(out['quotation']);
-      if (qStr != null) out['quotation'] = _parseHtmlToReadable(qStr);
-    }
-    
-    // 2. Normalize common integer IDs
-    final intFields = [
-      'id', 'customer_id', 'customerId', 'warehouse_id', 'status_id', 
-      'assign_user_id', 'payment_status'
-    ];
-    for (final f in intFields) {
-      if (out.containsKey(f)) {
-        final val = _asInt(out[f]);
-        if (f == 'customerId') out['customer_id'] = val;
-        else out[f] = val;
-      }
-    }
-
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
+    if (out.containsKey('payment_status')) {
+      out['payment_status'] = _asInt(out['payment_status']);
+    }
 
     Map<String, dynamic>? fixId(Map<String, dynamic>? m) {
       if (m == null) return null;
@@ -475,55 +449,22 @@ class SalesRemoteDataSource {
         'inventory',
         'inventory_items',
         'units',
-        'unit',
         'statuses',
         'settings',
         'contracts',
-        'contract',
         'requests',
-        'request',
         'quotations',
-        'quotation',
         'currencies',
-        'currency',
-        'currency_list',
-        'currency_data',
         'exchange_rates',
         'sale_order_requests',
         'rates',
+        'currency',
+        'contract',
+        'request',
         'form_numbers',
         'pfi',
         'order',
         'status',
-        'tickets',
-        'support_tickets',
-        'jobcards',
-        'jobcard',
-        'job_cards',
-        'job_card',
-        'job-cards',
-        'job-card',
-        'warehouses',
-        'warehouse',
-        'users',
-        'user',
-        'taxes',
-        'tax',
-        'projects',
-        'project',
-        'project_list',
-        'trips',
-        'trip',
-        'trip_list',
-        'payment_terms',
-        'payment_term',
-        'payment_methods',
-        'payment_method',
-        'vehicles',
-        'vehicle',
-        'package_types',
-        'package_type',
-        'measure_units',
       ];
 
       // 1. check direct keys
@@ -599,27 +540,12 @@ class SalesRemoteDataSource {
       final params = creatorId != null ? {'creatorId': creatorId} : null;
       final paths = [
         '/product/getItem',
-        '/product/getMaterial',
-        '/product/getProducts',
-        '/material/getMaterial',
-        '/logistic/getMaterial',
-        '/inventory/getItem',
-        '/sales/getMaterial',
-        '/sales/getItem',
-        '/api/product/getItem',
-        '/api/sales/getMaterial',
-      ];
-      
-      for (final p in paths) {
-        // Try simple fetch first (high limit, no complex pagination keys)
-        var list = await _getMetadataSimple(p, params: params);
-        if (list.isNotEmpty) return list.map((m) => _normalizeProductJson(m)).toList();
-        
-        // Fallback to complex paginated fetch
-        list = await _getMetadata(p, params: params);
-        if (list.isNotEmpty) return list.map((m) => _normalizeProductJson(m)).toList();
-      }
-      return [];
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+      );
+      final list = _extractList(resp.data);
+      return list.map((m) => _normalizeProductJson(m)).toList();
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -648,497 +574,11 @@ class SalesRemoteDataSource {
       final params = creatorId != null ? {'creatorId': creatorId} : null;
       final paths = [
         '/product/getProductUnit',
-        '/sales/getMeasureUnit',
-        '/order/getMeasureUnits',
-        '/logistic/getMeasureUnits',
-        '/api/product/getProductUnit',
-        '/api/sales/getMeasureUnit',
-      ];
-      
-      for (final p in paths) {
-        var list = await _getMetadataSimple(p, params: params);
-        if (list.isEmpty) {
-          list = await _getMetadata(p, params: params);
-        }
-        if (list.isNotEmpty) {
-          return list
-              .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
-              .toList();
-        }
-      }
-      return [];
-    } catch (e) {
-      throw ServerException(e.toString());
-    }
-  }
-
-  /// GET /vehicle/getVehicle
-  Future<List<Map<String, dynamic>>> getVehicles() async {
-    return _getMetadata('/vehicle/getVehicle');
-  }
-
-  Future<List<Map<String, dynamic>>> getPackageTypes() async {
-    return _getMetadata('/order/getPackageType');
-  }
-
-  Future<List<Map<String, dynamic>>> getWarehouses() async {
-    return _getMetadata('/warehouse/getWarehouse');
-  }
-
-  Future<List<Map<String, dynamic>>> getQuotations() async {
-    return _getMetadata('/sales/getSaleOrderPFI');
-  }
-
-  Future<List<Map<String, dynamic>>> getContracts() async {
-    return _getMetadata('/contract/getSaleOrderContract');
-  }
-
-  Future<List<Map<String, dynamic>>> getRequests() async {
-    return _getMetadata('/sales/getSaleOrderRequest');
-  }
-
-  Future<List<Map<String, dynamic>>> getTaxes() async {
-    return _getMetadata('/sales/getTaxes');
-  }
-
-  Future<List<Map<String, dynamic>>> getProjects() async {
-    final paths = [
-      '/get-projects',
-      '/proposal/getProject',
-      '/project/getProject',
-      '/sales/getProject',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getTrips() async {
-    final paths = [
-      '/trip/getTrip',
-      '/trips/getTrip',
-      '/logistic/getTrip',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentTerms() async {
-    final paths = [
-      '/payment/getPaymentTerm',
-      '/sales/getPaymentTerm',
-      '/order/getPaymentTerm',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentMethods() async {
-    final paths = [
-      '/payment/getPaymentMethod',
-      '/sales/getPaymentMethod',
-      '/order/getPaymentMethod',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getCurrencies() async {
-    final paths = [
-      '/proposal/getCurrency',
-      '/currency/getCurrency',
-      '/currency/getCurrencies',
-      '/api/getCurrency',
-      '/api/currencies',
-      '/order/getCurrency',
-      '/sales/getCurrency',
-      '/logistic/getCurrency',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(
-          p,
-          queryParameters: {
-            'limit': '1000',
-            'length': '1000',
-            'per_page': '1000',
-            'all': '1',
-          },
-          options: Options(
-            connectTimeout: const Duration(seconds: 5),
-            receiveTimeout: const Duration(seconds: 5),
-          ),
-        );
-        if (resp.statusCode == 200) {
-          // Try standard _extractList first
-          final list = _extractList(resp.data);
-          if (list.isNotEmpty) {
-            // ignore: avoid_print
-            print('[SalesDataSource] getCurrencies: found ${list.length} items via $p');
-            return list;
-          }
-          
-          // Bare list check (if _extractList failed to find the right key)
-          if (resp.data is List && (resp.data as List).isNotEmpty) {
-             return (resp.data as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-          }
-
-          // Inner key search
-          if (resp.data is Map) {
-            final raw = resp.data as Map;
-            for (final key in ['currencies', 'currency', 'data', 'records', 'items', 'payload', 'currency_list']) {
-              if (raw[key] is List && (raw[key] as List).isNotEmpty) {
-                final items = (raw[key] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-                if (items.isNotEmpty) return items;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // ignore: avoid_print
-        print('[SalesDataSource] getCurrencies: $p failed: $e');
-      }
-    }
-    // ignore: avoid_print
-    print('[SalesDataSource] getCurrencies: all paths failed, returning []');
-    return [];
-  }
-
-  Future<double?> getExchangeRate(int currencyId) async {
-    final paths = [
-      '/logistic/getExchangeRate/$currencyId',
-      '/order/getExchangeRate/$currencyId',
-      '/sales/getExchangeRate/$currencyId',
-      '/api/getExchangeRate/$currencyId',
-    ];
-    for (final p in paths) {
-      try {
-        final resp = await client.get(p);
-        final raw = resp.data;
-        if (raw is Map && raw.containsKey('rate')) {
-          return double.tryParse(raw['rate'].toString());
-        } else if (raw is num) {
-          return raw.toDouble();
-        } else if (raw is String) {
-          final decoded = json.decode(raw);
-          if (decoded is Map && decoded.containsKey('rate'))
-            return double.tryParse(decoded['rate'].toString());
-        }
-      } catch (_) {}
-    }
-    return null;
-  }
-
-  Future<List<Map<String, dynamic>>> getPriorities() async {
-    final paths = [
-      '/order/getPriority',
-      '/support/getSupportPriority',
-      '/order/getPriorities',
-      '/sales/getPriority'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getCargoUnits() async {
-    final paths = [
-      '/product/getProductUnit',
-      '/order/getMeasureUnits',
-      '/sales/getMeasureUnit',
-      '/logistic/getMeasureUnits'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getPaymentTypes() async {
-    final paths = [
-      '/order/getPackageType',
-      '/sales/getPaymentType',
-      '/api/payment/getPaymentType',
-      '/order/getPaymentType'
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getDiscountTypes() async {
-    final paths = [
-      '/sales/getDiscountType',
-      '/order/getDiscountType',
-      '/proposal/getDiscountType',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async {
-    try {
-      return await _getMetadata('/sales/getSubscriptionDuration');
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getUsers() async {
-    final paths = [
-      '/user/getUsers',
-     
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
-    }
-    return [];
-  }
-
-  Future<List<Map<String, dynamic>>> getSupportTickets() async {
-    return _getMetadata('/support/getSupportTicket');
-  }
-
-  Future<List<Map<String, dynamic>>> getJobCards() async {
-    final Map<String, Map<String, dynamic>> allJobcardsMap = {};
-    try {
-      // Fetch up to 10 pages (100 items if capped at 10)
-      for (int page = 1; page <= 10; page++) {
-        final resp = await client.get(
-          '/jobcard/getJobCard',
-          queryParameters: {
-            'page': page,
-            'start': (page - 1) * 10,
-            'offset': (page - 1) * 10,
-            'length': '10', // Explicitly use 10 to match the server's suspected default
-            'limit': '10',
-            'per_page': '10',
-            'limit_page_length': '10',
-            'draw': '1',
-            'all': '1',
-          },
-        );
-        if (resp.statusCode != 200) break;
-        final items = _extractList(resp.data);
-        if (items.isEmpty) break;
-
-        bool foundNew = false;
-        for (final it in items) {
-          final key = (it['id'] ?? it['jobcard_number'] ?? it['job_number'])?.toString();
-          if (key != null && !allJobcardsMap.containsKey(key)) {
-            allJobcardsMap[key] = it;
-            foundNew = true;
-          }
-        }
-        
-        if (!foundNew) break; // Reached the end or server ignoring our paging
-        if (items.length < 10) break; // End of server data
-      }
-      // ignore: avoid_print
-      print('[SalesDataSource] getJobCards finally collected ${allJobcardsMap.length} records');
-    } catch (e) {
-      // ignore: avoid_print
-      print('[SalesDataSource] getJobCards error: $e');
-    }
-    return allJobcardsMap.values.toList();
-  }
-
-  Future<Map<String, dynamic>> getJobCardById(int id) async {
-    try {
-      final resp = await client.get('/jobcard/getJobCardRow/$id');
-      final raw = resp.data;
-      if (raw is Map && raw['data'] is Map)
-        return Map<String, dynamic>.from(raw['data'] as Map);
-      if (raw is Map) return Map<String, dynamic>.from(raw);
-      if (raw is String) {
-        final decoded = json.decode(raw);
-        if (decoded is Map && decoded['data'] is Map)
-          return Map<String, dynamic>.from(decoded['data'] as Map);
-        if (decoded is Map) return Map<String, dynamic>.from(decoded);
-      }
-    } catch (_) {}
-    return <String, dynamic>{};
-  }
-
-  Future<List<Map<String, dynamic>>> _getMetadata(String path, {Map<String, dynamic>? params}) async {
-    try {
-      final List<Map<String, dynamic>> allItems = [];
-      int currentPage = 1;
-      int lastPage = 1;
-      const int pageSize = 500; 
-
-      do {
-        final queryParams = <String, dynamic>{
-          'page': currentPage,
-          'length': pageSize.toString(),
-          'limit': pageSize.toString(),
-          'per_page': pageSize.toString(),
-          'page_length': pageSize.toString(),
-          'limit_page_length': pageSize.toString(),
-          'all': '1',
-          'draw': '1',
-          'start': (currentPage - 1) * pageSize,
-          'offset': (currentPage - 1) * pageSize,
-        };
-        if (params != null) {
-          queryParams.addAll(params);
-        }
-
-        final resp = await client.get(
-          path,
-          queryParameters: queryParams,
-          options: Options(
-            validateStatus: (s) => s != null && s < 500,
-          ),
-        );
-
-        if (resp.statusCode != 200) break;
-
-        final raw = resp.data;
-        final pageItems = _extractList(raw);
-        if (pageItems.isEmpty) break;
-
-        allItems.addAll(pageItems);
-
-        // Robust pagination metadata detection
-        if (raw is Map) {
-          final paginator = raw['data'] is Map
-              ? raw['data'] as Map
-              : (raw['payload'] is Map ? raw['payload'] as Map : raw);
-
-          final lp = paginator['last_page'] ??
-              paginator['lastPage'] ??
-              paginator['total_pages'] ??
-              paginator['totalPages'] ??
-              raw['total_pages'] ??
-              raw['last_page'];
-
-          if (lp is num) {
-            lastPage = lp.toInt();
-          } else if (lp is String) {
-            lastPage = int.tryParse(lp) ?? 1;
-          } else {
-            final totalRaw = paginator['total'] ??
-                paginator['recordsTotal'] ??
-                paginator['records_total'] ??
-                raw['total'] ??
-                raw['recordsTotal'] ??
-                raw['records_total'];
-
-            final perPageRaw = paginator['per_page'] ??
-                paginator['perPage'] ??
-                paginator['limit'] ??
-                raw['per_page'] ??
-                raw['limit'] ??
-                pageSize;
-
-            int? total;
-            if (totalRaw is num) total = totalRaw.toInt();
-            else if (totalRaw is String) total = int.tryParse(totalRaw);
-
-            int? perPage;
-            if (perPageRaw is num) perPage = perPageRaw.toInt();
-            else if (perPageRaw is String) perPage = int.tryParse(perPageRaw);
-
-            if (total != null && perPage != null && perPage > 0) {
-              lastPage = (total / perPage).ceil();
-            } else {
-              // No pagination metadata: treat as single page to avoid infinite loop.
-              lastPage = 1;
-            }
-          }
-        } else {
-          lastPage = 1;
-        }
-
-        currentPage++;
-      } while (currentPage <= lastPage && lastPage >= currentPage && allItems.length < 10000);
-
-      // If we only got 10 items and lastPage was 1, maybe the backend is ignoring our pageSize.
-      // Let's try to fetch page 2 anyway if page 1 wasn't totally empty and we suspect more.
-      if (allItems.length > 0 && allItems.length < 100 && lastPage <= 1) {
-         // Some backends ignore per_page and return 10. If so, we must loop manually.
-         int extraPage = 2;
-         while (extraPage < 20) { // arbitrary limit to avoid infinity
-           final queryParams = <String, dynamic>{
-             'page': extraPage,
-             'length': pageSize.toString(),
-             'limit': pageSize.toString(),
-             'per_page': pageSize.toString(),
-             'all': '1',
-             'start': (extraPage - 1) * 10, // assuming 10 is the cap
-             'offset': (extraPage - 1) * 10,
-           };
-           final resp = await client.get(path, queryParameters: queryParams);
-           if (resp.statusCode != 200) break;
-           final items = _extractList(resp.data);
-           if (items.isEmpty) break;
-           
-           // Avoid duplicates if the backend is returning the same page
-           final firstNewId = items.first['id']?.toString();
-           if (firstNewId != null && allItems.any((x) => x['id']?.toString() == firstNewId)) {
-             break; 
-           }
-           
-           allItems.addAll(items);
-           if (items.length < 10) break;
-           extraPage++;
-         }
-      }
-
-      return allItems;
-    } catch (e) {
-      // ignore: avoid_print
-      print('[SalesDataSource] _getMetadata error for $path: $e');
-      return [];
-    }
-  }
-
-  /// POST /order/saveOrder
-  Future<Map<String, dynamic>> saveOrder(dynamic payload) async {
-    try {
-      final resp = await client.post('/order/saveOrder', data: payload);
-      final raw = resp.data;
-      if (raw is Map) return Map<String, dynamic>.from(raw);
-      return {'status': 200};
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+      );
+      return _extractList(resp.data)
+          .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
+          .toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
     } catch (e) {
@@ -1146,11 +586,151 @@ class SalesRemoteDataSource {
     }
   }
 
-  Future<Map<String, dynamic>> savePfi(dynamic payload) async {
+  /// GET /vehicle/getVehicle
+  Future<List<Map<String, dynamic>>> getVehicles() async {
     try {
-      final resp = await client.post('/proposal/saveSalesQuotation', data: payload);
+      final resp = await client.get('/vehicle/getVehicle');
+      return _extractList(resp.data);
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPackageTypes() async {
+    try {
+      final resp = await client.get('/order/getPackageType');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getWarehouses() async {
+    try {
+      final resp = await client.get('/warehouse/getWarehouse');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getQuotations() async {
+    try {
+      final resp = await client.get('/sales/getSaleOrderPFI');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getContracts() async {
+    try {
+      final resp = await client.get('/contract/getSaleOrderContract');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRequests() async {
+    try {
+      final resp = await client.get('/sales/getSaleOrderRequest');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getTaxes() async {
+    try {
+      final resp = await client.get('/sales/getTaxes');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCurrencies() async {
+    try {
+      final resp = await client.get('/logistic/getCurrency');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<double?> getExchangeRate(int currencyId) async {
+    try {
+      final resp = await client.get('/logistic/getExchangeRate/$currencyId');
+      final raw = resp.data;
+      if (raw is Map && raw.containsKey('rate')) {
+        return double.tryParse(raw['rate'].toString());
+      } else if (raw is num) {
+        return raw.toDouble();
+      } else if (raw is String) {
+        final decoded = json.decode(raw);
+        if (decoded is Map && decoded.containsKey('rate')) {
+          return double.tryParse(decoded['rate'].toString());
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    try {
+      final resp = await client.get('/user/getUsers');
+      return _extractList(resp.data);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Fallback stubs for methods referenced by sales providers but not yet tracked
+  /// in this datasource. These may be updated to real endpoints as needed.
+  Future<List<Map<String, dynamic>>> getJobCards() async => [];
+
+  Future<List<Map<String, dynamic>>> getSupportTickets() async => [];
+
+  Future<List<Map<String, dynamic>>> getProjects() async => [];
+
+  Future<List<Map<String, dynamic>>> getTrips() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentTerms() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentMethods() async => [];
+
+  Future<List<Map<String, dynamic>>> getPriorities() async => [];
+
+  Future<List<Map<String, dynamic>>> getCargoUnits() async => [];
+
+  Future<List<Map<String, dynamic>>> getPaymentTypes() async => [];
+
+  Future<List<Map<String, dynamic>>> getDiscountTypes() async => [];
+
+  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async => [];
+
+  /// POST /order/saveOrder
+  ///
+  /// [payload] can be either a plain `Map<String, dynamic>` (sent as JSON) or
+  /// a `FormData` instance (sent as multipart/form-data when file uploads are
+  /// included such as priority_document, lpo_document, or proof_of_payment).
+  Future<Map<String, dynamic>> saveOrder(dynamic payload) async {
+    try {
+      final resp = await client.post('/order/saveOrder', data: payload);
       final raw = resp.data;
       if (raw is Map) return Map<String, dynamic>.from(raw);
+      if (raw is String) {
+        final s = raw.trim();
+        if (!s.startsWith('<')) {
+          try {
+            final decoded = json.decode(s);
+            if (decoded is Map) return Map<String, dynamic>.from(decoded);
+          } catch (_) {}
+        }
+      }
       return {'status': 200};
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');

@@ -4,6 +4,7 @@ import 'package:workwise_erp/core/provider/dio_provider.dart';
 import '../../data/datasources/sales_remote_data_source.dart';
 import '../../data/models/sales_settings_model.dart';
 import '../../data/repositories/sales_repository_impl.dart';
+import '../../data/services/weightbridge_service.dart';
 import '../../domain/entities/sales_settings.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../domain/usecases/get_recent_orders.dart';
@@ -28,6 +29,12 @@ final salesRemoteDataSourceProvider = Provider((ref) {
   final dio = ref.watch(dioProvider);
   return SalesRemoteDataSource(dio);
 });
+
+/// Singleton-scoped access to the [WeightbridgeService] (SharedPreferences +
+/// local HTTP).  No Dio provider needed — it uses its own clean Dio instance.
+final weightbridgeServiceProvider = Provider<WeightbridgeService>(
+  (ref) => WeightbridgeService(),
+);
 
 final salesRepositoryProvider = Provider<SalesRepository>((ref) {
   final remote = ref.watch(salesRemoteDataSourceProvider);

@@ -409,7 +409,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (msg) => Center(child: Text(msg)),
         loaded: (operators) {
-          if (operators.isEmpty)
+          if (operators.isEmpty) {
             return Center(
               child: Text(
                 'No operators found',
@@ -418,6 +418,7 @@ class _LogisticPageState extends ConsumerState<LogisticPage> {
                 ),
               ),
             );
+          }
           return RefreshIndicator(
             onRefresh: () =>
                 ref.read(operatorsNotifierProvider.notifier).loadOperators(),

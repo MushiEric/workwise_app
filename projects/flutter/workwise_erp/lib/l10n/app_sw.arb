@@ -115,6 +115,10 @@
   "switchButton": "Badilisha",
   "signOut": "Toka",
   "signOutMessage": "Je, una uhakika unataka kutoka kwenye akaunti yako?",
+  "termsOfService": "Masharti ya Huduma",
+  "termsOfServiceSubtitle": "Soma masharti na hali zetu",
+  "privacyPolicy": "Sera ya Faragha",
+  "privacyPolicySubtitle": "Jinsi tunavyolinda faragha yako",
   "shareApp": "Shiriki Workwise",
   "changePassword": "Badilisha Nenosiri",
   "changePasswordSubtitle": "Sasisha nenosiri lako mara kwa mara",
@@ -186,5 +190,8 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "developerOptionsBlockedTitle": "Tahadhari ya Usalama",
+  "developerOptionsBlockedMessage": "Tumegundua kuwa Chaguo za Msanidi Programu zimewezeshwa kwenye kifaa chako. Tafadhali zizime ili kulinda data yako na kuendelea kutumia programu ya Workwise salama.",
+  "exitApp": "Toka"
 }

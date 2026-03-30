@@ -30,8 +30,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   }
 
   String? _validatePassword(String? value) {
-    if (value == null || value.trim().isEmpty)
+    if (value == null || value.trim().isEmpty) {
       return context.l10n.passwordRequired;
+    }
     if (value.trim().length < 6) return context.l10n.passwordMinLength;
     return null;
   }

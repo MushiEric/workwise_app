@@ -113,6 +113,10 @@
   "switchButton": "Changer",
   "signOut": "Se Déconnecter",
   "signOutMessage": "Êtes-vous sûr de vouloir vous déconnecter de votre compte?",
+  "termsOfService": "Conditions d'Utilisation",
+  "termsOfServiceSubtitle": "Consultez nos conditions générales",
+  "privacyPolicy": "Politique de Confidentialité",
+  "privacyPolicySubtitle": "Comment nous protégeons votre vie privée",
   "shareApp": "Partager Workwise",
   "changePassword": "Changer le Mot de Passe",
   "changePasswordSubtitle": "Mettez à jour votre mot de passe régulièrement",
@@ -184,5 +188,8 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "developerOptionsBlockedTitle": "Alerte de Sécurité",
+  "developerOptionsBlockedMessage": "Nous avons détecté que les Options développeur sont activées sur votre appareil. Veuillez les désactiver pour protéger vos données et continuer à utiliser l'application Workwise en toute sécurité.",
+  "exitApp": "Quitter"
 }

@@ -157,9 +157,9 @@ class _AssetsPageState extends ConsumerState<AssetsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        child: const Icon(LucideIcons.plus, size: 20),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        child: const Icon(LucideIcons.plus, size: 20),
       ),
     );
   }

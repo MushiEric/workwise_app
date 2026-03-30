@@ -30,10 +30,11 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage>
       _projectId = arg.id;
       // set the notifier detail from the provided list object (no network call)
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted)
+        if (mounted) {
           ref
               .read(projectNotifierProvider.notifier)
               .setProjectDetailFromList(arg);
+        }
       });
     } else if (arg is int) {
       _projectId = arg;

@@ -26,78 +26,94 @@ class JobcardRemoteDataSource {
     }
     if (raw is Map) {
       // common envelope keys
-      if (raw['data'] is List)
+      if (raw['data'] is List) {
         return (raw['data'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['jobcards'] is List)
+      }
+      if (raw['jobcards'] is List) {
         return (raw['jobcards'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['items'] is List)
+      }
+      if (raw['items'] is List) {
         return (raw['items'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['records'] is List)
+      }
+      if (raw['records'] is List) {
         return (raw['records'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['payload'] is List)
+      }
+      if (raw['payload'] is List) {
         return (raw['payload'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
+      }
       // Settings-specific keys
-      if (raw['settings'] is List)
+      if (raw['settings'] is List) {
         return (raw['settings'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['statuses'] is List)
+      }
+      if (raw['statuses'] is List) {
         return (raw['statuses'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['jobcard_settings'] is List)
+      }
+      if (raw['jobcard_settings'] is List) {
         return (raw['jobcard_settings'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
-      if (raw['jobcard_statuses'] is List)
+      }
+      if (raw['jobcard_statuses'] is List) {
         return (raw['jobcard_statuses'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
+      }
       // nested data/payload -> list (handles Laravel paginator: {data: {data: [...], last_page: N}})
       final inner = (raw['data'] is Map
           ? raw['data'] as Map
           : (raw['payload'] is Map ? raw['payload'] as Map : null));
       if (inner != null) {
-        if (inner['data'] is List)
+        if (inner['data'] is List) {
           return (inner['data'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-        if (inner['jobcards'] is List)
+        }
+        if (inner['jobcards'] is List) {
           return (inner['jobcards'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-        if (inner['settings'] is List)
+        }
+        if (inner['settings'] is List) {
           return (inner['settings'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-        if (inner['statuses'] is List)
+        }
+        if (inner['statuses'] is List) {
           return (inner['statuses'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-        if (inner['status'] is List)
+        }
+        if (inner['status'] is List) {
           return (inner['status'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
-        if (inner['items'] is List)
+        }
+        if (inner['items'] is List) {
           return (inner['items'] as List)
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
+        }
       }
     }
     if (raw is String) {
       final s = raw.trim();
-      if (s.startsWith('<'))
+      if (s.startsWith('<')) {
         throw ServerException('Server returned HTML (check backend)');
+      }
       try {
         final decoded = json.decode(s);
         return _extractList(decoded);
@@ -208,8 +224,9 @@ class JobcardRemoteDataSource {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException('Server returned HTML for /jobcard/getJobCard');
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -230,30 +247,34 @@ class JobcardRemoteDataSource {
         map = Map<String, dynamic>.from(raw);
       } else if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/getJobCardRow/$id',
           );
+        }
         try {
           final decoded = json.decode(s);
-          if (decoded is Map && decoded['data'] is Map)
+          if (decoded is Map && decoded['data'] is Map) {
             map = Map<String, dynamic>.from(decoded['data'] as Map);
+          }
         } catch (_) {
           throw ServerException('Invalid JSON response from server');
         }
       }
 
-      if (map == null)
+      if (map == null) {
         throw ServerException('Unexpected response format for jobcard/$id');
+      }
       return JobcardDetailModel.fromJson(map);
     } on DioException catch (e) {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/getJobCardRow/$id',
           );
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -275,8 +296,9 @@ class JobcardRemoteDataSource {
       final raw = resp.data;
 
       debugPrint('[JobcardSettings] GET $path -> ${raw.runtimeType}');
-      if (raw is Map)
+      if (raw is Map) {
         debugPrint('[JobcardSettings] keys: ${raw.keys.toList()}');
+      }
 
       return _extractList(raw);
     }
@@ -291,10 +313,11 @@ class JobcardRemoteDataSource {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/getJobCardSetting',
           );
+        }
       }
       // If the error is 404, retry with the alternate endpoint before failing.
       if (e.response?.statusCode == 404) {
@@ -349,10 +372,11 @@ class JobcardRemoteDataSource {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/getJobCardSetting',
           );
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -387,20 +411,22 @@ class JobcardRemoteDataSource {
       final respData = resp.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/deleteJobCard/$id',
           );
+        }
       }
       return;
     } on DioException catch (e) {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/deleteJobCard/$id',
           );
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -734,8 +760,9 @@ class JobcardRemoteDataSource {
       if (hasItemFiles || hasServiceFiles) {
         final mapForForm = <String, dynamic>{};
         payload.forEach((k, v) {
-          if (k == 'item_attachemt' || k == 'service_attachemt')
+          if (k == 'item_attachemt' || k == 'service_attachemt') {
             return; // handled below
+          }
           mapForForm[k] = v;
         });
 
@@ -782,10 +809,11 @@ class JobcardRemoteDataSource {
 
       if (raw is String) {
         final s = raw.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/saveJobCard',
           );
+        }
         try {
           final decoded = json.decode(s);
           if (decoded is Map) return Map<String, dynamic>.from(decoded);
@@ -803,10 +831,11 @@ class JobcardRemoteDataSource {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /jobcard/saveJobCard',
           );
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {
@@ -828,10 +857,11 @@ class JobcardRemoteDataSource {
       if (raw is String) {
         final s = raw.trim();
         if (s.isEmpty) return null;
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /generateUniqueNumber',
           );
+        }
         // try to decode JSON string — return primitive decoded values (string/number)
         try {
           final decoded = json.decode(s);
@@ -839,8 +869,9 @@ class JobcardRemoteDataSource {
           if (decoded is num) return decoded.toString();
           if (decoded is Map) {
             if (decoded['data'] is String) return decoded['data'] as String;
-            if (decoded['jobcard_number'] != null)
+            if (decoded['jobcard_number'] != null) {
               return decoded['jobcard_number'].toString();
+            }
             if (decoded['number'] != null) return decoded['number'].toString();
           }
           // decoded to an unsupported primitive — fall back to the raw string
@@ -852,10 +883,12 @@ class JobcardRemoteDataSource {
 
       if (raw is Map) {
         if (raw['data'] is String) return raw['data'] as String;
-        if (raw['data'] is Map && raw['data']['jobcard_number'] != null)
+        if (raw['data'] is Map && raw['data']['jobcard_number'] != null) {
           return raw['data']['jobcard_number'].toString();
-        if (raw['jobcard_number'] != null)
+        }
+        if (raw['jobcard_number'] != null) {
           return raw['jobcard_number'].toString();
+        }
         if (raw['number'] != null) return raw['number'].toString();
         // fallback: pick first string value
         for (final v in raw.values) {
@@ -917,10 +950,11 @@ class JobcardRemoteDataSource {
       final respData = e.response?.data;
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<'))
+        if (s.startsWith('<')) {
           throw ServerException(
             'Server returned HTML for /generateUniqueNumber',
           );
+        }
       }
       throw ServerException(friendlyDioError(e));
     } catch (e) {

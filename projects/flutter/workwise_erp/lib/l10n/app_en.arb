@@ -113,6 +113,10 @@
   "switchButton": "Switch",
   "signOut": "Sign Out",
   "signOutMessage": "Are you sure you want to sign out of your account?",
+  "termsOfService": "Terms of Service",
+  "termsOfServiceSubtitle": "View our terms and conditions",
+  "privacyPolicy": "Privacy Policy",
+  "privacyPolicySubtitle": "How we protect your privacy",
   "shareApp": "Share Workwise",
   "changePassword": "Change Password",
   "changePasswordSubtitle": "Update your password regularly",
@@ -184,5 +188,8 @@
     "placeholders": {
       "count": { "type": "int" }
     }
-  }
+  },
+  "developerOptionsBlockedTitle": "Security Alert",
+  "developerOptionsBlockedMessage": "We detected that Developer Options is enabled on your device. Please turn it off to protect your data and continue using the Workwise app safely.",
+  "exitApp": "Exit"
 }

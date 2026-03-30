@@ -99,6 +99,10 @@
   "switchButton": "बदलें",
   "signOut": "साइन आउट",
   "signOutMessage": "क्या आप वाकई अपने खाते से साइन आउट करना चाहते हैं?",
+  "termsOfService": "सेवा की शर्तें",
+  "termsOfServiceSubtitle": "हमारी शर्तें और नियम पढ़ें",
+  "privacyPolicy": "गोपनीयता नीति",
+  "privacyPolicySubtitle": "हम आपकी गोपनीयता कैसे सुरक्षित करते हैं",
   "shareApp": "वर्कवाइज साझा करें",
   "changePassword": "पासवर्ड बदलें",
   "changePasswordSubtitle": "नियमित रूप से अपना पासवर्ड अपडेट करें",
@@ -135,5 +139,8 @@
   "timeJustNow": "अब",
   "timeMinutes": "{count}m",
   "timeHours": "{count}h",
-  "timeDays": "{count}d"
+  "timeDays": "{count}d",
+  "developerOptionsBlockedTitle": "सुरक्षा चेतावनी",
+  "developerOptionsBlockedMessage": "हमने पाया कि आपके डिवाइस पर डेवलपर विकल्प सक्षम हैं। कृपया अपने डेटा की सुरक्षा करने और Workwise ऐप का उपयोग सुरक्षित रूप से जारी रखने के लिए उन्हें बंद करें।",
+  "exitApp": "बाहर निकलें"
 }

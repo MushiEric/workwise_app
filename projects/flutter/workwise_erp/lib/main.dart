@@ -17,6 +17,8 @@ import 'core/routes/app_router.dart';
 import '../../../core/constants/app_constant.dart';
 
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/services/analytics_service.dart';
 import 'core/config/environment.dart';
 import 'core/models/tenant.dart';
 import 'core/storage/tenant_local_data_source.dart';
@@ -24,6 +26,10 @@ import 'core/provider/tenant_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (Analytics + Crashlytics)
+  await Firebase.initializeApp();
+  await AnalyticsService.initCrashlytics();
 
   // OPTIONAL RUNTIME OVERRIDE (useful during local development):
   // Uncomment the following line to force a specific environment without
@@ -34,7 +40,7 @@ void main() async {
   // flutter run --dart-define=RUNTIME_ENV=dev
   const runtimeEnv = String.fromEnvironment(
     'RUNTIME_ENV',
-    defaultValue: 'staging',
+    defaultValue: 'prod',
   );
   if (runtimeEnv.isNotEmpty) {
     EnvConfig.init(EnvConfig.parseEnv(runtimeEnv));

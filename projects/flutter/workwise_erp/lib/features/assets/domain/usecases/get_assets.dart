@@ -1,7 +1,6 @@
 import 'package:workwise_erp/core/errors/either.dart';
 import 'package:workwise_erp/core/errors/failure.dart';
 
-import '../entities/asset.dart';
 import '../repositories/asset_repository.dart';
 
 class GetAssets {

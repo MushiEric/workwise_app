@@ -307,6 +307,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Are you sure you want to sign out of your account?';
 
   @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get termsOfServiceSubtitle => 'View our terms and conditions';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get privacyPolicySubtitle => 'How we protect your privacy';
+
+  @override
   String get shareApp => 'Share Workwise';
 
   @override
@@ -425,4 +437,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String timeDays(int count) {
     return '${count}d';
   }
+
+  @override
+  String get developerOptionsBlockedTitle => 'Security Alert';
+
+  @override
+  String get developerOptionsBlockedMessage =>
+      'We detected that Developer Options is enabled on your device. Please turn it off to protect your data and continue using the Workwise app safely.';
+
+  @override
+  String get exitApp => 'Exit';
 }
