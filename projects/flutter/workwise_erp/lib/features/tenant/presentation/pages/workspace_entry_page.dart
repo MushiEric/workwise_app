@@ -484,34 +484,16 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
                           color: Colors.white,
                         ),
                       )
-                    : Row(
-                        key: const ValueKey(2),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              LucideIcons.rocket,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                    : const Center(
+                        key: ValueKey(2),
+                        child: Text(
+                          'Launch Workspace',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
                           ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Launch Workspace',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(LucideIcons.arrowRight, size: 20),
-                        ],
+                        ),
                       ),
               ),
             ),
@@ -559,40 +541,14 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
           ).textTheme.bodySmall?.copyWith(color: AppColors.muted, height: 1.5),
         ),
         const SizedBox(height: 8),
-        // Additional trust indicators
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(LucideIcons.shield, size: 14, color: Colors.green.shade400),
-            const SizedBox(width: 6),
-            Text(
-              'Enterprise-grade security',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.green.shade600,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Icon(LucideIcons.lock, size: 14, color: Colors.blue.shade400),
-            const SizedBox(width: 6),
-            Text(
-              'SSL encrypted',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.blue.shade600,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        // Optional additional trust indicator
+        Text(
+          'SSL encrypted',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.blue.shade600,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
