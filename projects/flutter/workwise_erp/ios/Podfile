@@ -27,7 +27,7 @@ target 'Runner' do
   use_modular_headers!
 
   # Flutter Pod helper including all plugins:
-  install_all_flutter_pods(sandbox: nil)
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
   target 'RunnerTests' do
     inherit! :search_paths
