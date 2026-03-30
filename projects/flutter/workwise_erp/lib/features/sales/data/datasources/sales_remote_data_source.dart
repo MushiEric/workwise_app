@@ -766,16 +766,60 @@ class SalesRemoteDataSource {
     final paths = [
       '/proposal/getCurrency',
       '/currency/getCurrency',
+      '/currency/getCurrencies',
       '/api/getCurrency',
+      '/api/currencies',
       '/order/getCurrency',
       '/sales/getCurrency',
+      '/logistic/getCurrency',
     ];
     for (final p in paths) {
       try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
+        final resp = await client.get(
+          p,
+          queryParameters: {
+            'limit': '1000',
+            'length': '1000',
+            'per_page': '1000',
+            'all': '1',
+          },
+          options: Options(
+            connectTimeout: const Duration(seconds: 5),
+            receiveTimeout: const Duration(seconds: 5),
+          ),
+        );
+        if (resp.statusCode == 200) {
+          // Try standard _extractList first
+          final list = _extractList(resp.data);
+          if (list.isNotEmpty) {
+            // ignore: avoid_print
+            print('[SalesDataSource] getCurrencies: found ${list.length} items via $p');
+            return list;
+          }
+          
+          // Bare list check (if _extractList failed to find the right key)
+          if (resp.data is List && (resp.data as List).isNotEmpty) {
+             return (resp.data as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          }
+
+          // Inner key search
+          if (resp.data is Map) {
+            final raw = resp.data as Map;
+            for (final key in ['currencies', 'currency', 'data', 'records', 'items', 'payload', 'currency_list']) {
+              if (raw[key] is List && (raw[key] as List).isNotEmpty) {
+                final items = (raw[key] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+                if (items.isNotEmpty) return items;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ignore: avoid_print
+        print('[SalesDataSource] getCurrencies: $p failed: $e');
+      }
     }
+    // ignore: avoid_print
+    print('[SalesDataSource] getCurrencies: all paths failed, returning []');
     return [];
   }
 
@@ -878,10 +922,7 @@ class SalesRemoteDataSource {
   Future<List<Map<String, dynamic>>> getUsers() async {
     final paths = [
       '/user/getUsers',
-      '/sales/getSalesAgent',
-      '/sales/getSalesAgents',
-      '/auth/getUsers',
-      '/users/getUsers',
+     
     ];
     for (final p in paths) {
       try {
@@ -897,18 +938,64 @@ class SalesRemoteDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getJobCards() async {
-    final paths = [
-      '/jobcard/getJobCard',
-      '/job-card/getJobCard',
-      '/sales/getJobCard',
-    ];
-    for (final p in paths) {
-      try {
-        final list = await _getMetadata(p);
-        if (list.isNotEmpty) return list;
-      } catch (_) {}
+    final Map<String, Map<String, dynamic>> allJobcardsMap = {};
+    try {
+      // Fetch up to 10 pages (100 items if capped at 10)
+      for (int page = 1; page <= 10; page++) {
+        final resp = await client.get(
+          '/jobcard/getJobCard',
+          queryParameters: {
+            'page': page,
+            'start': (page - 1) * 10,
+            'offset': (page - 1) * 10,
+            'length': '10', // Explicitly use 10 to match the server's suspected default
+            'limit': '10',
+            'per_page': '10',
+            'limit_page_length': '10',
+            'draw': '1',
+            'all': '1',
+          },
+        );
+        if (resp.statusCode != 200) break;
+        final items = _extractList(resp.data);
+        if (items.isEmpty) break;
+
+        bool foundNew = false;
+        for (final it in items) {
+          final key = (it['id'] ?? it['jobcard_number'] ?? it['job_number'])?.toString();
+          if (key != null && !allJobcardsMap.containsKey(key)) {
+            allJobcardsMap[key] = it;
+            foundNew = true;
+          }
+        }
+        
+        if (!foundNew) break; // Reached the end or server ignoring our paging
+        if (items.length < 10) break; // End of server data
+      }
+      // ignore: avoid_print
+      print('[SalesDataSource] getJobCards finally collected ${allJobcardsMap.length} records');
+    } catch (e) {
+      // ignore: avoid_print
+      print('[SalesDataSource] getJobCards error: $e');
     }
-    return [];
+    return allJobcardsMap.values.toList();
+  }
+
+  Future<Map<String, dynamic>> getJobCardById(int id) async {
+    try {
+      final resp = await client.get('/jobcard/getJobCardRow/$id');
+      final raw = resp.data;
+      if (raw is Map && raw['data'] is Map)
+        return Map<String, dynamic>.from(raw['data'] as Map);
+      if (raw is Map) return Map<String, dynamic>.from(raw);
+      if (raw is String) {
+        final decoded = json.decode(raw);
+        if (decoded is Map && decoded['data'] is Map)
+          return Map<String, dynamic>.from(decoded['data'] as Map);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+    return <String, dynamic>{};
   }
 
   Future<List<Map<String, dynamic>>> _getMetadata(String path, {Map<String, dynamic>? params}) async {
@@ -916,7 +1003,7 @@ class SalesRemoteDataSource {
       final List<Map<String, dynamic>> allItems = [];
       int currentPage = 1;
       int lastPage = 1;
-      const int pageSize = 1000; 
+      const int pageSize = 500; 
 
       do {
         final queryParams = <String, dynamic>{
@@ -940,10 +1027,8 @@ class SalesRemoteDataSource {
           queryParameters: queryParams,
           options: Options(
             validateStatus: (s) => s != null && s < 500,
-            sendTimeout: const Duration(seconds: 4),
-            receiveTimeout: const Duration(seconds: 8),
           ),
-        ).timeout(const Duration(seconds: 10));
+        );
 
         if (resp.statusCode != 200) break;
 
@@ -996,13 +1081,8 @@ class SalesRemoteDataSource {
             if (total != null && perPage != null && perPage > 0) {
               lastPage = (total / perPage).ceil();
             } else {
-              // OPTIMISTIC FALLBACK: If we got items but no metadata, 
-              // try to fetch the next page regardless until we get empty list or hit cap.
-              if (pageItems.length > 0) {
-                lastPage = currentPage + 1;
-              } else {
-                lastPage = 1;
-              }
+              // No pagination metadata: treat as single page to avoid infinite loop.
+              lastPage = 1;
             }
           }
         } else {
@@ -1010,7 +1090,39 @@ class SalesRemoteDataSource {
         }
 
         currentPage++;
-      } while (currentPage <= lastPage && lastPage > 1 && allItems.length < 10000);
+      } while (currentPage <= lastPage && lastPage >= currentPage && allItems.length < 10000);
+
+      // If we only got 10 items and lastPage was 1, maybe the backend is ignoring our pageSize.
+      // Let's try to fetch page 2 anyway if page 1 wasn't totally empty and we suspect more.
+      if (allItems.length > 0 && allItems.length < 100 && lastPage <= 1) {
+         // Some backends ignore per_page and return 10. If so, we must loop manually.
+         int extraPage = 2;
+         while (extraPage < 20) { // arbitrary limit to avoid infinity
+           final queryParams = <String, dynamic>{
+             'page': extraPage,
+             'length': pageSize.toString(),
+             'limit': pageSize.toString(),
+             'per_page': pageSize.toString(),
+             'all': '1',
+             'start': (extraPage - 1) * 10, // assuming 10 is the cap
+             'offset': (extraPage - 1) * 10,
+           };
+           final resp = await client.get(path, queryParameters: queryParams);
+           if (resp.statusCode != 200) break;
+           final items = _extractList(resp.data);
+           if (items.isEmpty) break;
+           
+           // Avoid duplicates if the backend is returning the same page
+           final firstNewId = items.first['id']?.toString();
+           if (firstNewId != null && allItems.any((x) => x['id']?.toString() == firstNewId)) {
+             break; 
+           }
+           
+           allItems.addAll(items);
+           if (items.length < 10) break;
+           extraPage++;
+         }
+      }
 
       return allItems;
     } catch (e) {

@@ -93,6 +93,7 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     // Pre-fetch support tickets using the existing module notifier
     Future.microtask(() {
       ref.read(supportNotifierProvider.notifier).loadTickets(limit: 1000);
+      ref.read(jobcardNotifierProvider.notifier).loadJobcards(perPage: 40); // Pre-fetch jobcards
     });
   }
 
@@ -512,7 +513,20 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
                     label: 'Job Card',
                     hintText: 'Select Jobcard',
                     onChanged: (v) => setState(() => _selectedJobcardId = v),
-                    onMapChanged: _populateItemsFromMap,
+                    onMapChanged: (m) async {
+                      final idStr = m['id']?.toString();
+                      if (idStr != null) {
+                        final id = int.tryParse(idStr);
+                        if (id != null) {
+                          final full = await ref.read(salesRemoteDataSourceProvider).getJobCardById(id);
+                          _populateItemsFromMap(full.isNotEmpty ? full : m);
+                          return;
+                        }
+                      }
+                      _populateItemsFromMap(m);
+                    },
+                    onLoadMore: () => ref.read(jobcardNotifierProvider.notifier).loadMore(),
+                    isLoadingMore: ref.watch(salesJobcardsLoadingMoreProvider),
                     labelBuilder: (m) => '${m['jobcard_number'] ?? m['job_number'] ?? ''} - ${m['subject'] ?? m['service'] ?? m['name'] ?? ''}',
                     itemWidgetBuilder: (m) => RichText(
                       text: TextSpan(
@@ -882,6 +896,8 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     String displayKey = 'name',
     Widget Function(Map<String, dynamic>)? itemWidgetBuilder,
     String Function(Map<String, dynamic>)? labelBuilder,
+    VoidCallback? onLoadMore,
+    bool isLoadingMore = false,
   }) {
     return asyncValue.when(
       loading: () => _buildField(AppTextField(label: label, hintText: 'Loading...', readOnly: true)),
@@ -967,6 +983,8 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
             if (T == int) return onChanged(int.tryParse(v) as T);
             onChanged(v as T);
           },
+          onLoadMore: onLoadMore,
+          isLoadingMore: isLoadingMore,
         ));
       },
     );

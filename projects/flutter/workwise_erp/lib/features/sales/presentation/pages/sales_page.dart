@@ -100,7 +100,9 @@ class _SalesPageState extends ConsumerState<SalesPage>
 
     for (final p in providers) {
       try {
-        ref.read(p);
+        if (p is ProviderListenable) {
+           ref.read(p);
+        }
       } catch (_) {}
     }
 
