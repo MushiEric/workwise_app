@@ -1,6 +1,7 @@
 workflows:
   ios-release:
     name: iOS Release to TestFlight
+    project_path: "projects/flutter/workwise_erp"  # required for mono-repo
     max_build_duration: 120
     instance_type: mac_mini_m2
 
@@ -10,6 +11,7 @@ workflows:
         bundle_identifier: com.example.workwiseErp  # ← UPDATE to your real bundle ID
       flutter: stable
       xcode: latest
+      ruby: system
       cocoapods: default
       vars:
         # ── App Store Connect API key (add these as encrypted vars in Codemagic UI) ──
@@ -59,3 +61,21 @@ workflows:
         notify:
           success: true
           failure: true
+scripts:
+  - name: Verify current dir
+    script: pwd && ls -la
+
+  - name: Install pods
+    script: |
+      cd projects/flutter/workwise_erp/ios
+      pod install --repo-update
+
+  - name: Flutter pub get
+    script: |
+      cd projects/flutter/workwise_erp
+      flutter pub get
+
+  - name: Build IPA
+    script: |
+      cd projects/flutter/workwise_erp
+      flutter build ipa --release --no-codesign
