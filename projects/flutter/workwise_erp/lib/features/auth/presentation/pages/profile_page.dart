@@ -256,7 +256,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     // defaults while the notifier is in loading state.
     // If the authenticated user identity changed (different user logged in),
     // reset stale cached state so we never display the previous user's data.
-    if (user != null && _cachedUser != null && _cachedUser!.id != user.id) {
+    if (user != null && _cachedUser != null && _cachedUser!.id != user!.id) {
       _cachedUser = null;
       _lastPopulatedUser = null;
     }
