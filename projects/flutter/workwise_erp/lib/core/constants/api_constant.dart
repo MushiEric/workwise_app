@@ -1,13 +1,16 @@
+import '../config/environment.dart';
+
 class ApiConstant {
-
   ApiConstant._();
-  // Local dev server (same machine) — API root
 
-static const String baseUrl="https://staging.workwise.africa/api";
-  //test staging
-  static const String baseUrlDev ="staging.workwise.africa/api";
-  // static const String baseUrlDev = 'http://10.86.58.81:8000/api';
-  static const String stagingUrl = "staging.workwise.africa/api";
-  // static const String baseUrlProd = 'https://api.workwise.africa/api';
+  /// The effective base URL used for legacy utilities (image URL resolution, auth fallback paths, etc.).
+  ///
+  /// This is updated when a workspace is selected; otherwise it defaults
+  /// to the current environment (`EnvConfig.current.baseUrl`).
+  static String baseUrl = EnvConfig.current.baseUrl;
 
+  /// Override the base URL at runtime (workspace switch).
+  static void setBaseUrl(String url) {
+    baseUrl = url;
+  }
 }

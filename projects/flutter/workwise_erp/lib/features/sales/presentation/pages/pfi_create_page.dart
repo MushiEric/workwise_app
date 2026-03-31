@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_smart_dropdown.dart';
 import '../../../pfi/domain/entities/pfi.dart';
 import '../../../customer/domain/entities/customer.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
+import '../../../pfi/presentation/providers/pfi_providers.dart';
 
 class PfiCreatePage extends ConsumerStatefulWidget {
   final Pfi? pfi;
@@ -26,7 +27,9 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   final _proposalNumberCtl = TextEditingController();
   final _subjectCtl = TextEditingController();
   final _dateCtl = TextEditingController();
-  
+  final _notesCtl = TextEditingController();
+  final _termsCtl = TextEditingController();
+
   int? _selectedCustomerId;
   int? _selectedStatusId;
   DateTime? _selectedDate;
@@ -63,6 +66,8 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
     _proposalNumberCtl.dispose();
     _subjectCtl.dispose();
     _dateCtl.dispose();
+    _notesCtl.dispose();
+    _termsCtl.dispose();
     super.dispose();
   }
 
@@ -92,17 +97,21 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCustomerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a customer')));
       return;
     }
 
     setState(() => _isSubmitting = true);
     // TODO: Implement save logic in PFI notifier
-    await Future.delayed(const Duration(seconds: 1)); 
-    
+    await Future.delayed(const Duration(seconds: 1));
+
     if (mounted) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.pfi != null ? 'PFI updated' : 'PFI created')),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.pfi != null ? 'PFI updated' : 'PFI created'),
+        ),
       );
       Navigator.pop(context, true);
     }
@@ -119,76 +128,99 @@ class _PfiCreatePageState extends ConsumerState<PfiCreatePage> {
       return cfg[key] == true;
     }
 
-    ref.listen<AsyncValue<Map<String, dynamic>>>(pfiSettingsProvider, (prev, next) {
+    ref.listen<AsyncValue<Map<String, dynamic>>>(pfiSettingsProvider, (
+      prev,
+      next,
+    ) {
       if (widget.pfi == null && next.hasValue) {
         final data = next.value!;
         if (_notesCtl.text.isEmpty) {
-          final notesRaw = data['pfi_client_notes']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          final notesRaw =
+              data['pfi_client_notes']
+                  ?.toString()
+                  .replaceAll('&nbsp;', ' ')
+                  .replaceAll('<br>', '\n') ??
+              '';
           _notesCtl.text = notesRaw.trim();
         }
         if (_termsCtl.text.isEmpty) {
-          final termsRaw = data['pfi_terms_condition']?.toString().replaceAll('&nbsp;', ' ').replaceAll('<br>', '\n') ?? '';
+          final termsRaw =
+              data['pfi_terms_condition']
+                  ?.toString()
+                  .replaceAll('&nbsp;', ' ')
+                  .replaceAll('<br>', '\n') ??
+              '';
           _termsCtl.text = termsRaw.trim();
         }
       }
     });
+
+    // Ensure pfiSettingsProvider is read so we can dynamically adapt form layout
+    ref.watch(pfiSettingsProvider);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A0E21) : Colors.white,
       appBar: CustomAppBar(
         title: widget.pfi != null ? 'Edit PFI' : 'Create PFI',
       ),
-      body: _isLoadingMetadata 
-        ? const Center(child: CircularProgressIndicator())
-        : Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(20.r),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppTextField(
-                    controller: _proposalNumberCtl,
-                    label: 'Proposal Number *',
-                    hintText: 'e.g. PFI-2024-001',
-                    validator: (v) => v?.isEmpty == true ? 'Required' : null,
-                  ),
-                  SizedBox(height: 16.h),
-                  AppTextField(
-                    controller: _subjectCtl,
-                    label: 'Subject *',
-                    hintText: 'e.g. Pro Forma for Spares',
-                    validator: (v) => v?.isEmpty == true ? 'Required' : null,
-                  ),
-                  SizedBox(height: 16.h),
-                  AppSmartDropdown<int>(
-                    value: _selectedCustomerId,
-                    items: _customers.map((c) => c.id!).toList(),
-                    itemBuilder: (id) => _customers.firstWhere((c) => c.id == id).name ?? 'Unknown',
-                    label: 'Customer *',
-                    hintText: 'Select customer',
-                    onChanged: (id) => setState(() => _selectedCustomerId = id),
-                  ),
-                  SizedBox(height: 16.h),
-                  AppTextField(
-                    controller: _dateCtl,
-                    label: 'PFI Date',
-                    hintText: 'Select date',
-                    readOnly: true,
-                    onTap: _selectDate,
-                    suffixIcon: Icon(AppIcons.calendar, size: 20.r, color: Colors.grey),
-                  ),
-                  SizedBox(height: 32.h),
-                  AppButton(
-                    text: widget.pfi != null ? 'Update PFI' : 'Create PFI',
-                    onPressed: _submit,
-                    isLoading: _isSubmitting,
-                    width: double.infinity,
-                  ),
-                ],
+      body: _isLoadingMetadata
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(20.r),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppTextField(
+                      controller: _proposalNumberCtl,
+                      label: 'Proposal Number *',
+                      hintText: 'e.g. PFI-2024-001',
+                      validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                    ),
+                    SizedBox(height: 16.h),
+                    AppTextField(
+                      controller: _subjectCtl,
+                      label: 'Subject *',
+                      hintText: 'e.g. Pro Forma for Spares',
+                      validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                    ),
+                    SizedBox(height: 16.h),
+                    AppSmartDropdown<int>(
+                      value: _selectedCustomerId,
+                      items: _customers.map((c) => c.id!).toList(),
+                      itemBuilder: (id) =>
+                          _customers.firstWhere((c) => c.id == id).name ??
+                          'Unknown',
+                      label: 'Customer *',
+                      hintText: 'Select customer',
+                      onChanged: (id) =>
+                          setState(() => _selectedCustomerId = id),
+                    ),
+                    SizedBox(height: 16.h),
+                    AppTextField(
+                      controller: _dateCtl,
+                      label: 'PFI Date',
+                      hintText: 'Select date',
+                      readOnly: true,
+                      onTap: _selectDate,
+                      suffixIcon: Icon(
+                        AppIcons.calendar,
+                        size: 20.r,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+                    AppButton(
+                      text: widget.pfi != null ? 'Update PFI' : 'Create PFI',
+                      onPressed: _submit,
+                      isLoading: _isSubmitting,
+                      width: double.infinity,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
 }

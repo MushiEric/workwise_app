@@ -1001,116 +1001,119 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final themeMode = ref.watch(themeModeProvider);
-                    final isDarkMode = themeMode == ThemeMode.dark
-                        ? true
-                        : themeMode == ThemeMode.light
-                        ? false
-                        : Theme.of(context).brightness == Brightness.dark;
-                    return _buildMenuTile(
-                      icon: AppIcons.moon,
-                      label: context.l10n.darkMode,
-                      trailing: CupertinoSwitch(
-                        value: isDarkMode,
-                        onChanged: (value) {
-                          ref
-                              .read(themeModeProvider.notifier)
-                              .setThemeMode(
-                                value ? ThemeMode.dark : ThemeMode.light,
-                              );
-                        },
-                        activeColor: AppColors.primary,
-                      ),
-                    );
-                  },
-                ),
-                Consumer(
-                  builder: (context, ref, _) {
-                    // prefer authenticated user's lang, otherwise app provider
-                    final code = ref
-                        .watch(authNotifierProvider)
-                        .maybeWhen(
-                          authenticated: (u) =>
-                              u.lang ?? ref.watch(appLocaleProvider),
-                          orElse: () => ref.watch(appLocaleProvider),
-                        );
-                    return _buildMenuTile(
-                      icon: AppIcons.globe,
-                      label: context.l10n.language,
-                      subtitle: languageLabel(code),
-                      onTap: _showLanguageSelection,
-                    );
-                  },
-                ),
+                  const SizedBox(height: 20),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final themeMode = ref.watch(themeModeProvider);
+                      final isDarkMode = themeMode == ThemeMode.dark
+                          ? true
+                          : themeMode == ThemeMode.light
+                          ? false
+                          : Theme.of(context).brightness == Brightness.dark;
+                      return _buildMenuTile(
+                        icon: AppIcons.moon,
+                        label: context.l10n.darkMode,
+                        trailing: CupertinoSwitch(
+                          value: isDarkMode,
+                          onChanged: (value) {
+                            ref
+                                .read(themeModeProvider.notifier)
+                                .setThemeMode(
+                                  value ? ThemeMode.dark : ThemeMode.light,
+                                );
+                          },
+                          activeColor: AppColors.primary,
+                        ),
+                      );
+                    },
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      // prefer authenticated user's lang, otherwise app provider
+                      final code = ref
+                          .watch(authNotifierProvider)
+                          .maybeWhen(
+                            authenticated: (u) =>
+                                u.lang ?? ref.watch(appLocaleProvider),
+                            orElse: () => ref.watch(appLocaleProvider),
+                          );
+                      return _buildMenuTile(
+                        icon: AppIcons.globe,
+                        label: context.l10n.language,
+                        subtitle: languageLabel(code),
+                        onTap: _showLanguageSelection,
+                      );
+                    },
+                  ),
 
-                _buildMenuTile(
-                  icon: AppIcons.volume,
-                  label: context.l10n.sound,
-                  trailing: CupertinoSwitch(
-                    value: true,
-                    onChanged: (value) {},
-                    activeColor: AppColors.primary,
+                  _buildMenuTile(
+                    icon: AppIcons.volume,
+                    label: context.l10n.sound,
+                    trailing: CupertinoSwitch(
+                      value: true,
+                      onChanged: (value) {},
+                      activeColor: AppColors.primary,
+                    ),
                   ),
-                ),
-                _buildMenuTile(
-                  icon: AppIcons.server,
-                  label: context.l10n.switchWorkspace,
-                  subtitle: context.l10n.changeWorkspaceSubtitle,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showSwitchWorkspaceConfirmation();
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.description_outlined,
-                  label: context.l10n.termsOfService,
-                  subtitle: context.l10n.termsOfServiceSubtitle,
-                  onTap: () {
-                    Navigator.pop(context);
-                    launchUrl(
-                      Uri.parse('https://workwise.africa/terms-of-service/'),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.privacy_tip_outlined,
-                  label: context.l10n.privacyPolicy,
-                  subtitle: context.l10n.privacyPolicySubtitle,
-                  onTap: () {
-                    Navigator.pop(context);
-                    launchUrl(
-                      Uri.parse('https://workwise.africa/privacy-policy/'),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  },
-                ),
-                _buildMenuTile(
-                  icon: AppIcons.logOut,
-                  label: context.l10n.signOut,
-                  color: Colors.red,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showLogoutConfirmation();
-                  },
-                ),
-                const SizedBox(height: 20),
-              ],
+                  _buildMenuTile(
+                    icon: AppIcons.server,
+                    label: context.l10n.switchWorkspace,
+                    subtitle: context.l10n.changeWorkspaceSubtitle,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showSwitchWorkspaceConfirmation();
+                    },
+                  ),
+                  _buildMenuTile(
+                    icon: Icons.description_outlined,
+                    label: context.l10n.termsOfService,
+                    subtitle: context.l10n.termsOfServiceSubtitle,
+                    onTap: () {
+                      Navigator.pop(context);
+                      launchUrl(
+                        Uri.parse('https://workwise.africa/terms-of-service/'),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
+                  _buildMenuTile(
+                    icon: Icons.privacy_tip_outlined,
+                    label: context.l10n.privacyPolicy,
+                    subtitle: context.l10n.privacyPolicySubtitle,
+                    onTap: () {
+                      Navigator.pop(context);
+                      launchUrl(
+                        Uri.parse('https://workwise.africa/privacy-policy/'),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
+                  _buildMenuTile(
+                    icon: AppIcons.logOut,
+                    label: context.l10n.signOut,
+                    color: Colors.red,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showLogoutConfirmation();
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );

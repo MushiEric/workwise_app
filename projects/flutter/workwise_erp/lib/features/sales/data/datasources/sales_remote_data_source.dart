@@ -19,14 +19,16 @@ class SalesRemoteDataSource {
     try {
       final defaultStatus = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
+      final now = DateTime.now();
+      final today =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
       final defaultData = <String, dynamic>{
         'draw': '1',
         'start': '0',
         'length': '5000',
-        'search[value]': '',
-        'search[regex]': 'false',
-        'start_date': '2000-01-01',
-        'end_date': '2100-12-31 23:59:59',
+        'start_date': today,
+        'end_date': today,
         'user': 'All',
         'customer': 'All',
         'vehicle': 'All',
@@ -41,27 +43,37 @@ class SalesRemoteDataSource {
 
       queryParams.putIfAbsent('start', () => '0');
       queryParams.putIfAbsent('length', () => '5000');
+      queryParams.putIfAbsent('start_date', () => today);
+      queryParams.putIfAbsent('end_date', () => today);
 
       // Include status array if not already provided.
-      if (!queryParams.containsKey('status')) {
-        queryParams['status'] = defaultStatus;
+      if (!queryParams.containsKey('status') &&
+          !queryParams.containsKey('status[]')) {
+        queryParams['status[]'] = defaultStatus;
+      }
+
+      // Support both forms in case query has status=.. or status[]=..
+      if (queryParams.containsKey('status') &&
+          !queryParams.containsKey('status[]')) {
+        queryParams['status[]'] = queryParams['status'];
       }
 
       // Also send flat search keys alongside any nested search object so
       // the server accepts either format.
-      final searchObj = queryParams['search'];
-      if (searchObj is Map) {
-        queryParams.putIfAbsent(
-          'search[value]',
-          () => searchObj['value'] ?? '',
-        );
-        queryParams.putIfAbsent(
-          'search[regex]',
-          () => searchObj['regex'] ?? 'false',
-        );
-      } else {
-        queryParams.putIfAbsent('search[value]', () => '');
+      if (queryParams.containsKey('search[value]')) {
         queryParams.putIfAbsent('search[regex]', () => 'false');
+      } else if (queryParams.containsKey('search')) {
+        final searchObj = queryParams['search'];
+        if (searchObj is Map) {
+          queryParams.putIfAbsent(
+            'search[value]',
+            () => searchObj['value'] ?? '',
+          );
+          queryParams.putIfAbsent(
+            'search[regex]',
+            () => searchObj['regex'] ?? 'false',
+          );
+        }
       }
 
       final resp = await client.get(
@@ -113,6 +125,12 @@ class SalesRemoteDataSource {
       }
     }
     return v.toString();
+  }
+
+  String? _stripHtml(String? value) {
+    if (value == null) return null;
+    final stripped = value.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+    return stripped.isEmpty ? null : stripped;
   }
 
   int? _asInt(dynamic v) {
@@ -168,15 +186,35 @@ class SalesRemoteDataSource {
 
   Map<String, dynamic> _normalizeOrderJson(Map<String, dynamic> src) {
     final out = Map<String, dynamic>.from(src);
-    
+
     // 1. Broad set of fields that must be strings in OrderModel
     final stringFields = [
-      'order_number', 'invoice_number', 'title', 'start_date', 'end_date',
-      'created_at', 'updated_at', 'lpo_number', 'sender_name', 'sender_phone',
-      'receiver_name', 'receiver_phone', 'consignment_details', 'package_type',
-      'cargo_value', 'cargo_unit', 'priority', 'payment_type', 
-      'currency_id', 'exchange_rate', 'contract_id', 'request_id', 'quotation_id',
-      'duration', 'duration_unit'
+      'order_number',
+      'invoice_number',
+      'status',
+      'title',
+      'start_date',
+      'end_date',
+      'created_at',
+      'updated_at',
+      'lpo_number',
+      'sender_name',
+      'sender_phone',
+      'receiver_name',
+      'receiver_phone',
+      'consignment_details',
+      'package_type',
+      'cargo_value',
+      'cargo_unit',
+      'priority',
+      'payment_type',
+      'currency_id',
+      'exchange_rate',
+      'contract_id',
+      'request_id',
+      'quotation_id',
+      'duration',
+      'duration_unit',
     ];
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = _asString(out[f]);
@@ -185,9 +223,25 @@ class SalesRemoteDataSource {
     if (out.containsKey('customer_id')) {
       out['customer_id'] = _asInt(out['customer_id']);
     }
+    if (out.containsKey('warehouse_id')) {
+      out['warehouse_id'] = _asInt(out['warehouse_id']);
+    }
+    if (out.containsKey('status_id')) {
+      out['status_id'] = _asInt(out['status_id']);
+    }
+    if (out.containsKey('assign_user_id')) {
+      out['assign_user_id'] = _asInt(out['assign_user_id']);
+    }
     if (out.containsKey('amount')) out['amount'] = _asNum(out['amount']);
     if (out.containsKey('payment_status')) {
       out['payment_status'] = _asInt(out['payment_status']);
+    }
+
+    if (out.containsKey('status')) {
+      out['status'] = _stripHtml(_asString(out['status']));
+    }
+    if (out.containsKey('order_number')) {
+      out['order_number'] = _stripHtml(_asString(out['order_number']));
     }
 
     Map<String, dynamic>? fixId(Map<String, dynamic>? m) {
@@ -206,19 +260,27 @@ class SalesRemoteDataSource {
     var sRow = _asMap(out['status_row']);
     if (sRow == null && out.containsKey('status') && out['status'] is String) {
       final statStr = out['status'] as String;
-      final stripped = statStr.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+      final stripped = statStr
+          .replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '')
+          .trim();
       if (stripped.isNotEmpty) {
         String? color;
-        final colorMatch = RegExp(r'color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
-        final bgMatch = RegExp(r'background-color:\s*(#[a-fA-F0-9]+)').firstMatch(statStr);
-        if (bgMatch != null) color = bgMatch.group(1);
-        else if (colorMatch != null) color = colorMatch.group(1);
+        final colorMatch = RegExp(
+          r'color:\s*(#[a-fA-F0-9]+)',
+        ).firstMatch(statStr);
+        final bgMatch = RegExp(
+          r'background-color:\s*(#[a-fA-F0-9]+)',
+        ).firstMatch(statStr);
+        if (bgMatch != null)
+          color = bgMatch.group(1);
+        else if (colorMatch != null)
+          color = colorMatch.group(1);
         sRow = {'name': stripped, 'color': color};
       }
     }
     out['status_row'] = fixId(sRow);
     out['payment_status_row'] = fixId(_asMap(out['payment_status_row']));
-    
+
     // Robustly normalize customer and user if present as maps
     if (out['customer'] is Map) {
       final c = Map<String, dynamic>.from(out['customer'] as Map);
@@ -228,7 +290,7 @@ class SalesRemoteDataSource {
       if (c.containsKey('contact')) c['contact'] = _asString(c['contact']);
       out['customer'] = c;
     }
-    
+
     if (out['user'] is Map) {
       final u = Map<String, dynamic>.from(out['user'] as Map);
       if (u.containsKey('id')) u['id'] = _asInt(u['id']);
@@ -244,26 +306,34 @@ class SalesRemoteDataSource {
     for (final it in rawItems) {
       final m = Map<String, dynamic>.from(it);
       if (m.containsKey('id')) m['id'] = _asInt(m['id']);
-      
+
       final itemStringFields = [
-        'order_id', 'item_id', 'price', 'quantity', 'tax', 'discount', 
-        'duration', 'duration_unit'
+        'order_id',
+        'item_id',
+        'price',
+        'quantity',
+        'tax',
+        'discount',
+        'duration',
+        'duration_unit',
       ];
       for (final f in itemStringFields) {
         if (m.containsKey(f)) m[f] = _asString(m[f]);
       }
-      
+
       if (m.containsKey('loading_instruction')) {
         final li = _asString(m['loading_instruction']);
         if (li != null) m['loading_instruction'] = _parseHtmlToReadable(li);
       }
-      
+
       final pMap = _asMap(m['product']);
       m['product'] = pMap != null ? _normalizeProductJson(pMap) : null;
-      
+
       final puMap = _asMap(m['package_unit']);
-      m['package_unit'] = puMap != null ? _normalizePackageUnitJson(puMap) : null;
-      
+      m['package_unit'] = puMap != null
+          ? _normalizePackageUnitJson(puMap)
+          : null;
+
       normalizedItems.add(m);
     }
     out['items'] = normalizedItems;
@@ -275,19 +345,31 @@ class SalesRemoteDataSource {
       final m = Map<String, dynamic>.from(t);
       if (m.containsKey('id')) m['id'] = _asInt(m['id']);
       if (m.containsKey('order_id')) m['order_id'] = _asString(m['order_id']);
-      if (m.containsKey('vehicle_id')) m['vehicle_id'] = _asInt(m['vehicle_id']);
-      
+      if (m.containsKey('vehicle_id'))
+        m['vehicle_id'] = _asInt(m['vehicle_id']);
+
       final truckStringFields = [
-        'vehicle_name', 'vehicle_plate_number', 'vehicle_trailer_number',
-        'driver_name', 'driver_phone', 'driver_license_number',
-        'checkin_status', 'checkout_status', 'checkin_datetime', 'checkout_datetime',
-        'checkin_weight', 'checkin_weight_unit', 'checkout_weight', 'checkout_weight_unit',
-        'net_weight', 'net_weight_unit'
+        'vehicle_name',
+        'vehicle_plate_number',
+        'vehicle_trailer_number',
+        'driver_name',
+        'driver_phone',
+        'driver_license_number',
+        'checkin_status',
+        'checkout_status',
+        'checkin_datetime',
+        'checkout_datetime',
+        'checkin_weight',
+        'checkin_weight_unit',
+        'checkout_weight',
+        'checkout_weight_unit',
+        'net_weight',
+        'net_weight_unit',
       ];
       for (final f in truckStringFields) {
         if (m.containsKey(f)) m[f] = _asString(m[f]);
       }
-      
+
       normalizedTrucks.add(m);
     }
     out['truck_list'] = normalizedTrucks;
@@ -537,12 +619,15 @@ class SalesRemoteDataSource {
   /// Internal helper to get raw product maps
   Future<List<Map<String, dynamic>>> getRawProducts({int? creatorId}) async {
     try {
-      final params = creatorId != null ? {'creatorId': creatorId} : null;
-      final paths = [
+      final queryParams = <String, dynamic>{};
+      if (creatorId != null) {
+        queryParams['creatorId'] = creatorId;
+      }
+      final response = await client.get(
         '/product/getItem',
-        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
-      final list = _extractList(resp.data);
+      final list = _extractList(response.data);
       return list.map((m) => _normalizeProductJson(m)).toList();
     } on DioException catch (e) {
       throw ServerException(e.message ?? 'Network error');
@@ -551,7 +636,10 @@ class SalesRemoteDataSource {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getMetadataSimple(String path, {Map<String, dynamic>? params}) async {
+  Future<List<Map<String, dynamic>>> _getMetadataSimple(
+    String path, {
+    Map<String, dynamic>? params,
+  }) async {
     try {
       final queryParams = <String, dynamic>{
         'length': '1000',
@@ -560,7 +648,7 @@ class SalesRemoteDataSource {
         'all': '1',
       };
       if (params != null) queryParams.addAll(params);
-      
+
       final resp = await client.get(path, queryParameters: queryParams);
       return _extractList(resp.data);
     } catch (_) {
@@ -571,10 +659,13 @@ class SalesRemoteDataSource {
   /// GET /product/getProductUnit
   Future<List<PackageUnitModel>> getPackageUnits({int? creatorId}) async {
     try {
-      final params = creatorId != null ? {'creatorId': creatorId} : null;
-      final paths = [
+      final queryParams = <String, dynamic>{};
+      if (creatorId != null) {
+        queryParams['creatorId'] = creatorId;
+      }
+      final resp = await client.get(
         '/product/getProductUnit',
-        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       return _extractList(resp.data)
           .map((m) => PackageUnitModel.fromJson(_normalizePackageUnitJson(m)))
@@ -745,16 +836,15 @@ class SalesRemoteDataSource {
     try {
       final resp = await client.get(
         '/generateUniqueNumber',
-        queryParameters: {
-          'table': table,
-          'column': column,
-        },
+        queryParameters: {'table': table, 'column': column},
         options: Options(extra: {'noAuth': true}),
       );
       return _tryParseNextNumber(resp.data);
     } catch (e) {
       // ignore: avoid_print
-      print('[SalesRemoteDataSource] generateUniqueNumber error for $table: $e');
+      print(
+        '[SalesRemoteDataSource] generateUniqueNumber error for $table: $e',
+      );
       return null;
     }
   }
@@ -777,7 +867,8 @@ class SalesRemoteDataSource {
         return raw['data']['number'].toString();
       if (raw['number'] != null) return raw['number'].toString();
       if (raw['order_number'] != null) return raw['order_number'].toString();
-      if (raw['proposal_number'] != null) return raw['proposal_number'].toString();
+      if (raw['proposal_number'] != null)
+        return raw['proposal_number'].toString();
       for (final v in raw.values) {
         if (v is String && v.isNotEmpty) return v;
       }

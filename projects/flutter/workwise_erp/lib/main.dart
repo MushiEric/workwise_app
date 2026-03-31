@@ -23,6 +23,7 @@ import 'core/config/environment.dart';
 import 'core/models/tenant.dart';
 import 'core/storage/tenant_local_data_source.dart';
 import 'core/provider/tenant_provider.dart';
+import './core/constants/api_constant.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +41,7 @@ void main() async {
   // flutter run --dart-define=RUNTIME_ENV=dev
   const runtimeEnv = String.fromEnvironment(
     'RUNTIME_ENV',
-    defaultValue: 'prod',
+    defaultValue: 'staging',
   );
   if (runtimeEnv.isNotEmpty) {
     EnvConfig.init(EnvConfig.parseEnv(runtimeEnv));
@@ -60,6 +61,7 @@ void main() async {
   if (tenantOverride != null) {
     // override the provider value (StateProvider<Tenant?> expects Tenant?)
     providerOverrides.add(tenantProvider.overrideWith((ref) => tenantOverride));
+    ApiConstant.setBaseUrl(tenantOverride.baseUrl);
   }
 
   // If running in a development environment and no tenant has been stored,
