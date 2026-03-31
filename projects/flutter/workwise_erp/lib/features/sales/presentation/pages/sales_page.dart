@@ -2,34 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/app_drawer.dart';
-import '../../../../core/provider/permission_provider.dart';
 import '../../../../core/widgets/app_bar.dart';
-import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/utils/scroll_aware_fab.dart';
 import '../../../../core/widgets/dashboard_stat_card.dart';
 import '../../../../core/widgets/dashboard_stats_row.dart';
-import '../../domain/entities/sales_order.dart';
 import '../providers/sales_providers.dart';
 import '../state/sales_state.dart';
 import '../widgets/order_tile.dart';
-import 'sales_view_page.dart';
 import '../../../../core/themes/app_icons.dart';
 import '../../../../core/widgets/drawer_filter.dart';
 import '../../../../core/widgets/google_nav_bar.dart';
-import '../../../jobcard/presentation/providers/jobcard_providers.dart';
 import '../../../customer/presentation/providers/customer_providers.dart';
 import '../../../support/presentation/providers/support_providers.dart';
 
 import '../../../pfi/presentation/providers/pfi_providers.dart';
 import '../../../pfi/presentation/state/pfi_state.dart';
 import '../../../pfi/domain/entities/pfi.dart';
+import '../../../invoice/presentation/providers/invoice_providers.dart';
+import '../../../invoice/presentation/state/invoice_state.dart';
+import '../../../invoice/presentation/widgets/invoice_tile.dart';
 
 class SalesPage extends ConsumerStatefulWidget {
   const SalesPage({super.key});
@@ -51,7 +48,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {});
@@ -63,6 +60,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
           .read(salesNotifierProvider.notifier)
           .loadOrders(_mapFilterToParams(_activeFilter));
       ref.read(pfiNotifierProvider.notifier).loadPfis();
+      ref.read(invoiceNotifierProvider.notifier).loadInvoices();
       _warmupMetadata();
     });
   }
@@ -101,7 +99,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
     for (final p in providers) {
       try {
         if (p is ProviderListenable) {
-           ref.read(p);
+          ref.read(p);
         }
       } catch (_) {}
     }
@@ -136,6 +134,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
   Widget build(BuildContext context) {
     final salesState = ref.watch(salesNotifierProvider);
     final pfiState = ref.watch(pfiNotifierProvider);
+    final invoiceState = ref.watch(invoiceNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = AppColors.primary;
 
@@ -292,7 +291,9 @@ class _SalesPageState extends ConsumerState<SalesPage>
               visible: _showStats,
               cards: _tabController.index == 0
                   ? _buildOrderStats(salesState, isDark)
-                  : _buildPfiStats(pfiState, isDark),
+                  : _tabController.index == 1
+                      ? _buildPfiStats(pfiState, isDark)
+                      : _buildInvoiceStats(invoiceState, isDark),
             ),
 
             SizedBox(height: 16.h),
@@ -311,6 +312,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
                 tabs: const [
                   Tab(text: "Orders"),
                   Tab(text: "PFIs"),
+                  Tab(text: "Invoices"),
                 ],
                 labelColor: primaryColor,
                 labelStyle: TextStyle(
@@ -339,6 +341,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
                 children: [
                   _buildOrdersList(salesState, isDark),
                   _buildPfisList(pfiState, isDark),
+                  _buildInvoicesList(invoiceState, isDark),
                 ],
               ),
             ),
@@ -349,12 +352,18 @@ class _SalesPageState extends ConsumerState<SalesPage>
           onPressed: () {
             if (_tabController.index == 0) {
               Navigator.pushNamed(context, '/sales/orders/create');
-            } else {
+            } else if (_tabController.index == 1) {
               Navigator.pushNamed(context, '/sales/pfi/create');
+            } else {
+              // invoices currently read-only list; no creation route yet
             }
           },
           icon: Icon(AppIcons.addRounded, size: 20.r),
-          label: _tabController.index == 0 ? 'New Order' : 'New PFI',
+          label: _tabController.index == 0
+              ? 'New Order'
+              : _tabController.index == 1
+              ? 'New PFI'
+              : 'Invoices',
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
@@ -371,12 +380,44 @@ class _SalesPageState extends ConsumerState<SalesPage>
                 },
                 items: const [
                   AppGoogleNavBarItem(
-                      label: 'Orders', icon: AppIcons.shoppingCart),
+                    label: 'Orders',
+                    icon: AppIcons.shoppingCart,
+                  ),
                   AppGoogleNavBarItem(
-                      label: 'Settings', icon: AppIcons.settings),
+                    label: 'Settings',
+                    icon: AppIcons.settings,
+                  ),
                 ],
-                backgroundColor:
-                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                backgroundColor: isDark
+                    ? const Color(0xFF151A2E)
+                    : Colors.white,
+                activeTabBackgroundColor: isDark
+                    ? Colors.white12
+                    : AppColors.primary.withOpacity(0.15),
+                activeColor: AppColors.primary,
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              )
+            : _tabController.index == 1
+            ? AppGoogleNavBar(
+                selectedIndex: 0,
+                onTabChange: (idx) {
+                  if (idx == 1) {
+                    Navigator.pushNamed(context, '/sales/pfi/settings');
+                  }
+                },
+                items: const [
+                  AppGoogleNavBarItem(
+                    label: 'PFI',
+                    icon: Icons.receipt_long_rounded,
+                  ),
+                  AppGoogleNavBarItem(
+                    label: 'Settings',
+                    icon: AppIcons.settings,
+                  ),
+                ],
+                backgroundColor: isDark
+                    ? const Color(0xFF151A2E)
+                    : Colors.white,
                 activeTabBackgroundColor: isDark
                     ? Colors.white12
                     : AppColors.primary.withOpacity(0.15),
@@ -387,17 +428,22 @@ class _SalesPageState extends ConsumerState<SalesPage>
                 selectedIndex: 0,
                 onTabChange: (idx) {
                   if (idx == 1) {
-                    Navigator.pushNamed(context, '/sales/pfi/settings');
+                    Navigator.pushNamed(context, '/sales/settings');
                   }
                 },
                 items: const [
                   AppGoogleNavBarItem(
-                      label: 'PFI', icon: Icons.receipt_long_rounded),
+                    label: 'Invoices',
+                    icon: Icons.receipt_long_rounded,
+                  ),
                   AppGoogleNavBarItem(
-                      label: 'PFI Settings', icon: AppIcons.settings),
+                    label: 'Settings',
+                    icon: AppIcons.settings,
+                  ),
                 ],
-                backgroundColor:
-                    isDark ? const Color(0xFF151A2E) : Colors.white,
+                backgroundColor: isDark
+                    ? const Color(0xFF151A2E)
+                    : Colors.white,
                 activeTabBackgroundColor: isDark
                     ? Colors.white12
                     : AppColors.primary.withOpacity(0.15),
@@ -447,10 +493,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
         }
         return cards;
       },
-      loading: () => List.generate(
-        4,
-        (_) => const DashboardStatCardSkeleton(),
-      ),
+      loading: () => List.generate(4, (_) => const DashboardStatCardSkeleton()),
       orElse: () => [],
     );
   }
@@ -493,13 +536,55 @@ class _SalesPageState extends ConsumerState<SalesPage>
         label: 'Sent',
         count: state.pfis.where((p) => p.status == 1).length,
         icon: Icons.send_rounded,
-        borderColor: Colors.orange,
+        borderColor: Colors.green,
       ),
       DashboardStatCard(
         label: 'Accepted',
         count: state.pfis.where((p) => p.status == 2).length,
         icon: Icons.check_rounded,
         borderColor: Colors.green,
+      ),
+    ];
+  }
+
+  List<Widget> _buildInvoiceStats(InvoiceState state, bool isDark) {
+    final invoices = state.invoices;
+    return [
+      DashboardStatCard(
+        label: 'Total Invoices',
+        count: invoices.length,
+        icon: Icons.receipt_long_rounded,
+        borderColor: AppColors.primary,
+      ),
+      DashboardStatCard(
+        label: 'Draft',
+        count: invoices.where((i) => i.status == 0).length,
+        icon: Icons.edit_note_rounded,
+        borderColor: Colors.grey,
+      ),
+      DashboardStatCard(
+        label: 'Sent',
+        count: invoices.where((i) => i.status == 1).length,
+        icon: Icons.send_rounded,
+        borderColor: Colors.green,
+      ),
+      DashboardStatCard(
+        label: 'Unpaid',
+        count: invoices.where((i) => i.status == 2).length,
+        icon: Icons.error_outline_rounded,
+        borderColor: Colors.red,
+      ),
+      DashboardStatCard(
+        label: 'Partial',
+        count: invoices.where((i) => i.status == 3).length,
+        icon: Icons.payment_rounded,
+        borderColor: Colors.yellow.shade700,
+      ),
+      DashboardStatCard(
+        label: 'Paid',
+        count: invoices.where((i) => i.status == 4).length,
+        icon: Icons.check_circle_outline_rounded,
+        borderColor: Colors.blue,
       ),
     ];
   }
@@ -705,6 +790,87 @@ class _SalesPageState extends ConsumerState<SalesPage>
     );
   }
 
+  Widget _buildInvoicesList(InvoiceState state, bool isDark) {
+    if (state.isLoading && state.invoices.isEmpty) {
+      return ListView.separated(
+        padding: EdgeInsets.all(16.r),
+        itemCount: 6,
+        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+        itemBuilder: (_, __) => Container(
+          height: 80,
+          color: isDark ? const Color(0xFF1E2640) : Colors.grey.shade200,
+        ),
+      );
+    }
+    if (state.error != null && state.invoices.isEmpty) {
+      return _buildError(
+        state.error!,
+        isDark,
+        () => ref.read(invoiceNotifierProvider.notifier).loadInvoices(),
+      );
+    }
+
+    final filtered = _searchController.text.isEmpty
+        ? state.invoices
+        : state.invoices.where((invoice) {
+            final q = _searchController.text.toLowerCase();
+            return (invoice.invoiceNumber?.toLowerCase().contains(q) ??
+                    false) ||
+                (invoice.orderId?.toLowerCase().contains(q) ?? false);
+          }).toList();
+
+    if (filtered.isEmpty) {
+      return _buildEmptyState(
+        isDark,
+        _searchController.text.isNotEmpty ||
+            (_activeFilter != null && !_activeFilter!.isEmpty),
+      );
+    }
+
+    var finalFiltered = filtered;
+    if (_activeFilter != null && !_activeFilter!.isEmpty) {
+      finalFiltered = finalFiltered.where((f) {
+        if (_activeFilter!.statusId != null) {
+          final statusText = _activeFilter!.statusId!.toLowerCase();
+          // no status mapping yet; keep simple
+          if (statusText != 'all') {
+            // no per-status match available, skip.
+          }
+        }
+
+        if (_activeFilter!.dateFrom != null || _activeFilter!.dateTo != null) {
+          final dt = f.issueDate != null
+              ? DateTime.tryParse(f.issueDate!)
+              : null;
+          if (dt == null) return false;
+          if (_activeFilter!.dateFrom != null &&
+              dt.isBefore(_activeFilter!.dateFrom!)) {
+            return false;
+          }
+          if (_activeFilter!.dateTo != null &&
+              dt.isAfter(_activeFilter!.dateTo!.add(const Duration(days: 1)))) {
+            return false;
+          }
+        }
+
+        return true;
+      }).toList();
+    }
+
+    if (finalFiltered.isEmpty) return _buildEmptyState(isDark, true);
+
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(invoiceNotifierProvider.notifier).loadInvoices(),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.all(16.r),
+        itemCount: finalFiltered.length,
+        itemBuilder: (ctx, i) => InvoiceTile(invoice: finalFiltered[i]),
+      ),
+    );
+  }
+
   Widget _buildError(String msg, bool isDark, VoidCallback onRetry) {
     return Center(
       child: Column(
@@ -754,20 +920,26 @@ class _SalesPageState extends ConsumerState<SalesPage>
   }
 
   Map<String, dynamic> _mapFilterToParams(DrawerFilterValue? filter) {
+    final now = DateTime.now();
+    final todayStr = DateFormat('yyyy-MM-dd').format(now);
     final startStr = filter?.dateFrom != null
         ? DateFormat('yyyy-MM-dd').format(filter!.dateFrom!)
-        : '2000-01-01';
+        : todayStr;
     final endStr = filter?.dateTo != null
-        ? DateFormat('yyyy-MM-dd HH:mm:ss').format(filter!.dateTo!)
-        : '2100-12-31 23:59:59';
+        ? DateFormat('yyyy-MM-dd').format(filter!.dateTo!)
+        : todayStr;
 
     final map = <String, dynamic>{
       'draw': '1',
-      'search[value]': _searchController.text,
-      'search[regex]': 'false',
       'start_date': startStr,
       'end_date': endStr,
     };
+
+    final trimmedSearch = _searchController.text.trim();
+    if (trimmedSearch.isNotEmpty) {
+      map['search[value]'] = trimmedSearch;
+      map['search[regex]'] = 'false';
+    }
 
     if (filter?.staffId != null) {
       map['user'] = filter!.staffId!.toString();
@@ -788,7 +960,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
       map['departure'] = filter!.departure!;
     }
     if (filter?.statusId?.isNotEmpty == true) {
-      map['status_id'] = filter!.statusId!;
+      map['status[]'] = [filter!.statusId!];
     }
 
     return map;
@@ -913,7 +1085,6 @@ class _PfiTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppColors.primary;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),

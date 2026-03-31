@@ -67,12 +67,12 @@ Future<String?> _resolveAvatarUrl(Dio client, String url) async {
   }
 
   if (trimmed.startsWith('/')) {
-    final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    final base = client.options.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     return '$base$trimmed';
   }
 
   if (!trimmed.contains('://') && trimmed.contains('/')) {
-    final base = ApiConstant.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+    final base = client.options.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     return '$base/$trimmed';
   }
 

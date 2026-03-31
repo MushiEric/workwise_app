@@ -11,6 +11,7 @@ import '../../../../core/provider/tenant_provider.dart';
 import '../../../../core/themes/app_colors.dart';
 import '../../../../core/widgets/app_textfield.dart';
 import 'package:workwise_erp/core/extensions/l10n_extension.dart';
+import '../../../../core/constants/api_constant.dart';
 
 typedef DioFactory = Dio Function(String baseUrl);
 
@@ -116,6 +117,7 @@ class _WorkspaceEntryScreenState extends ConsumerState<WorkspaceEntryScreen>
 
       await ref.read(tenantLocalDataSourceProvider).saveTenant(apiBase);
       ref.read(tenantProvider.notifier).state = Tenant(apiBase);
+      ApiConstant.setBaseUrl(apiBase);
 
       if (!mounted) return;
       // navigate directly to login/dashboard after saving

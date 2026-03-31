@@ -11,24 +11,48 @@ class SupportRemoteDataSource {
   SupportRemoteDataSource(this.client);
 
   // helper: extract list from common envelope shapes and string payloads
-  List<Map<String, dynamic>> _extractListFromRaw(dynamic raw, {List<String>? keys}) {
+  List<Map<String, dynamic>> _extractListFromRaw(
+    dynamic raw, {
+    List<String>? keys,
+  }) {
     keys ??= ['data', 'tickets', 'items', 'records', 'payload'];
-    if (raw is List) return raw.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+    if (raw is List)
+      return raw
+          .map(
+            (e) =>
+                e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{},
+          )
+          .toList();
     if (raw is Map) {
       for (final k in keys) {
-        if (raw[k] is List) return (raw[k] as List).map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+        if (raw[k] is List)
+          return (raw[k] as List)
+              .map(
+                (e) => e is Map
+                    ? Map<String, dynamic>.from(e)
+                    : <String, dynamic>{},
+              )
+              .toList();
       }
       // nested data -> key
       if (raw['data'] is Map) {
         final inner = raw['data'] as Map;
         for (final k in keys) {
-          if (inner[k] is List) return (inner[k] as List).map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+          if (inner[k] is List)
+            return (inner[k] as List)
+                .map(
+                  (e) => e is Map
+                      ? Map<String, dynamic>.from(e)
+                      : <String, dynamic>{},
+                )
+                .toList();
         }
       }
     }
     if (raw is String) {
       final s = raw.trim();
-      if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+      if (s.startsWith('<'))
+        throw ServerException('Server returned HTML (check backend)');
       try {
         final decoded = json.decode(s);
         return _extractListFromRaw(decoded, keys: keys);
@@ -40,16 +64,22 @@ class SupportRemoteDataSource {
   }
 
   /// GET /support/getSupportTicket
-  Future<List<SupportTicketModel>> getSupportTickets({int page = 1, int limit = 20}) async {
+  Future<List<SupportTicketModel>> getSupportTickets({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final resp = await client.get('/support/getSupportTicket', queryParameters: {
-        'page': page,
-        'page_length': limit,
-        'limit_page_length': limit,
-        'limit_start': (page - 1) * limit,
-        'start': (page - 1) * limit,
-        'length': limit,
-      });
+      final resp = await client.get(
+        '/support/getSupportTicket',
+        queryParameters: {
+          'page': page,
+          'page_length': limit,
+          'limit_page_length': limit,
+          'limit_start': (page - 1) * limit,
+          'start': (page - 1) * limit,
+          'length': limit,
+        },
+      );
       final list = _extractListFromRaw(resp.data);
 
       // Normalize each ticket JSON to be defensive against backend shape changes
@@ -77,16 +107,22 @@ class SupportRemoteDataSource {
 
   /// GET /support/getSupportTicket — returns normalized raw JSON maps so
   /// the repository can resolve category/department/supervisor IDs to names.
-  Future<List<Map<String, dynamic>>> getSupportTicketsRaw({int page = 1, int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> getSupportTicketsRaw({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final resp = await client.get('/support/getSupportTicket', queryParameters: {
-        'page': page,
-        'page_length': limit,
-        'limit_page_length': limit,
-        'limit_start': (page - 1) * limit,
-        'start': (page - 1) * limit,
-        'length': limit,
-      });
+      final resp = await client.get(
+        '/support/getSupportTicket',
+        queryParameters: {
+          'page': page,
+          'page_length': limit,
+          'limit_page_length': limit,
+          'limit_start': (page - 1) * limit,
+          'start': (page - 1) * limit,
+          'length': limit,
+        },
+      );
       final list = _extractListFromRaw(resp.data);
 
       final List<Map<String, dynamic>> results = [];
@@ -212,7 +248,10 @@ class SupportRemoteDataSource {
   }
 
   /// POST /support/changeTicketStatus
-  Future<void> changeTicketStatus({required int ticketId, required int statusId}) async {
+  Future<void> changeTicketStatus({
+    required int ticketId,
+    required int statusId,
+  }) async {
     try {
       // Send multiple possible param names (server may expect different keys).
       final payload = {
@@ -222,11 +261,17 @@ class SupportRemoteDataSource {
         'status_id': statusId,
       };
 
-      final resp = await client.post('/support/changeTicketStatus', data: payload);
+      final resp = await client.post(
+        '/support/changeTicketStatus',
+        data: payload,
+      );
 
       final code = resp.statusCode ?? 500;
       if (code < 200 || code >= 300) {
-        final msg = resp.data is Map<String, dynamic> && resp.data['message'] != null ? resp.data['message'].toString() : 'Failed to change ticket status';
+        final msg =
+            resp.data is Map<String, dynamic> && resp.data['message'] != null
+            ? resp.data['message'].toString()
+            : 'Failed to change ticket status';
         throw ServerException(msg);
       }
     } on DioException catch (e) {
@@ -237,10 +282,12 @@ class SupportRemoteDataSource {
       }
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
-          if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
+          if (decoded is Map && decoded['message'] != null)
+            throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
       throw ServerException(friendlyDioError(e));
@@ -250,7 +297,10 @@ class SupportRemoteDataSource {
   }
 
   /// POST /support/changeTicketPriority
-  Future<void> changeTicketPriority({required int ticketId, required int priorityId}) async {
+  Future<void> changeTicketPriority({
+    required int ticketId,
+    required int priorityId,
+  }) async {
     try {
       final payload = {
         'ticket_id': ticketId,
@@ -259,11 +309,17 @@ class SupportRemoteDataSource {
         'priority_id': priorityId,
       };
 
-      final resp = await client.post('/support/changeTicketPriority', data: payload);
+      final resp = await client.post(
+        '/support/changeTicketPriority',
+        data: payload,
+      );
 
       final code = resp.statusCode ?? 500;
       if (code < 200 || code >= 300) {
-        final msg = resp.data is Map<String, dynamic> && resp.data['message'] != null ? resp.data['message'].toString() : 'Failed to change ticket priority';
+        final msg =
+            resp.data is Map<String, dynamic> && resp.data['message'] != null
+            ? resp.data['message'].toString()
+            : 'Failed to change ticket priority';
         throw ServerException(msg);
       }
     } on DioException catch (e) {
@@ -273,10 +329,12 @@ class SupportRemoteDataSource {
       }
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
-          if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
+          if (decoded is Map && decoded['message'] != null)
+            throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
       throw ServerException(friendlyDioError(e));
@@ -288,16 +346,19 @@ class SupportRemoteDataSource {
   /// POST /support/deleteSupportTicket
   Future<void> deleteSupportTicket({required int ticketId}) async {
     try {
-      final payload = {
-        'ticket_id': ticketId,
-        'id': ticketId,
-      };
+      final payload = {'ticket_id': ticketId, 'id': ticketId};
 
-      final resp = await client.post('/support/deleteSupportTicket', data: payload);
+      final resp = await client.post(
+        '/support/deleteSupportTicket',
+        data: payload,
+      );
 
       final code = resp.statusCode ?? 500;
       if (code < 200 || code >= 300) {
-        final msg = resp.data is Map<String, dynamic> && resp.data['message'] != null ? resp.data['message'].toString() : 'Failed to delete ticket';
+        final msg =
+            resp.data is Map<String, dynamic> && resp.data['message'] != null
+            ? resp.data['message'].toString()
+            : 'Failed to delete ticket';
         throw ServerException(msg);
       }
     } on DioException catch (e) {
@@ -307,10 +368,12 @@ class SupportRemoteDataSource {
       }
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
-          if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
+          if (decoded is Map && decoded['message'] != null)
+            throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
       throw ServerException(friendlyDioError(e));
@@ -331,12 +394,16 @@ class SupportRemoteDataSource {
       // ignore: avoid_print
       print('--- [DEBUG] saveSupportTicket Request ---');
       // ignore: avoid_print
-      print('URI: ${EnvConfig.current.baseUrl}/support/saveSupportTicket');
+      final resolvedBase = client.options.baseUrl.replaceFirst(
+        RegExp(r'/api/?$'),
+        '',
+      );
+      print('URI: $resolvedBase/support/saveSupportTicket');
       try {
         // ignore: avoid_print
         print('FIELDS_JSON: ${json.encode(fields)}');
       } catch (_) {}
-      
+
       // simple fields and lists
       fields.forEach((k, v) {
         if (v == null) return;
@@ -358,7 +425,12 @@ class SupportRemoteDataSource {
         final path = attachmentPaths.first;
         final fileName = path.split('/').last;
         try {
-          form.files.add(MapEntry('attachment', MultipartFile.fromFileSync(path, filename: fileName)));
+          form.files.add(
+            MapEntry(
+              'attachment',
+              MultipartFile.fromFileSync(path, filename: fileName),
+            ),
+          );
           // ignore: avoid_print
           print('  File [attachment]: $fileName');
         } catch (e) {
@@ -372,7 +444,12 @@ class SupportRemoteDataSource {
         for (final p in filePaths) {
           final fileName = p.split('/').last;
           try {
-            form.files.add(MapEntry('files[]', MultipartFile.fromFileSync(p, filename: fileName)));
+            form.files.add(
+              MapEntry(
+                'files[]',
+                MultipartFile.fromFileSync(p, filename: fileName),
+              ),
+            );
             // ignore: avoid_print
             print('  File [files[]]: $fileName');
           } catch (e) {
@@ -381,14 +458,17 @@ class SupportRemoteDataSource {
           }
         }
       }
-      
+
       // ignore: avoid_print
       print('--- [DEBUG] End saveSupportTicket Request ---');
 
       final resp = await client.post('/support/saveSupportTicket', data: form);
       final code = resp.statusCode ?? 500;
       if (code < 200 || code >= 300) {
-        final msg = resp.data is Map<String, dynamic> && resp.data['message'] != null ? resp.data['message'].toString() : 'Failed to create ticket';
+        final msg =
+            resp.data is Map<String, dynamic> && resp.data['message'] != null
+            ? resp.data['message'].toString()
+            : 'Failed to create ticket';
         throw ServerException(msg);
       }
     } on DioException catch (e) {
@@ -398,10 +478,12 @@ class SupportRemoteDataSource {
       }
       if (respData is String) {
         final s = respData.trim();
-        if (s.startsWith('<')) throw ServerException('Server returned HTML (check backend)');
+        if (s.startsWith('<'))
+          throw ServerException('Server returned HTML (check backend)');
         try {
           final decoded = json.decode(s);
-          if (decoded is Map && decoded['message'] != null) throw ServerException(decoded['message'].toString());
+          if (decoded is Map && decoded['message'] != null)
+            throw ServerException(decoded['message'].toString());
         } catch (_) {}
       }
       throw ServerException(friendlyDioError(e));
@@ -421,9 +503,12 @@ class SupportRemoteDataSource {
       if (v is num || v is bool) return v.toString();
       if (v is Map) {
         // common patterns: {"name": "..."} or {"title": "..."}
-        if (v.containsKey('name') && v['name'] is String) return v['name'] as String;
-        if (v.containsKey('title') && v['title'] is String) return v['title'] as String;
-        if (v.containsKey('text') && v['text'] is String) return v['text'] as String;
+        if (v.containsKey('name') && v['name'] is String)
+          return v['name'] as String;
+        if (v.containsKey('title') && v['title'] is String)
+          return v['title'] as String;
+        if (v.containsKey('text') && v['text'] is String)
+          return v['text'] as String;
         return v.toString();
       }
       return v.toString();
@@ -440,13 +525,23 @@ class SupportRemoteDataSource {
     }
 
     // Normalize simple string fields that sometimes come back as objects
-    final stringFields = ['subject', 'ticket_code', 'end_date', 'description', 'category', 'location', 'department', 'created_at'];
+    final stringFields = [
+      'subject',
+      'ticket_code',
+      'end_date',
+      'description',
+      'category',
+      'location',
+      'department',
+      'created_at',
+    ];
     for (final f in stringFields) {
       if (out.containsKey(f)) out[f] = asString(out[f]);
     }
 
     // created_by may sometimes be an object instead of int
-    if (out.containsKey('created_by')) out['created_by'] = asInt(out['created_by']);
+    if (out.containsKey('created_by'))
+      out['created_by'] = asInt(out['created_by']);
 
     // Normalize attachments: ensure list of maps
     if (out.containsKey('attachments')) {
@@ -455,13 +550,20 @@ class SupportRemoteDataSource {
         // sometimes backend returns JSON string — try to parse
         try {
           // ignore: avoid_dynamic_calls
-          final parsed = a.isNotEmpty ? List<Map<String, dynamic>>.from([]) : <Map<String, dynamic>>[];
+          final parsed = a.isNotEmpty
+              ? List<Map<String, dynamic>>.from([])
+              : <Map<String, dynamic>>[];
           out['attachments'] = parsed;
         } catch (_) {
           out['attachments'] = <Map<String, dynamic>>[];
         }
       } else if (a is List) {
-        out['attachments'] = a.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+        out['attachments'] = a
+            .map(
+              (e) =>
+                  e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{},
+            )
+            .toList();
       } else {
         out['attachments'] = <Map<String, dynamic>>[];
       }
@@ -471,7 +573,12 @@ class SupportRemoteDataSource {
     if (out.containsKey('replies')) {
       final r = out['replies'];
       if (r is List) {
-        out['replies'] = r.map((e) => e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}).toList();
+        out['replies'] = r
+            .map(
+              (e) =>
+                  e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{},
+            )
+            .toList();
       } else {
         out['replies'] = <Map<String, dynamic>>[];
       }
@@ -517,7 +624,8 @@ class SupportRemoteDataSource {
     }
 
     // ── Supervisor: extract from supervisor_id if ticket has one ──
-    if (out['supervisors'] == null || (out['supervisors'] is List && (out['supervisors'] as List).isEmpty)) {
+    if (out['supervisors'] == null ||
+        (out['supervisors'] is List && (out['supervisors'] as List).isEmpty)) {
       if (out.containsKey('supervisor_id')) {
         out['_supervisor_id'] = asInt(out['supervisor_id']);
       }

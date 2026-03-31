@@ -71,7 +71,7 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
   String? _selectedPaymentType;
 
   // Items
-  final List<_DraftItem> _items = [];
+  List<_DraftItem> _items = [];
 
   // Truck Details
   int? _selectedMyVehicleId;
@@ -171,7 +171,9 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
       _updateTotals();
     } else {
       _startDateCtl.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      WidgetsBinding.instance.addPostFrameCallback((_) => _generateOrderNumber());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _generateOrderNumber(),
+      );
     }
 
     _loadCustomers();
@@ -183,6 +185,14 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
         .read(weightbridgeServiceProvider)
         .getManualOverride();
     if (mounted) setState(() => _weighbridgeManual = manual);
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      await ref.read(customersNotifierProvider.notifier).loadCustomers();
+    } catch (_) {
+      // ignore errors; this is a best-effort initialization for customer dropdowns
+    }
   }
 
   Future<void> _fetchFromWeighbridge() async {
@@ -229,7 +239,10 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
     setState(() => _generatingOrderNumber = true);
     try {
       final remote = ref.read(salesRemoteDataSourceProvider);
-      final num = await remote.generateUniqueNumber('logistic_order', 'order_number');
+      final num = await remote.generateUniqueNumber(
+        'logistic_order',
+        'order_number',
+      );
       if (num != null && mounted) {
         _orderNumberCtl.text = num;
       }
@@ -821,8 +834,8 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
               );
               // Assemble full name for user records
               if (m['first_name'] != null || m['last_name'] != null) {
-                final full =
-                    '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'.trim();
+                final full = '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'
+                    .trim();
                 if (full.isNotEmpty) return full;
               }
               final val =
@@ -910,33 +923,38 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
                 ),
               if (_fieldEnabled(cfg, ['enable_customer_id', 'enable_customer']))
                 _buildField(
-                  Builder(builder: (context) {
-                    final customerState = ref.watch(customersNotifierProvider);
-                    final customers = customerState.maybeWhen(
-                      loaded: (list) => list,
-                      orElse: () => <Customer>[],
-                    );
+                  Builder(
+                    builder: (context) {
+                      final customerState = ref.watch(
+                        customersNotifierProvider,
+                      );
+                      final customers = customerState.maybeWhen(
+                        loaded: (list) => list,
+                        orElse: () => <Customer>[],
+                      );
 
-                    return AppSmartDropdown<int>(
-                      value: _selectedCustomerId,
-                      items: customers.map((c) => c.id!).toList(),
-                      itemBuilder: (id) =>
-                          customers
-                              .firstWhere(
-                                (c) => c.id == id,
-                                orElse:
-                                    () =>
-                                        Customer(id: id, name: 'Customer #$id'),
-                              )
-                              .name ??
-                          'Unknown',
-                      label: 'Customer *',
-                      hintText: customers.isEmpty ? 'Loading customers...' : 'Select Customer',
-                      enabled: customers.isNotEmpty,
-                      onChanged:
-                          (id) => setState(() => _selectedCustomerId = id),
-                    );
-                  }),
+                      return AppSmartDropdown<int>(
+                        value: _selectedCustomerId,
+                        items: customers.map((c) => c.id!).toList(),
+                        itemBuilder: (id) =>
+                            customers
+                                .firstWhere(
+                                  (c) => c.id == id,
+                                  orElse: () =>
+                                      Customer(id: id, name: 'Customer #$id'),
+                                )
+                                .name ??
+                            'Unknown',
+                        label: 'Customer *',
+                        hintText: customers.isEmpty
+                            ? 'Loading customers...'
+                            : 'Select Customer',
+                        enabled: customers.isNotEmpty,
+                        onChanged: (id) =>
+                            setState(() => _selectedCustomerId = id),
+                      );
+                    },
+                  ),
                 ),
               if (_fieldEnabled(cfg, ['enable_currency', 'show_currency']))
                 _buildAsyncMapDropdown<String>(
@@ -1567,156 +1585,157 @@ class _SalesOrderCreatePageState extends ConsumerState<SalesOrderCreatePage> {
         //     ),
         //   )
         // else ...[
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (ctx, i) {
-              final item = _items[i];
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0x1AFFFFFF) : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
-                  ),
-                  boxShadow: isDark
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.02),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _items.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (ctx, i) {
+            final item = _items[i];
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0x1AFFFFFF) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : const Color(0xFFE5E7EB),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${i + 1}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: primaryColor,
+                boxShadow: isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
+                      ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1A2634),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: [
-                              _buildItemTag(isDark, 'Qty: ${item.qty}'),
-                              if (item.packSize != null)
-                                _buildItemTag(isDark, 'Pack: ${item.packSize}'),
-                              _buildItemTag(
-                                isDark,
-                                'Price: ${NumberFormat.decimalPattern().format(item.price)}',
-                              ),
-                              if (item.tax != null)
-                                _buildItemTag(isDark, 'Tax: ${item.tax}'),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'Total: ${NumberFormat.decimalPattern().format(item.amount)}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    IconButton(
-                      onPressed: () async {
-                        final result = await showModalBottomSheet<_DraftItem>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (ctx) => _AddItemDrawer(cfg: cfg, editItem: item),
-                        );
-                        if (result != null) {
-                          if (mounted) {
-                            setState(() => _items[i] = result);
-                            _updateTotals();
-                          }
-                        }
-                      },
-                      icon: Icon(
-                        Icons.edit_rounded,
-                        size: 20,
+                    child: Text(
+                      '${i + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
                         color: primaryColor,
                       ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
                     ),
-                    IconButton(
-                      onPressed: () {
-                        setState(() => _items.removeAt(i));
-                        _updateTotals();
-                      },
-                      icon: Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: Colors.red.shade400,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A2634),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            _buildItemTag(isDark, 'Qty: ${item.qty}'),
+                            if (item.packSize != null)
+                              _buildItemTag(isDark, 'Pack: ${item.packSize}'),
+                            _buildItemTag(
+                              isDark,
+                              'Price: ${NumberFormat.decimalPattern().format(item.price)}',
+                            ),
+                            if (item.tax != null)
+                              _buildItemTag(isDark, 'Tax: ${item.tax}'),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Total: ${NumberFormat.decimalPattern().format(item.amount)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                  IconButton(
+                    onPressed: () async {
+                      final result = await showModalBottomSheet<_DraftItem>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) =>
+                            _AddItemDrawer(cfg: cfg, editItem: item),
+                      );
+                      if (result != null) {
+                        if (mounted) {
+                          setState(() => _items[i] = result);
+                          _updateTotals();
+                        }
+                      }
+                    },
+                    icon: Icon(
+                      Icons.edit_rounded,
+                      size: 20,
+                      color: primaryColor,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() => _items.removeAt(i));
+                      _updateTotals();
+                    },
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 20,
+                      color: Colors.red.shade400,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
 
-          const SizedBox(height: 16),
+        const SizedBox(height: 16),
+
         // ],
-
         const SizedBox(height: 16),
 
         InkWell(
@@ -1881,7 +1900,7 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
       _selectedTax = item.tax;
       _selectedPackSize = item.packSize;
       _availableStock = item.available;
-      
+
       // Attempt to restore selected product if ID is known
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && item.itemId > 0) {
@@ -1894,6 +1913,7 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
       });
     }
   }
+
   @override
   void dispose() {
     _itemNameCtl.dispose();
@@ -2040,7 +2060,9 @@ class _AddItemDrawerState extends ConsumerState<_AddItemDrawer> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          widget.editItem != null ? 'Edit Material' : 'Add Material',
+                          widget.editItem != null
+                              ? 'Edit Material'
+                              : 'Add Material',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
