@@ -26,6 +26,7 @@ class AppTextField extends StatefulWidget {
   final bool readOnly;
   final void Function(String)? onChanged;
   final void Function(String)? onSubmitted;
+  final String? initialValue;
 
   const AppTextField({
     super.key,
@@ -51,6 +52,7 @@ class AppTextField extends StatefulWidget {
     this.textInputAction,
     this.onChanged,
     this.onSubmitted,
+    this.initialValue,
   });
 
   @override
@@ -148,6 +150,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   textInputAction: widget.textInputAction,
                   onChanged: widget.onChanged,
                   onFieldSubmitted: widget.onSubmitted,
+                  initialValue: widget.initialValue,
                   decoration: InputDecoration(
                     hintText: widget.hintText,
                     hintStyle: AppTypography.hintStyle.copyWith(

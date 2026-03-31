@@ -355,7 +355,7 @@ class _SalesPageState extends ConsumerState<SalesPage>
             } else if (_tabController.index == 1) {
               Navigator.pushNamed(context, '/sales/pfi/create');
             } else {
-              // invoices currently read-only list; no creation route yet
+              Navigator.pushNamed(context, '/sales/invoices/create');
             }
           },
           icon: Icon(AppIcons.addRounded, size: 20.r),
@@ -864,9 +864,15 @@ class _SalesPageState extends ConsumerState<SalesPage>
           ref.read(invoiceNotifierProvider.notifier).loadInvoices(),
       child: ListView.builder(
         controller: _scrollController,
-        padding: EdgeInsets.all(16.r),
         itemCount: finalFiltered.length,
-        itemBuilder: (ctx, i) => InvoiceTile(invoice: finalFiltered[i]),
+        itemBuilder: (ctx, i) => InvoiceTile(
+          invoice: finalFiltered[i],
+          onTap: () => Navigator.pushNamed(
+            context,
+            '/sales/invoices/view',
+            arguments: finalFiltered[i],
+          ),
+        ),
       ),
     );
   }

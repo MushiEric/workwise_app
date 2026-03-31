@@ -6,6 +6,10 @@ import '../../data/datasources/invoice_remote_data_source.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
 import '../../domain/repositories/invoice_repository.dart';
 import '../../domain/usecases/get_invoices.dart';
+import '../../domain/usecases/get_invoice_by_id.dart';
+import '../../domain/usecases/save_invoice.dart';
+import '../../domain/usecases/update_invoice.dart';
+import '../../domain/usecases/delete_invoice.dart';
 import '../notifier/invoice_notifier.dart';
 import '../state/invoice_state.dart';
 
@@ -24,8 +28,33 @@ final getInvoicesUseCaseProvider = Provider((ref) {
   return GetInvoices(repo);
 });
 
+final getInvoiceByIdUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(invoiceRepositoryProvider);
+  return GetInvoiceById(repo);
+});
+
+final saveInvoiceUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(invoiceRepositoryProvider);
+  return SaveInvoice(repo);
+});
+
+final updateInvoiceUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(invoiceRepositoryProvider);
+  return UpdateInvoice(repo);
+});
+
+final deleteInvoiceUseCaseProvider = Provider((ref) {
+  final repo = ref.watch(invoiceRepositoryProvider);
+  return DeleteInvoice(repo);
+});
+
 final invoiceNotifierProvider =
     StateNotifierProvider<InvoiceNotifier, InvoiceState>((ref) {
-      final uc = ref.watch(getInvoicesUseCaseProvider);
-      return InvoiceNotifier(getInvoices: uc);
-    });
+  return InvoiceNotifier(
+    getInvoices: ref.watch(getInvoicesUseCaseProvider),
+    saveInvoice: ref.watch(saveInvoiceUseCaseProvider),
+    updateInvoice: ref.watch(updateInvoiceUseCaseProvider),
+    deleteInvoice: ref.watch(deleteInvoiceUseCaseProvider),
+    getInvoiceById: ref.watch(getInvoiceByIdUseCaseProvider),
+  );
+});

@@ -293,3 +293,11 @@ final salesSubscriptionDurationsProvider =
           .watch(salesRemoteDataSourceProvider)
           .getSubscriptionDurations();
     });
+
+final salesOrdersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getSaleOrders();
+});
+
+final salesDeliveryNotesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return await ref.watch(salesRemoteDataSourceProvider).getDeliveryNotes();
+});

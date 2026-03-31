@@ -642,9 +642,9 @@ class SalesRemoteDataSource {
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'length': '1000',
-        'limit': '1000',
-        'per_page': '1000',
+        'length': '10000',
+        'limit': '10000',
+        'per_page': '10000',
         'all': '1',
       };
       if (params != null) queryParams.addAll(params);
@@ -699,12 +699,7 @@ class SalesRemoteDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getWarehouses() async {
-    try {
-      final resp = await client.get('/warehouse/getWarehouse');
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return await _getMetadataSimple('/warehouse/getWarehouse');
   }
 
   Future<List<Map<String, dynamic>>> getQuotations() async {
@@ -744,12 +739,7 @@ class SalesRemoteDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getCurrencies() async {
-    try {
-      final resp = await client.get('/logistic/getCurrency');
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return await _getMetadataSimple('/logistic/getCurrency');
   }
 
   Future<double?> getExchangeRate(int currencyId) async {
@@ -771,37 +761,60 @@ class SalesRemoteDataSource {
   }
 
   Future<List<Map<String, dynamic>>> getUsers() async {
-    try {
-      final resp = await client.get('/user/getUsers');
-      return _extractList(resp.data);
-    } catch (_) {
-      return [];
-    }
+    return await _getMetadataSimple('/user/getUsers');
   }
 
-  /// Fallback stubs for methods referenced by sales providers but not yet tracked
-  /// in this datasource. These may be updated to real endpoints as needed.
-  Future<List<Map<String, dynamic>>> getJobCards() async => [];
+  Future<List<Map<String, dynamic>>> getJobCards() async {
+    return await _getMetadataSimple('/jobcard/getJobCard');
+  }
 
-  Future<List<Map<String, dynamic>>> getSupportTickets() async => [];
+  Future<List<Map<String, dynamic>>> getSupportTickets() async {
+    return await _getMetadataSimple('/support/getSupportTicket');
+  }
 
-  Future<List<Map<String, dynamic>>> getProjects() async => [];
+  Future<List<Map<String, dynamic>>> getProjects() async {
+    return await _getMetadataSimple('/get-projects');
+  }
 
-  Future<List<Map<String, dynamic>>> getTrips() async => [];
+  Future<List<Map<String, dynamic>>> getTrips() async {
+    return await _getMetadataSimple('/trip/getTrip/');
+  }
 
-  Future<List<Map<String, dynamic>>> getPaymentTerms() async => [];
+  Future<List<Map<String, dynamic>>> getPaymentTerms() async {
+    return await _getMetadataSimple('/logistic/getPaymentTerm');
+  }
 
-  Future<List<Map<String, dynamic>>> getPaymentMethods() async => [];
+  Future<List<Map<String, dynamic>>> getPaymentMethods() async {
+    return await _getMetadataSimple('/logistic/getPaymentMethod');
+  }
 
-  Future<List<Map<String, dynamic>>> getPriorities() async => [];
+  Future<List<Map<String, dynamic>>> getPriorities() async {
+    return await _getMetadataSimple('/support/getSupportPriority');
+  }
 
-  Future<List<Map<String, dynamic>>> getCargoUnits() async => [];
+  Future<List<Map<String, dynamic>>> getCargoUnits() async {
+    return await _getMetadataSimple('/logistic/getCargoUnit');
+  }
 
-  Future<List<Map<String, dynamic>>> getPaymentTypes() async => [];
+  Future<List<Map<String, dynamic>>> getPaymentTypes() async {
+    return await _getMetadataSimple('/logistic/getPaymentType');
+  }
 
-  Future<List<Map<String, dynamic>>> getDiscountTypes() async => [];
+  Future<List<Map<String, dynamic>>> getDiscountTypes() async {
+    return await _getMetadataSimple('/logistic/getDiscountType');
+  }
 
-  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async => [];
+  Future<List<Map<String, dynamic>>> getSubscriptionDurations() async {
+    return await _getMetadataSimple('/logistic/getSubscriptionDuration');
+  }
+
+  Future<List<Map<String, dynamic>>> getDeliveryNotes() async {
+    return await _getMetadataSimple('/delivery_note/getDeliveryNote');
+  }
+
+  Future<List<Map<String, dynamic>>> getSaleOrders() async {
+    return await _getMetadataSimple('/order/getSaleOrder');
+  }
 
   /// POST /order/saveOrder
   ///

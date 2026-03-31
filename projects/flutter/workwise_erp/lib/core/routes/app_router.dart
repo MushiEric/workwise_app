@@ -25,6 +25,7 @@ import '../../features/sales/domain/entities/sales_order.dart';
 import '../../features/pfi/domain/entities/pfi.dart';
 import '../../features/invoice/domain/entities/invoice.dart';
 import '../../features/invoice/presentation/pages/invoice_page.dart';
+import '../../features/invoice/presentation/pages/invoice_create_page.dart';
 import '../../features/invoice/presentation/pages/invoice_view_page.dart';
 import '../../features/security/presentation/pages/developer_options_blocked_page.dart';
 
@@ -63,6 +64,11 @@ class AppRouter {
       return PfiViewPage(pfi: pfi);
     },
     '/sales/invoices': (_) => const InvoicePage(),
+    '/sales/invoices/create': (_) => const InvoiceCreatePage(),
+    '/sales/invoices/edit': (ctx) {
+      final invoiceId = ModalRoute.of(ctx)!.settings.arguments as int;
+      return InvoiceCreatePage(editId: invoiceId);
+    },
     '/sales/invoices/view': (ctx) {
       final invoice = ModalRoute.of(ctx)!.settings.arguments as Invoice;
       return InvoiceViewPage(invoice: invoice);

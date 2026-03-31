@@ -135,10 +135,9 @@ class _InvoiceViewPageState extends ConsumerState<InvoiceViewPage>
               children: [
                 _infoRow('Invoice No', invoice.invoiceNumber ?? '-'),
                 _infoRow('Customer', invoice.customerName ?? '-'),
-                _infoRow('Amount', invoice.amount ?? '-'),
-                _infoRow('Discount', invoice.discount ?? '-'),
                 _infoRow('Issue Date', _fmtDate(invoice.issueDate)),
                 _infoRow('Due Date', _fmtDate(invoice.dueDate)),
+                _infoRow('Payment Method', invoice.paymentMethod ?? '-'),
                 _infoRow(
                   'Status',
                   _statusLabel(invoice.status),
@@ -146,6 +145,88 @@ class _InvoiceViewPageState extends ConsumerState<InvoiceViewPage>
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Line Items',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF1A2634),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (invoice.items == null || invoice.items!.isEmpty)
+            Center(child: Text('No items found')),
+          if (invoice.items != null)
+            ...invoice.items!.map((item) => _buildItemTile(isDark, item)),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF151A2E) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100),
+            ),
+            child: Column(
+              children: [
+                _infoRow('Total Amount', invoice.amount ?? '0.00'),
+                _infoRow('Discount', invoice.discount ?? '0.00'),
+                const Divider(height: 24),
+                _infoRow(
+                  'Grand Total',
+                  invoice.amount ?? '0.00',
+                  valueColor: AppColors.primary,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemTile(bool isDark, InvoiceItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item.itemName ?? 'Unknown Item',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Text(
+                '${item.subtotal ?? 0.0}',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                'Qty: ${item.quantity ?? 0}',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'Rate: ${item.rate ?? 0}',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
           ),
         ],
       ),

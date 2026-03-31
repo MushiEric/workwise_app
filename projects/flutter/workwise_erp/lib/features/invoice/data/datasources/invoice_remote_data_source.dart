@@ -83,4 +83,64 @@ class InvoiceRemoteDataSource {
       throw ServerException(e.toString());
     }
   }
+
+  Future<InvoiceModel> getInvoiceById(String id) async {
+    try {
+      final resp = await client.get('/invoice/get/$id');
+      final raw = resp.data;
+      if (raw is Map && raw['data'] != null) {
+        return InvoiceModel.fromJson(Map<String, dynamic>.from(raw['data']));
+      } else if (raw is Map) {
+        return InvoiceModel.fromJson(Map<String, dynamic>.from(raw));
+      }
+      throw ServerException('Invalid response format');
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  Future<void> saveInvoice(Map<String, dynamic> data) async {
+    try {
+      final resp = await client.post('/invoice/save', data: data);
+      if (resp.statusCode != 200) {
+        throw ServerException(resp.data['message'] ?? 'Failed to save invoice');
+      }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  Future<void> updateInvoice(String id, Map<String, dynamic> data) async {
+    try {
+      final resp = await client.post('/invoice/update/$id', data: data);
+      if (resp.statusCode != 200) {
+        throw ServerException(
+          resp.data['message'] ?? 'Failed to update invoice',
+        );
+      }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  Future<void> deleteInvoice(String id) async {
+    try {
+      final resp = await client.delete('/invoice/delete/$id');
+      if (resp.statusCode != 200) {
+        throw ServerException(
+          resp.data['message'] ?? 'Failed to delete invoice',
+        );
+      }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Network error');
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
 }
